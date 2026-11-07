@@ -28,6 +28,16 @@ begin
         true, 'radius', 6
     );
 
+    insert into public.store_whatsapp_messages (store_id, type) values
+        (store, 'greeting'),
+        (store, 'away'),
+        (store, 'confirmed'),
+        (store, 'preparing'),
+        (store, 'out_for_delivery'),
+        (store, 'ready_for_pickup'),
+        (store, 'completed'),
+        (store, 'canceled');
+
     insert into public.store_payment_methods (store_id, method, enabled_delivery, enabled_pickup) values
         (store, 'pix', true, true),
         (store, 'cash', true, true),

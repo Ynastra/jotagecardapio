@@ -759,6 +759,43 @@ $$;
 revoke execute on function public.get_order_tracking(text) from public;
 grant execute on function public.get_order_tracking(text) to anon, authenticated;
 
+-- WhatsApp ----------------------------------------------------------------
+
+-- custom_body nulo usa o texto padrão do app. interval_minutes vale só para a
+-- saudação: tempo mínimo entre duas saudações ao mesmo cliente.
+create table public.store_whatsapp_messages (
+    store_id uuid not null references public.stores (id) on delete cascade,
+    type text not null check (
+        type in ('greeting', 'away', 'confirmed', 'preparing', 'out_for_delivery', 'ready_for_pickup', 'completed', 'canceled')
+    ),
+    active boolean not null default true,
+    custom_body text,
+    interval_minutes integer check (interval_minutes is null or interval_minutes > 0),
+    primary key (store_id, type)
+);
+
+-- Quem grava a sessão é o servidor de envio, com a chave de serviço; o painel só lê.
+create table public.store_whatsapp_sessions (
+    store_id uuid primary key references public.stores (id) on delete cascade,
+    provider text not null check (provider in ('qr', 'meta')),
+    state text not null default 'disconnected' check (state in ('disconnected', 'connecting', 'connected')),
+    phone text,
+    updated_at timestamptz not null default now()
+);
+
+alter table public.store_whatsapp_messages enable row level security;
+alter table public.store_whatsapp_sessions enable row level security;
+
+create policy "membro vê mensagens do WhatsApp" on public.store_whatsapp_messages
+    for select using (public.is_store_member(store_id));
+create policy "membro edita mensagens do WhatsApp" on public.store_whatsapp_messages
+    for all using (public.is_store_member(store_id)) with check (public.is_store_member(store_id));
+
+create policy "membro vê sessão do WhatsApp" on public.store_whatsapp_sessions
+    for select using (public.is_store_member(store_id));
+
+revoke insert, update, delete on public.store_whatsapp_sessions from anon, authenticated;
+
 -- Imagens da loja ---------------------------------------------------------
 
 -- Cada loja grava só dentro da pasta com o próprio id: <store_id>/arquivo.
