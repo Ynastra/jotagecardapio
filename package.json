@@ -10,11 +10,13 @@
     "preview": "vite preview",
     "pretypecheck": "node scripts/generate-css-module-types.mjs",
     "typecheck": "tsc --noEmit",
+    "pretypecheck:fast": "node scripts/generate-css-module-types.mjs",
+    "typecheck:fast": "tsc --noEmit --noUnusedLocals false --noUnusedParameters false",
     "test": "vitest run",
     "test:db": "supabase test db",
     "lint:css": "stylelint \"src/**/*.css\"",
     "check:fsd": "steiger ./src --fail-on-warnings",
-    "check:fast": "npm run lint:css && npm run typecheck && npm run check:fsd",
+    "check:fast": "npm run lint:css && npm run typecheck:fast && npm run check:fsd",
     "check": "npm run lint:css && npm run typecheck && npm run check:fsd && npm run test && npm run build"
   },
   "dependencies": {
