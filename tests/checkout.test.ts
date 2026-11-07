@@ -147,7 +147,7 @@ describe('getAvailablePaymentMethod', () => {
 describe('buildPlaceOrderPayload', () => {
     it('manda só dígitos do telefone e omite endereço e troco quando não se aplicam', () => {
         const form = { ...filledForm, fulfillment: 'pickup' as const, customerPhone: '(18) 99664-9346', changeFor: '50' }
-        const payload = buildPlaceOrderPayload(store.slug, form, [])
+        const payload = buildPlaceOrderPayload(store, form, [])
 
         expect(payload.customer_phone).toBe('18996649346')
         expect(payload.address).toBeNull()
@@ -171,9 +171,16 @@ describe('CEP na entrega', () => {
 
     it('manda CEP só com dígitos, cidade e UF dentro do endereço', () => {
         const form = { ...filledForm, cep: '17780-000', city: ' Lucélia ', state: 'sp' }
-        const payload = buildPlaceOrderPayload(store.slug, form, [])
+        const payload = buildPlaceOrderPayload(requiringCep, form, [])
 
         expect(payload.address).toMatchObject({ cep: '17780000', city: 'Lucélia', state: 'SP' })
+    })
+
+    it('não manda CEP, cidade e UF lembrados quando a loja não pede CEP', () => {
+        const form = { ...filledForm, cep: '17780-000', city: 'Lucélia', state: 'SP' }
+        const payload = buildPlaceOrderPayload(store, form, [])
+
+        expect(payload.address).toMatchObject({ cep: '', city: '', state: '' })
     })
 })
 

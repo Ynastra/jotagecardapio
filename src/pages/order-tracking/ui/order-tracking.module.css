@@ -19,9 +19,11 @@
 
 .logo {
     flex: none;
-    inline-size: 48px;
-    block-size: 48px;
+    inline-size: 56px;
+    block-size: 56px;
+    border: 3px solid var(--color-surface);
     border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-card);
 }
 
 .storeName {

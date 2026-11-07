@@ -22,7 +22,7 @@ begin
         hide_unavailable_items, delivery_mode, delivery_max_km
     ) values (
         store, 'zedoburguerlucelia', 'Zé do Burguer',
-        'Rua Francisco Xavier de Oliveira, 48, Lado Este, Lucélia - SP, 17780-043',
+        'Rua Francisco Xavier de Oliveira, 48, Lado Este',
         '5518996649346', '#060504', 700, 800,
         30, 'Lucélia', 'SP', 'full', true, true,
         true, 'radius', 6

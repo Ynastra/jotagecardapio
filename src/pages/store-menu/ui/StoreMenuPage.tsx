@@ -5,7 +5,7 @@ import type { DraftLine, OrderMessageContext, PlacedOrder } from '@/entities/ord
 import { buildBrandStyle, ThemeProvider } from '@/shared/lib'
 import { Button, StatusMessage, ThemeIcon } from '@/shared/ui'
 
-import { countProductInCart, getMaxQuantity } from '../model/availability'
+import { countProductInCart, getMaxQuantity, getProductAvailability } from '../model/availability'
 import { isStoreOpenNow } from '../model/opening-hours'
 import { buildOrderConfirmation } from '../model/order-confirmation'
 import { filterCategories } from '../model/search'
@@ -46,15 +46,20 @@ function useStoreOpen(store: Store): boolean {
 function StoreMenuView({ menu }: { menu: StoreMenu }) {
     const { store, categories } = menu
     const products = useMemo(() => categories.flatMap((category) => category.products), [categories])
-    const productIds = useMemo(() => new Set(products.map((product) => product.id)), [products])
-    const cart = useCart(store.slug, productIds)
+    const availableProductIds = useMemo(
+        () => new Set(products.filter((product) => getProductAvailability(product) === 'available').map((product) => product.id)),
+        [products],
+    )
+    const cart = useCart(store.slug, availableProductIds)
     const isOpen = useStoreOpen(store)
     const [searchParams, setSearchParams] = useSearchParams()
     const [query, setQuery] = useState('')
     const [isCheckoutOpen, setCheckoutOpen] = useState(false)
     const [placed, setPlaced] = useState<PlacedConfirmation | null>(null)
 
-    const selectedProduct = products.find((product) => product.id === searchParams.get(PRODUCT_PARAM))
+    const requestedProduct = products.find((product) => product.id === searchParams.get(PRODUCT_PARAM))
+    const selectedProduct =
+        requestedProduct && getProductAvailability(requestedProduct) === 'available' ? requestedProduct : undefined
     const visibleCategories = filterCategories(categories, query)
     const featuredProducts = products.filter((product) => product.featured)
     const showFeatured = featuredProducts.length > 0 && query.trim() === ''

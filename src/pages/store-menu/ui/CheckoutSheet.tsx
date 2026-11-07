@@ -152,7 +152,7 @@ export function CheckoutSheet({
 
         setErrorMessage(null)
         setSubmitting(true)
-        const payload = buildPlaceOrderPayload(store.slug, form, lines)
+        const payload = buildPlaceOrderPayload(store, form, lines)
 
         try {
             const order = await placeOrder(payload)

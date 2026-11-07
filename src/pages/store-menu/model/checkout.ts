@@ -202,13 +202,20 @@ export function validateCheckout(form: CheckoutForm, store: Store, subtotalCents
     return firstError
 }
 
-export function buildPlaceOrderPayload(storeSlug: string, form: CheckoutForm, lines: readonly DraftLine[]): PlaceOrderPayload {
+export function buildPlaceOrderPayload(
+    store: Pick<Store, 'slug' | 'requireCep'>,
+    form: CheckoutForm,
+    lines: readonly DraftLine[],
+): PlaceOrderPayload {
+    const storeSlug = store.slug
+    const sendsCep = store.requireCep
     const isDelivery = form.fulfillment === 'delivery'
+    // CEP, cidade e UF lembrados de outra loja não vão para quem não pede CEP.
     const address = isDelivery
         ? {
-              cep: keepDigits(form.cep),
-              city: form.city.trim(),
-              state: form.state.trim().toUpperCase(),
+              cep: sendsCep ? keepDigits(form.cep) : '',
+              city: sendsCep ? form.city.trim() : '',
+              state: sendsCep ? form.state.trim().toUpperCase() : '',
               street: form.street.trim(),
               number: form.number.trim(),
               neighborhood: form.neighborhood.trim(),

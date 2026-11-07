@@ -3,36 +3,70 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { lookupCep } from '@/pages/store-menu/api/lookup-cep'
 import { formatCep, isValidCep } from '@/shared/lib'
 
-function stubFetch(implementation: () => Promise<unknown>) {
-    const fetchMock = vi.fn(implementation)
+const VIACEP_URL = 'https://viacep.com.br/ws/17780000/json/'
+const BRASIL_API_URL = 'https://brasilapi.com.br/api/cep/v2/17780000'
+
+type FakeResponse = { ok: boolean; json: () => Promise<unknown> }
+
+function jsonResponse(body: unknown): FakeResponse {
+    return { ok: true, json: async () => body }
+}
+
+const failedResponse: FakeResponse = { ok: false, json: async () => ({}) }
+
+function stubFetch(handler: (url: string, init?: RequestInit) => Promise<FakeResponse>) {
+    const fetchMock = vi.fn(handler)
     vi.stubGlobal('fetch', fetchMock)
     return fetchMock
 }
 
+const viaCepFound = jsonResponse({ logradouro: 'Rua A', bairro: 'Centro', localidade: 'Lucélia', uf: 'SP' })
+const brasilApiFound = jsonResponse({ street: 'Rua B', neighborhood: 'Lado Este', city: 'Lucélia', state: 'SP' })
+
 afterEach(() => {
     vi.unstubAllGlobals()
+    vi.useRealTimers()
 })
 
 describe('lookupCep', () => {
-    it('devolve rua, bairro, cidade e UF quando o CEP existe', async () => {
-        const fetchMock = stubFetch(async () => ({
-            ok: true,
-            json: async () => ({ logradouro: 'Rua A', bairro: 'Centro', localidade: 'Lucélia', uf: 'SP' }),
-        }))
+    it('devolve o endereço do ViaCEP e não consulta a BrasilAPI', async () => {
+        const fetchMock = stubFetch(async () => viaCepFound)
 
         const address = await lookupCep('17780-000')
 
-        expect(fetchMock).toHaveBeenCalledWith('https://viacep.com.br/ws/17780000/json/')
         expect(address).toEqual({ street: 'Rua A', neighborhood: 'Centro', city: 'Lucélia', state: 'SP' })
+        expect(fetchMock).toHaveBeenCalledTimes(1)
+        expect(fetchMock).toHaveBeenCalledWith(VIACEP_URL, expect.anything())
     })
 
-    it('devolve nada quando o CEP não é encontrado', async () => {
-        stubFetch(async () => ({ ok: true, json: async () => ({ erro: true }) }))
+    it('usa a BrasilAPI quando o ViaCEP não acha o CEP', async () => {
+        stubFetch(async (url) => (url === VIACEP_URL ? jsonResponse({ erro: true }) : brasilApiFound))
 
-        expect(await lookupCep('00000000')).toBeNull()
+        const address = await lookupCep('17780000')
+
+        expect(address).toEqual({ street: 'Rua B', neighborhood: 'Lado Este', city: 'Lucélia', state: 'SP' })
     })
 
-    it('devolve nada quando a rede falha', async () => {
+    it('usa a BrasilAPI quando o ViaCEP falha e trata campos nulos como vazios', async () => {
+        stubFetch(async (url) => {
+            if (url === VIACEP_URL) {
+                throw new TypeError('Failed to fetch')
+            }
+            return jsonResponse({ street: null, neighborhood: null, city: 'Lucélia', state: 'SP' })
+        })
+
+        const address = await lookupCep('17780000')
+
+        expect(address).toEqual({ street: '', neighborhood: '', city: 'Lucélia', state: 'SP' })
+    })
+
+    it('devolve nada quando as duas fontes não acham o CEP', async () => {
+        stubFetch(async (url) => (url === VIACEP_URL ? jsonResponse({ erro: true }) : failedResponse))
+
+        expect(await lookupCep('17780000')).toBeNull()
+    })
+
+    it('devolve nada quando as duas fontes falham na rede', async () => {
         stubFetch(async () => {
             throw new TypeError('Failed to fetch')
         })
@@ -40,10 +74,21 @@ describe('lookupCep', () => {
         expect(await lookupCep('17780000')).toBeNull()
     })
 
-    it('devolve nada quando o serviço responde com erro', async () => {
-        stubFetch(async () => ({ ok: false, json: async () => ({}) }))
+    it('desiste de uma fonte que não responde em 8 segundos', async () => {
+        vi.useFakeTimers()
+        const fetchMock = stubFetch(
+            (_url, init) =>
+                new Promise<FakeResponse>((_resolve, reject) => {
+                    init?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+                }),
+        )
 
-        expect(await lookupCep('17780000')).toBeNull()
+        const pending = lookupCep('17780000')
+        await vi.advanceTimersByTimeAsync(8000)
+        await vi.advanceTimersByTimeAsync(8000)
+
+        expect(await pending).toBeNull()
+        expect(fetchMock).toHaveBeenCalledWith(BRASIL_API_URL, expect.anything())
     })
 })
 
