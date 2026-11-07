@@ -1,6 +1,6 @@
 begin;
 
-select plan(9);
+select plan(13);
 
 update public.stores set enforce_opening_hours = false where slug = 'zedoburguerlucelia';
 
@@ -80,6 +80,62 @@ select throws_ok(
     '23514',
     null,
     'etiqueta informativa fora da lista é recusada'
+);
+
+update public.products set stock = 5 where name = 'GUARANÁ ANTARCTICA';
+
+select lives_ok(
+    $$
+        select public.place_order(jsonb_build_object(
+            'store_slug', 'zedoburguerlucelia',
+            'customer_name', 'Maria Teste',
+            'customer_phone', '18999990000',
+            'fulfillment', 'pickup',
+            'payment_method', 'pix',
+            'items', jsonb_build_array(
+                jsonb_build_object(
+                    'product_id', (select id from public.products where name = 'GUARANÁ ANTARCTICA'), 'quantity', 2),
+                jsonb_build_object(
+                    'product_id', (select id from public.products where name = 'FANTA LARANJA'), 'quantity', 1),
+                jsonb_build_object(
+                    'product_id', (select id from public.products where name = 'GUARANÁ ANTARCTICA'), 'quantity', 2)
+            )
+        ))
+    $$,
+    'pedido com produto repetido e produto sem estoque controlado é aceito'
+);
+
+select is(
+    (select stock from public.products where name = 'GUARANÁ ANTARCTICA'),
+    1,
+    'produto repetido no pedido desconta cada linha do estoque'
+);
+
+select is(
+    (select stock from public.products where name = 'FANTA LARANJA'),
+    null,
+    'produto sem estoque controlado continua sem estoque'
+);
+
+with other_store as (
+    insert into public.stores (slug, name, whatsapp) values ('outraloja', 'Outra Loja', '5518999999999')
+    returning id
+), other_category as (
+    insert into public.categories (store_id, name) select id, 'Geral' from other_store returning id, store_id
+)
+insert into public.products (store_id, category_id, name, price_cents, featured)
+select store_id, id, 'Destaque ' || n, 1000, true
+from other_category, generate_series(1, 6) as n;
+
+select throws_ok(
+    $$
+        update public.products
+        set store_id = (select id from public.stores where slug = 'outraloja'),
+            category_id = (select id from public.categories where name = 'Geral')
+        where name = 'X-MELT'
+    $$,
+    'featured_limit_reached',
+    'mover um destaque para loja já cheia é recusado'
 );
 
 select * from finish();

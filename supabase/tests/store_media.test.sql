@@ -1,6 +1,6 @@
 begin;
 
-select plan(8);
+select plan(11);
 
 select is(
     (select public from storage.buckets where id = 'store-media'),
@@ -37,8 +37,28 @@ select lives_ok(
     'membro troca a imagem da própria loja'
 );
 
+select is(
+    (select count(*)::int from storage.objects where bucket_id = 'store-media'),
+    1,
+    'membro lista as imagens da própria loja'
+);
+
 select set_config('request.jwt.claim.sub', '5e1d0000-0000-4000-8000-0000000000bb', true);
 select set_config('request.jwt.claims', '{"sub": "5e1d0000-0000-4000-8000-0000000000bb", "role": "authenticated"}', true);
+
+select is(
+    (select count(*)::int from storage.objects where bucket_id = 'store-media'),
+    0,
+    'quem não é membro não lista imagens da loja'
+);
+
+set local role anon;
+select is(
+    (select count(*)::int from storage.objects where bucket_id = 'store-media'),
+    0,
+    'visitante anônimo não lista imagens'
+);
+set local role authenticated;
 
 select throws_ok(
     $$ insert into storage.objects (bucket_id, name) values ('store-media', '5e1d0000-0000-4000-8000-000000000001/intruso.png') $$,

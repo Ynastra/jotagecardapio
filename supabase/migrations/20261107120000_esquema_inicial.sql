@@ -242,7 +242,8 @@ declare
     max_featured constant integer := 6;
     featured_count integer;
 begin
-    if not new.featured or (tg_op = 'UPDATE' and old.featured) then
+    if not new.featured
+        or (tg_op = 'UPDATE' and old.featured and old.store_id = new.store_id) then
         return new;
     end if;
 
@@ -260,7 +261,7 @@ end;
 $$;
 
 create trigger products_featured_limit
-    before insert or update of featured on public.products
+    before insert or update of featured, store_id on public.products
     for each row execute function public.enforce_featured_limit();
 
 create index store_hours_store_idx on public.store_hours (store_id);
@@ -552,14 +553,25 @@ begin
         raise exception 'empty_order';
     end if;
 
+    -- Só produto com estoque controlado é travado, todos de uma vez e em ordem
+    -- de id, para pedidos com os mesmos itens em ordem inversa não se travarem.
+    perform 1
+    from public.products
+    where store_id = target_store.id
+      and stock is not null
+      and id in (
+          select (value ->> 'product_id')::uuid from jsonb_array_elements(payload -> 'items')
+      )
+    order by id
+    for update;
+
     for item in select value from jsonb_array_elements(payload -> 'items') loop
         select * into target_product
         from public.products
         where id = (item ->> 'product_id')::uuid
           and store_id = target_store.id
           and active
-          and sell_delivery_pickup
-        for update;
+          and sell_delivery_pickup;
         if not found then
             raise exception 'product_unavailable';
         end if;
@@ -818,8 +830,11 @@ as $$
     );
 $$;
 
-create policy "imagens da loja são públicas" on storage.objects
-    for select using (bucket_id = 'store-media');
+-- A URL pública do bucket serve os arquivos sem esta política; ela só controla
+-- a listagem pela API, restrita à pasta da própria loja.
+create policy "membro lista imagens da loja" on storage.objects
+    for select to authenticated
+    using (bucket_id = 'store-media' and public.is_store_media_member(name));
 create policy "membro envia imagem da loja" on storage.objects
     for insert to authenticated
     with check (bucket_id = 'store-media' and public.is_store_media_member(name));
