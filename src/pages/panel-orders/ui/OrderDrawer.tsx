@@ -6,6 +6,7 @@ import { Button, ThemeIcon } from '@/shared/ui'
 
 import { getNextStep, getPreviousStatus, isActiveOrder } from '../model/order-flow'
 import { OrderDetail } from './OrderDetail'
+import { OrderReceipt } from './OrderReceipt'
 import styles from './order-drawer.module.css'
 
 type OrderDrawerProps = {
@@ -66,6 +67,9 @@ export function OrderDrawer({
             <div className={styles.panel}>
                 <header className={styles.header}>
                     <h2 className={styles.title}>Pedido {order.publicCode}</h2>
+                    <button type="button" className={styles.link} onClick={() => window.print()}>
+                        Imprimir
+                    </button>
                     <button type="button" className={styles.close} onClick={onClose} aria-label="Fechar">
                         <ThemeIcon name="fechar" size={22} />
                     </button>
@@ -115,6 +119,7 @@ export function OrderDrawer({
                     )}
                 </footer>
             </div>
+            <OrderReceipt order={order} store={store} />
         </dialog>
     )
 }

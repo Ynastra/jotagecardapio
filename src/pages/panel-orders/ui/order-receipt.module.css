@@ -1,0 +1,68 @@
+.receipt {
+    display: none;
+}
+
+.header {
+    text-align: center;
+}
+
+.storeName {
+    font-size: var(--font-size-lg);
+    font-weight: 800;
+}
+
+.code {
+    font-size: var(--font-size-xl);
+    font-weight: 800;
+}
+
+.block {
+    display: grid;
+    gap: var(--space-1);
+    padding-block: var(--space-2);
+    border-block-start: 1px dashed currentColor;
+}
+
+.row {
+    display: flex;
+    gap: var(--space-2);
+    justify-content: space-between;
+}
+
+.strong {
+    font-weight: 800;
+}
+
+.detail {
+    padding-inline-start: var(--space-3);
+}
+
+.items {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+@page {
+    size: 80mm auto;
+    margin: 0;
+}
+
+@media print {
+    :global(#root) {
+        display: none;
+    }
+
+    .receipt {
+        display: block;
+        inline-size: 80mm;
+        padding: var(--space-2) var(--space-3);
+        background-color: transparent;
+        color: var(--color-text);
+        font-family: var(--font-body);
+        font-size: var(--font-size-sm);
+        line-height: 1.35;
+    }
+}

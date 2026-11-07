@@ -11,6 +11,14 @@ function formatDate(instant: Date, timeZone: string, withYear: boolean): string 
     return date
 }
 
+// Data completa e hora, no fuso da loja: 07/11/2026 19:05.
+export function formatOrderDateTime(isoTimestamp: string, timeZone: string): string {
+    const date = formatDate(new Date(isoTimestamp), timeZone, true)
+    const time = formatClockTime(isoTimestamp, timeZone)
+    const dateTime = `${date} ${time}`
+    return dateTime
+}
+
 // Hora do pedido; acrescenta a data quando ele não é de hoje na loja.
 export function describeOrderMoment(createdAtIso: string, now: Date, timeZone: string): string {
     const createdAt = new Date(createdAtIso)
