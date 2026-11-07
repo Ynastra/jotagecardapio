@@ -49,24 +49,25 @@ begin
         (drinks, store, 'BEBIDAS', 2);
 
     insert into public.products (
-        store_id, category_id, name, description, price_cents, promo_price_cents, serves, portion_label, featured, position
+        store_id, category_id, name, description, price_cents, promo_price_cents, serves,
+        portion_amount, portion_unit, featured, position
     ) values
-        (store, burgers, 'KIDS', 'Pão brioche macio, hambúrguer de 100g suculento, 1 fatia de cheddar e maionese da casa, em uma combinação irresistível para os pequenos.', 2399, null, 1, null, true, 0),
-        (store, burgers, 'X-BURGUER', 'Pão de brioche macio, hambúrguer de 180g, 2 fatias de cheddar derretido, ketchup e mostarda, finalizado com cebola e picles de pepino para um toque agridoce e crocante.', 3099, null, 1, null, false, 1),
-        (store, burgers, 'X-SALADA', 'Pão de brioche macio, hambúrguer de 180g, 2 fatias de cheddar derretido, alface, tomate, cebola e maionese da casa. O alface poderá ser substituído por rúcula; informe nas observações.', 3199, null, 1, null, false, 2),
-        (store, burgers, 'X-BACON', 'Pão de brioche macio, hambúrguer de 180g, 2 fatias de cheddar derretido, 3 fatias de bacon crocante e maionese da casa, combinando suculência, cremosidade e textura irresistível.', 3399, null, 1, null, false, 3),
-        (store, burgers, 'X-MELT', 'Pão de brioche macio, hambúrguer de 180g, molho de cheddar, cebola caramelizada e maionese da casa, em uma combinação cremosa e marcante.', 3099, null, 1, null, false, 4),
-        (store, burgers, 'X-CHICKEN', 'Pão de brioche macio, hambúrguer de frango empanado de 100 g, 2 fatias de cheddar derretido, 2 fatias de bacon, molho barbecue (BBQ), alface e maionese da casa.', 3099, null, 1, null, true, 5),
-        (store, portions, 'BATATA FRITA - SIMPLES P', 'Batata frita crocante, dourada e sequinha. Porção de 150g de batata, pesada antes do preparo. O clássico acompanhamento para seu hambúrguer!', 700, null, 1, '150 g', false, 0),
-        (store, portions, 'BATATA FRITA - SIMPLES G', 'Batata frita crocante, dourada e sequinha. Porção de 500g de batata, pesada antes do preparo.', 2400, null, 2, '500 g', false, 1),
-        (store, portions, 'BATATA FRITA - CHEDDAR E BACON G', 'Batata frita crocante, dourada e sequinha, coberta com um delicioso molho cheddar cremoso e finalizada com uma irresistível farofa de bacon crocante. Porção de 500g de batata, pesada antes do preparo.', 3600, null, 2, '500 g', false, 2),
-        (store, portions, 'MINI CHICKENS', 'Mini Chickens crocantes, dourados e sequinhos. Porção de 6 unidades.', 1400, 1200, 1, '6 un', true, 3),
-        (store, drinks, 'COCA COLA ORIGINAL', null, 700, null, 1, '350 ml', false, 0),
-        (store, drinks, 'COCA COLA ZERO', null, 700, null, 1, '350 ml', false, 1),
-        (store, drinks, 'GUARANÁ ANTARCTICA', null, 600, null, 1, '350 ml', false, 2),
-        (store, drinks, 'GUARANÁ ANTARCTICA ZERO', null, 600, null, 1, '350 ml', false, 3),
-        (store, drinks, 'FANTA LARANJA', null, 600, null, 1, '350 ml', false, 4),
-        (store, drinks, 'SPRITE', null, 600, null, 1, '350 ml', false, 5);
+        (store, burgers, 'KIDS', 'Pão brioche macio, hambúrguer de 100g suculento, 1 fatia de cheddar e maionese da casa, em uma combinação irresistível para os pequenos.', 2399, null, 1, null, null, true, 0),
+        (store, burgers, 'X-BURGUER', 'Pão de brioche macio, hambúrguer de 180g, 2 fatias de cheddar derretido, ketchup e mostarda, finalizado com cebola e picles de pepino para um toque agridoce e crocante.', 3099, null, 1, null, null, false, 1),
+        (store, burgers, 'X-SALADA', 'Pão de brioche macio, hambúrguer de 180g, 2 fatias de cheddar derretido, alface, tomate, cebola e maionese da casa. O alface poderá ser substituído por rúcula; informe nas observações.', 3199, null, 1, null, null, false, 2),
+        (store, burgers, 'X-BACON', 'Pão de brioche macio, hambúrguer de 180g, 2 fatias de cheddar derretido, 3 fatias de bacon crocante e maionese da casa, combinando suculência, cremosidade e textura irresistível.', 3399, null, 1, null, null, false, 3),
+        (store, burgers, 'X-MELT', 'Pão de brioche macio, hambúrguer de 180g, molho de cheddar, cebola caramelizada e maionese da casa, em uma combinação cremosa e marcante.', 3099, null, 1, null, null, false, 4),
+        (store, burgers, 'X-CHICKEN', 'Pão de brioche macio, hambúrguer de frango empanado de 100 g, 2 fatias de cheddar derretido, 2 fatias de bacon, molho barbecue (BBQ), alface e maionese da casa.', 3099, null, 1, null, null, true, 5),
+        (store, portions, 'BATATA FRITA - SIMPLES P', 'Batata frita crocante, dourada e sequinha. Porção de 150g de batata, pesada antes do preparo. O clássico acompanhamento para seu hambúrguer!', 700, null, 1, 150, 'g', false, 0),
+        (store, portions, 'BATATA FRITA - SIMPLES G', 'Batata frita crocante, dourada e sequinha. Porção de 500g de batata, pesada antes do preparo.', 2400, null, 2, 500, 'g', false, 1),
+        (store, portions, 'BATATA FRITA - CHEDDAR E BACON G', 'Batata frita crocante, dourada e sequinha, coberta com um delicioso molho cheddar cremoso e finalizada com uma irresistível farofa de bacon crocante. Porção de 500g de batata, pesada antes do preparo.', 3600, null, 2, 500, 'g', false, 2),
+        (store, portions, 'MINI CHICKENS', 'Mini Chickens crocantes, dourados e sequinhos. Porção de 6 unidades.', 1400, 1200, 1, 6, 'un', true, 3),
+        (store, drinks, 'COCA COLA ORIGINAL', null, 700, null, 1, 350, 'ml', false, 0),
+        (store, drinks, 'COCA COLA ZERO', null, 700, null, 1, 350, 'ml', false, 1),
+        (store, drinks, 'GUARANÁ ANTARCTICA', null, 600, null, 1, 350, 'ml', false, 2),
+        (store, drinks, 'GUARANÁ ANTARCTICA ZERO', null, 600, null, 1, 350, 'ml', false, 3),
+        (store, drinks, 'FANTA LARANJA', null, 600, null, 1, 350, 'ml', false, 4),
+        (store, drinks, 'SPRITE', null, 600, null, 1, 350, 'ml', false, 5);
 
     insert into public.option_groups (id, store_id, title) values
         (meat_point, store, 'Qual o ponto da carne?'),

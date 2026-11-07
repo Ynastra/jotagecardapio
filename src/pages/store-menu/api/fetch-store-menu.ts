@@ -5,6 +5,16 @@ import type { Category, OptionGroup, Product, Store, StoreMenu } from '../model/
 const STORE_COLUMNS =
     'id, slug, name, address, whatsapp, logo_url, cover_url, theme, brand_color, min_order_cents, delivery_fee_cents, free_delivery_above_cents, accepts_delivery, accepts_pickup, enforce_opening_hours, timezone'
 
+const PORTION_UNIT_LABELS: Record<string, string> = {
+    g: 'g',
+    kg: 'kg',
+    l: 'l',
+    ml: 'ml',
+    un: 'un',
+    capsulas: 'cápsulas',
+    fatias: 'fatias',
+}
+
 type StoreRow = {
     id: string
     slug: string
@@ -44,7 +54,8 @@ type MenuRows = {
         price_cents: number
         promo_price_cents: number | null
         serves: number | null
-        portion_label: string | null
+        portion_amount: number | null
+        portion_unit: string | null
         image_url: string | null
         featured: boolean
     }[]
@@ -83,7 +94,9 @@ async function fetchMenuRows(storeId: string): Promise<MenuRows> {
         supabase.from('categories').select('id, name, icon_url').eq('store_id', storeId).order('position'),
         supabase
             .from('products')
-            .select('id, category_id, name, description, price_cents, promo_price_cents, serves, portion_label, image_url, featured')
+            .select(
+                'id, category_id, name, description, price_cents, promo_price_cents, serves, portion_amount, portion_unit, image_url, featured',
+            )
             .eq('store_id', storeId)
             .order('position'),
         supabase
@@ -110,6 +123,16 @@ async function fetchMenuRows(storeId: string): Promise<MenuRows> {
         options: unwrap(options),
     }
     return rows
+}
+
+function describePortion(amount: number | null, unit: string | null): string | null {
+    if (amount === null || unit === null) {
+        return null
+    }
+
+    const unitLabel = PORTION_UNIT_LABELS[unit] ?? unit
+    const description = `${amount.toLocaleString('pt-BR')} ${unitLabel}`
+    return description
 }
 
 function buildOptionGroup(rows: MenuRows, group: MenuRows['groups'][number], link: MenuRows['links'][number]): OptionGroup {
@@ -153,7 +176,7 @@ function buildProducts(rows: MenuRows): Product[] {
         priceCents: product.price_cents,
         promoPriceCents: product.promo_price_cents,
         serves: product.serves,
-        portionLabel: product.portion_label,
+        portionLabel: describePortion(product.portion_amount, product.portion_unit),
         imageUrl: product.image_url,
         featured: product.featured,
         optionGroups: buildProductOptionGroups(rows, product.id),

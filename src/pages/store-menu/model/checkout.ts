@@ -228,6 +228,7 @@ const ORDER_ERROR_MESSAGES: Record<string, string> = {
     delivery_zone_required: 'Escolha o bairro da entrega.',
     empty_order: 'A sacola está vazia.',
     product_unavailable: 'Um item da sacola não está mais disponível. Remova e tente de novo.',
+    insufficient_stock: 'Um item da sacola não tem estoque para essa quantidade. Diminua a quantidade e tente de novo.',
     option_unavailable: 'Um opcional escolhido não está mais disponível. Remova o item e monte de novo.',
     invalid_option_selection: 'Um item ficou com opcionais incompletos. Remova e monte de novo.',
     below_minimum_order: 'O pedido não atingiu o valor mínimo da loja.',

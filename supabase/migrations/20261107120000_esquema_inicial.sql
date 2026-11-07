@@ -121,12 +121,35 @@ create table public.products (
     price_cents integer not null check (price_cents >= 0),
     promo_price_cents integer,
     serves smallint check (serves is null or serves > 0),
-    portion_label text,
+    portion_amount numeric(10, 2),
+    portion_unit text,
     image_url text,
+    highlight_tag text,
+    info_tags text[] not null default '{}',
+    allergen_tags text[] not null default '{}',
+    -- null = estoque não controlado; place_order confere e desconta quando há valor.
+    stock integer,
+    sell_delivery_pickup boolean not null default true,
+    sell_table boolean not null default true,
     featured boolean not null default false,
     active boolean not null default true,
     position integer not null default 0,
     unique (id, store_id),
+    constraint products_portion_complete check ((portion_amount is null) = (portion_unit is null)),
+    constraint products_portion_amount_positive check (portion_amount is null or portion_amount > 0),
+    constraint products_portion_unit_valid check (
+        portion_unit is null or portion_unit in ('g', 'kg', 'l', 'ml', 'un', 'capsulas', 'fatias')
+    ),
+    constraint products_highlight_tag_valid check (
+        highlight_tag is null or highlight_tag in ('new', 'best_seller', 'promo')
+    ),
+    constraint products_info_tags_valid check (
+        info_tags <@ array['cold_drink', 'alcoholic', 'vegan', 'vegetarian', 'hot_dish', 'sugar_free', 'lactose_free', 'gluten_free']
+    ),
+    constraint products_allergen_tags_valid check (
+        allergen_tags <@ array['contains_gluten', 'contains_lactose', 'contains_peanut', 'contains_seafood']
+    ),
+    constraint products_stock_not_negative check (stock is null or stock >= 0),
     -- A chave composta impede um produto de apontar para categoria de outra loja.
     foreign key (category_id, store_id) references public.categories (id, store_id) on delete cascade,
     constraint products_promo_below_price check (
@@ -208,6 +231,37 @@ create table public.orders (
     created_at timestamptz not null default now(),
     unique (store_id, number)
 );
+
+create function public.enforce_featured_limit()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+    max_featured constant integer := 6;
+    featured_count integer;
+begin
+    if not new.featured or (tg_op = 'UPDATE' and old.featured) then
+        return new;
+    end if;
+
+    -- Duas marcações simultâneas na mesma loja não podem passar do limite juntas.
+    perform pg_advisory_xact_lock(hashtextextended(new.store_id::text, 1));
+    select count(*) into featured_count
+    from public.products
+    where store_id = new.store_id and featured and id <> new.id;
+
+    if featured_count >= max_featured then
+        raise exception 'featured_limit_reached';
+    end if;
+    return new;
+end;
+$$;
+
+create trigger products_featured_limit
+    before insert or update of featured on public.products
+    for each row execute function public.enforce_featured_limit();
 
 create index store_hours_store_idx on public.store_hours (store_id);
 create index categories_store_idx on public.categories (store_id);
@@ -501,7 +555,11 @@ begin
     for item in select value from jsonb_array_elements(payload -> 'items') loop
         select * into target_product
         from public.products
-        where id = (item ->> 'product_id')::uuid and store_id = target_store.id and active;
+        where id = (item ->> 'product_id')::uuid
+          and store_id = target_store.id
+          and active
+          and sell_delivery_pickup
+        for update;
         if not found then
             raise exception 'product_unavailable';
         end if;
@@ -509,6 +567,13 @@ begin
         item_quantity := (item ->> 'quantity')::integer;
         if item_quantity is null or item_quantity < 1 or item_quantity > max_item_quantity then
             raise exception 'invalid_quantity';
+        end if;
+
+        if target_product.stock is not null then
+            if target_product.stock < item_quantity then
+                raise exception 'insufficient_stock' using detail = target_product.name;
+            end if;
+            update public.products set stock = stock - item_quantity where id = target_product.id;
         end if;
 
         -- Opção repetida no mesmo item burlaria o max_quantity.
