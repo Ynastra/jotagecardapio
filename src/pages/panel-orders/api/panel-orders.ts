@@ -1,4 +1,10 @@
-import { mapStoredAddress, mapStoredLines, type OrderStatus, type PanelOrder } from '@/entities/order'
+import {
+    mapStoredAddress,
+    mapStoredLines,
+    type OrderPaymentStatus,
+    type OrderStatus,
+    type PanelOrder,
+} from '@/entities/order'
 import { supabase } from '@/shared/api'
 
 const ORDER_COLUMNS =
@@ -88,6 +94,29 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus): P
     if (error) {
         throw error
     }
+}
+
+export async function updatePaymentStatus(orderId: string, paymentStatus: OrderPaymentStatus): Promise<void> {
+    const { error } = await supabase.from('orders').update({ payment_status: paymentStatus }).eq('id', orderId)
+
+    if (error) {
+        throw error
+    }
+}
+
+export async function countCustomerOrders(storeId: string, customerPhone: string): Promise<number> {
+    const { count, error } = await supabase
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('store_id', storeId)
+        .eq('customer_phone', customerPhone)
+
+    if (error) {
+        throw error
+    }
+
+    const total = count ?? 0
+    return total
 }
 
 // Avisa a cada pedido novo ou mudança de status; devolve a função que encerra.

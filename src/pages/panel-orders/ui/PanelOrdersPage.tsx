@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 import type { PanelOrder } from '@/entities/order'
 import { useCurrentStore } from '@/entities/store'
@@ -10,6 +11,7 @@ import { useOrderBoard } from '../model/use-order-board'
 import { BoardCard } from './BoardCard'
 import { BoardColumn, type ColumnTone } from './BoardColumn'
 import { BoardToolbar } from './BoardToolbar'
+import { OrderDrawer } from './OrderDrawer'
 import styles from './order-board.module.css'
 
 const COLUMN_DEFINITIONS = [
@@ -19,6 +21,8 @@ const COLUMN_DEFINITIONS = [
     { key: 'finished', id: 'coluna-concluidos', title: 'Concluídos', tone: 'finished' },
 ] as const satisfies readonly { key: string; id: string; title: string; tone: ColumnTone }[]
 
+const OPEN_ORDER_PARAM = 'pedido'
+
 function jumpToColumn(columnId: string) {
     document.getElementById(columnId)?.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' })
 }
@@ -26,6 +30,24 @@ function jumpToColumn(columnId: string) {
 export function PanelOrdersPage() {
     const store = useCurrentStore()
     const board = useOrderBoard(store)
+    const [searchParams, setSearchParams] = useSearchParams()
+    const openOrderId = searchParams.get(OPEN_ORDER_PARAM)
+    const openOrder = openOrderId ? board.findOrder(openOrderId) : null
+
+    function openDrawer(orderId: string) {
+        board.markSeen(orderId)
+        setSearchParams({ [OPEN_ORDER_PARAM]: orderId })
+    }
+
+    function closeDrawer() {
+        setSearchParams({})
+    }
+
+    useEffect(() => {
+        if (openOrderId) {
+            board.markSeen(openOrderId)
+        }
+    }, [openOrderId, board.markSeen])
 
     useEffect(() => {
         const base = `Pedidos · ${store.name}`
@@ -41,7 +63,7 @@ export function PanelOrdersPage() {
                 isFresh={board.isFresh(order)}
                 notifyUrl={board.getNotifyUrl(order)}
                 onChangeStatus={board.changeStatus}
-                onOpen={board.markSeen}
+                onOpen={openDrawer}
             />
         )
     }
@@ -104,6 +126,19 @@ export function PanelOrdersPage() {
                     )
                 })}
             </div>
+
+            {openOrder ? (
+                <OrderDrawer
+                    key={openOrder.id}
+                    order={openOrder}
+                    store={store}
+                    trackingUrl={board.getTrackingUrl(openOrder)}
+                    notifyUrl={board.getNotifyUrl(openOrder)}
+                    onClose={closeDrawer}
+                    onChangeStatus={board.changeStatus}
+                    onChangePayment={board.changePaymentStatus}
+                />
+            ) : null}
         </div>
     )
 }

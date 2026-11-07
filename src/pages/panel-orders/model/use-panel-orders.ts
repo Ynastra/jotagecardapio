@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import type { OrderStatus, PanelOrder } from '@/entities/order'
+import type { OrderPaymentStatus, OrderStatus, PanelOrder } from '@/entities/order'
 import { playNewOrderChime } from '@/shared/lib'
 
-import { fetchOrders, subscribeToOrders, updateOrderStatus } from '../api/panel-orders'
+import { fetchOrders, subscribeToOrders, updateOrderStatus, updatePaymentStatus } from '../api/panel-orders'
 import { hasReachedQueryLimit, ORDERS_QUERY_LIMIT } from './board'
 import { upsertOrder } from './order-flow'
 
@@ -13,6 +13,7 @@ export type PanelOrdersState = {
     isTruncated: boolean
     errorMessage: string | null
     changeStatus: (orderId: string, status: OrderStatus) => Promise<void>
+    changePaymentStatus: (orderId: string, paymentStatus: OrderPaymentStatus) => Promise<void>
 }
 
 export function usePanelOrders(storeId: string, periodStart: Date): PanelOrdersState {
@@ -73,5 +74,16 @@ export function usePanelOrders(storeId: string, periodStart: Date): PanelOrdersS
         }
     }, [])
 
-    return { orders, isLoading, isTruncated, errorMessage, changeStatus }
+    const changePaymentStatus = useCallback(async (orderId: string, paymentStatus: OrderPaymentStatus) => {
+        try {
+            await updatePaymentStatus(orderId, paymentStatus)
+            setOrders((current) => current.map((order) => (order.id === orderId ? { ...order, paymentStatus } : order)))
+            setErrorMessage(null)
+        } catch (error) {
+            console.error('Falha ao mudar pagamento', error)
+            setErrorMessage('Não deu para mudar o pagamento. Confira a internet e tente de novo.')
+        }
+    }, [])
+
+    return { orders, isLoading, isTruncated, errorMessage, changeStatus, changePaymentStatus }
 }

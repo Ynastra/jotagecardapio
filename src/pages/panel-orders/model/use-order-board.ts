@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 
-import { buildStatusMessage, type OrderStatus, type PanelOrder } from '@/entities/order'
+import { buildStatusMessage, type OrderPaymentStatus, type OrderStatus, type PanelOrder } from '@/entities/order'
 import type { Store } from '@/entities/store'
 
 import { groupOrdersIntoColumns, sumCompletedCents, type BoardColumns } from './board'
@@ -27,9 +27,12 @@ export type OrderBoardState = {
     isTruncated: boolean
     errorMessage: string | null
     changeStatus: (orderId: string, status: OrderStatus) => Promise<void>
+    changePaymentStatus: (orderId: string, paymentStatus: OrderPaymentStatus) => Promise<void>
+    findOrder: (orderId: string) => PanelOrder | null
     isFresh: (order: PanelOrder) => boolean
     markSeen: (orderId: string) => void
     getNotifyUrl: (order: PanelOrder) => string | null
+    getTrackingUrl: (order: PanelOrder) => string
 }
 
 export function useOrderBoard(store: Store): OrderBoardState {
@@ -39,7 +42,10 @@ export function useOrderBoard(store: Store): OrderBoardState {
     const [seenIds, setSeenIds] = useState<ReadonlySet<string>>(new Set())
 
     const periodStart = useMemo(() => getPeriodStart(period, new Date(), store.timezone), [period, store.timezone])
-    const { orders, isLoading, isTruncated, errorMessage, changeStatus } = usePanelOrders(store.id, periodStart)
+    const { orders, isLoading, isTruncated, errorMessage, changeStatus, changePaymentStatus } = usePanelOrders(
+        store.id,
+        periodStart,
+    )
     const statusMessages = useStatusMessages(store.id)
 
     const visibleOrders = useMemo(
@@ -50,20 +56,36 @@ export function useOrderBoard(store: Store): OrderBoardState {
     const finishedTotalCents = sumCompletedCents(columns.finished)
     const activeCount = orders.filter(isActiveOrder).length
 
+    const findOrder = useCallback(
+        (orderId: string) => {
+            const found = orders.find((order) => order.id === orderId) ?? null
+            return found
+        },
+        [orders],
+    )
+
     const isFresh = useCallback((order: PanelOrder) => order.status === 'received' && !seenIds.has(order.id), [seenIds])
 
     const markSeen = useCallback((orderId: string) => {
         setSeenIds((current) => new Set(current).add(orderId))
     }, [])
 
+    const getTrackingUrl = useCallback(
+        (order: PanelOrder) => {
+            const url = buildTrackingUrl(window.location.origin, store.slug, order)
+            return url
+        },
+        [store.slug],
+    )
+
     const getNotifyUrl = useCallback(
         (order: PanelOrder) => {
-            const trackingUrl = buildTrackingUrl(window.location.origin, store.slug, order)
+            const trackingUrl = getTrackingUrl(order)
             const message = buildStatusMessage(order, { storeName: store.name, trackingUrl, stored: statusMessages })
             const url = message ? buildCustomerWhatsappUrl(order, message) : null
             return url
         },
-        [store.name, store.slug, statusMessages],
+        [store.name, statusMessages, getTrackingUrl],
     )
 
     return {
@@ -82,8 +104,11 @@ export function useOrderBoard(store: Store): OrderBoardState {
         isTruncated,
         errorMessage,
         changeStatus,
+        changePaymentStatus,
+        findOrder,
         isFresh,
         markSeen,
         getNotifyUrl,
+        getTrackingUrl,
     }
 }

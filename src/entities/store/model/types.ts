@@ -3,4 +3,5 @@ export type Store = {
     name: string
     slug: string
     timezone: string
+    prepTimeMinutes: number
 }
