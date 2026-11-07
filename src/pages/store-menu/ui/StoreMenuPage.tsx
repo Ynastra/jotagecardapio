@@ -5,6 +5,7 @@ import { buildOrderMessage, buildWhatsappUrl, type DraftLine, type OrderMessageC
 import { pickReadableTextColor, ThemeProvider } from '@/shared/lib'
 import { Button, StatusMessage, ThemeIcon } from '@/shared/ui'
 
+import { countProductInCart, getMaxQuantity } from '../model/availability'
 import { isStoreOpenNow } from '../model/opening-hours'
 import { filterCategories } from '../model/search'
 import type { Store, StoreMenu } from '../model/types'
@@ -72,6 +73,13 @@ function StoreMenuView({ menu }: { menu: StoreMenu }) {
     useEffect(() => {
         document.title = `${store.name} · Cardápio`
     }, [store.name])
+
+    function getLineMaxQuantity(line: DraftLine): number {
+        const product = products.find((candidate) => candidate.id === line.productId)
+        const elsewhere = countProductInCart(cart.lines, line.productId, line.key)
+        const max = product ? getMaxQuantity(product, elsewhere) : line.quantity
+        return max
+    }
 
     function openProduct(productId: string) {
         setSearchParams({ [PRODUCT_PARAM]: productId })
@@ -146,7 +154,15 @@ function StoreMenuView({ menu }: { menu: StoreMenu }) {
                 <CartBar itemCount={cart.itemCount} subtotalCents={cart.subtotalCents} onOpen={() => setCheckoutOpen(true)} />
             ) : null}
 
-            {selectedProduct ? <ProductSheet key={selectedProduct.id} product={selectedProduct} onAdd={handleAdd} onClose={closeProduct} /> : null}
+            {selectedProduct ? (
+                <ProductSheet
+                    key={selectedProduct.id}
+                    product={selectedProduct}
+                    maxQuantity={getMaxQuantity(selectedProduct, countProductInCart(cart.lines, selectedProduct.id))}
+                    onAdd={handleAdd}
+                    onClose={closeProduct}
+                />
+            ) : null}
 
             {isCheckoutOpen ? (
                 <CheckoutSheet
@@ -155,6 +171,7 @@ function StoreMenuView({ menu }: { menu: StoreMenu }) {
                     subtotalCents={cart.subtotalCents}
                     isStoreOpen={isOpen}
                     onSetQuantity={cart.setQuantity}
+                    getLineMaxQuantity={getLineMaxQuantity}
                     onPlaced={handlePlaced}
                     onClose={() => setCheckoutOpen(false)}
                 />

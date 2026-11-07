@@ -1,6 +1,7 @@
 import { supabase } from '@/shared/api'
 
-import type { Category, OptionGroup, Product, Store, StoreMenu } from '../model/types'
+import { selectOnlineProducts } from '../model/availability'
+import type { Category,OptionGroup, Product, Store, StoreMenu } from '../model/types'
 
 const STORE_COLUMNS =
     'id, slug, name, address, whatsapp, logo_url, cover_url, theme, brand_color, min_order_cents, delivery_fee_cents, free_delivery_above_cents, accepts_delivery, accepts_pickup, enforce_opening_hours, timezone, city, state, address_display, require_cep, order_copy_whatsapp, hide_unavailable_items, cart_notice_title, cart_notice_body, pix_key, pix_key_type'
@@ -68,6 +69,9 @@ type MenuRows = {
         portion_unit: string | null
         image_url: string | null
         featured: boolean
+        active: boolean
+        stock: number | null
+        sell_delivery_pickup: boolean
     }[]
     links: { product_id: string; group_id: string; min_choices: number; max_choices: number | null }[]
     groups: { id: string; title: string }[]
@@ -105,7 +109,7 @@ async function fetchMenuRows(storeId: string): Promise<MenuRows> {
         supabase
             .from('products')
             .select(
-                'id, category_id, name, description, price_cents, promo_price_cents, serves, portion_amount, portion_unit, image_url, featured',
+                'id, category_id, name, description, price_cents, promo_price_cents, serves, portion_amount, portion_unit, image_url, featured, active, stock, sell_delivery_pickup',
             )
             .eq('store_id', storeId)
             .order('position'),
@@ -189,6 +193,9 @@ function buildProducts(rows: MenuRows): Product[] {
         portionLabel: describePortion(product.portion_amount, product.portion_unit),
         imageUrl: product.image_url,
         featured: product.featured,
+        active: product.active,
+        stock: product.stock,
+        sellsDeliveryPickup: product.sell_delivery_pickup,
         optionGroups: buildProductOptionGroups(rows, product.id),
     }))
     return products
@@ -248,7 +255,8 @@ export async function fetchStoreMenu(slug: string): Promise<StoreMenu | null> {
     }
 
     const rows = await fetchMenuRows(storeRow.id)
-    const products = buildProducts(rows)
+    const store = buildStore(storeRow, rows)
+    const products = selectOnlineProducts(buildProducts(rows), store)
     const categories: Category[] = rows.categories
         .map((category) => ({
             id: category.id,
@@ -258,6 +266,6 @@ export async function fetchStoreMenu(slug: string): Promise<StoreMenu | null> {
         }))
         .filter((category) => category.products.length > 0)
 
-    const menu = { store: buildStore(storeRow, rows), categories }
+    const menu = { store, categories }
     return menu
 }

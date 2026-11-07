@@ -7,6 +7,7 @@ import styles from './checkout-sheet.module.css'
 type CartLinesProps = {
     lines: readonly DraftLine[]
     onSetQuantity: (key: string, quantity: number) => void
+    getMaxQuantity: (line: DraftLine) => number
 }
 
 function describeOptions(line: DraftLine): string {
@@ -16,7 +17,7 @@ function describeOptions(line: DraftLine): string {
     return description
 }
 
-export function CartLines({ lines, onSetQuantity }: CartLinesProps) {
+export function CartLines({ lines, onSetQuantity, getMaxQuantity }: CartLinesProps) {
     return (
         <ul className={styles.lines}>
             {lines.map((line) => (
@@ -31,6 +32,7 @@ export function CartLines({ lines, onSetQuantity }: CartLinesProps) {
                         compact
                         label={line.name}
                         value={line.quantity}
+                        max={getMaxQuantity(line)}
                         onChange={(quantity) => onSetQuantity(line.key, quantity)}
                     />
                 </li>

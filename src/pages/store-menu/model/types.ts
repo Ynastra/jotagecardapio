@@ -88,6 +88,10 @@ export type Product = {
     portionLabel: string | null
     imageUrl: string | null
     featured: boolean
+    active: boolean
+    // null = sem controle de estoque.
+    stock: number | null
+    sellsDeliveryPickup: boolean
     optionGroups: OptionGroup[]
 }
 

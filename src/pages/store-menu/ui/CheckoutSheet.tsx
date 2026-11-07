@@ -39,6 +39,7 @@ type CheckoutSheetProps = {
     subtotalCents: number
     isStoreOpen: boolean
     onSetQuantity: (key: string, quantity: number) => void
+    getLineMaxQuantity: (line: DraftLine) => number
     onPlaced: (order: PlacedOrder, context: OrderMessageContext) => void
     onClose: () => void
 }
@@ -64,9 +65,11 @@ export function CheckoutSheet({
     subtotalCents,
     isStoreOpen,
     onSetQuantity,
+    getLineMaxQuantity,
     onPlaced,
     onClose,
 }: CheckoutSheetProps) {
+    const hasNotice = Boolean(store.cartNoticeTitle || store.cartNoticeBody)
     const [form, setForm] = useState<CheckoutForm>(() => loadInitialForm(store))
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const [isSubmitting, setSubmitting] = useState(false)
@@ -132,6 +135,13 @@ export function CheckoutSheet({
         )
     }
 
+    const notice = hasNotice ? (
+        <aside className={styles.notice}>
+            {store.cartNoticeTitle ? <strong className={styles.noticeTitle}>{store.cartNoticeTitle}</strong> : null}
+            {store.cartNoticeBody ? <p>{store.cartNoticeBody}</p> : null}
+        </aside>
+    ) : null
+
     const footer = (
         <div className={styles.footerContent}>
             {isStoreOpen ? null : <p className={styles.closedWarning}>A loja está fechada. O envio libera quando ela abrir.</p>}
@@ -144,7 +154,7 @@ export function CheckoutSheet({
     return (
         <Sheet title="Sua sacola" onClose={onClose} footer={footer}>
             <form id="checkout-form" className={styles.form} onSubmit={handleSubmit} noValidate>
-                <CartLines lines={lines} onSetQuantity={onSetQuantity} />
+                <CartLines lines={lines} onSetQuantity={onSetQuantity} getMaxQuantity={getLineMaxQuantity} />
 
                 <fieldset className={styles.section}>
                     <legend className={styles.sectionTitle}>Como quer receber?</legend>
@@ -294,6 +304,8 @@ export function CheckoutSheet({
                         onChange={(event) => update('notes', event.target.value)}
                     />
                 </fieldset>
+
+                {notice}
 
                 <dl className={styles.summary}>
                     <div className={styles.summaryRow}>

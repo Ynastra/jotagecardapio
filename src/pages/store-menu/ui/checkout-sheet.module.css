@@ -99,6 +99,20 @@
     font-size: var(--font-size-sm);
 }
 
+.notice {
+    display: grid;
+    gap: var(--space-1);
+    margin: var(--space-2) var(--space-5) 0;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background-color: var(--color-warning-soft);
+    font-size: var(--font-size-sm);
+}
+
+.noticeTitle {
+    font-weight: 700;
+}
+
 .summary {
     display: grid;
     gap: var(--space-1);
