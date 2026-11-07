@@ -28,6 +28,7 @@ const store: Store = {
     acceptsPickup: true,
     enforceOpeningHours: true,
     timezone: 'America/Sao_Paulo',
+    prepTimeMinutes: 40,
     city: 'Lucélia',
     state: 'SP',
     addressDisplay: 'full',

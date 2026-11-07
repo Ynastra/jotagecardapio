@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 
-import { buildOrderMessage, buildWhatsappUrl, type DraftLine, type OrderMessageContext, type PlacedOrder } from '@/entities/order'
+import type { DraftLine, OrderMessageContext, PlacedOrder } from '@/entities/order'
 import { pickReadableTextColor, ThemeProvider } from '@/shared/lib'
 import { Button, StatusMessage, ThemeIcon } from '@/shared/ui'
 
 import { countProductInCart, getMaxQuantity } from '../model/availability'
 import { isStoreOpenNow } from '../model/opening-hours'
+import { buildOrderConfirmation } from '../model/order-confirmation'
 import { filterCategories } from '../model/search'
 import type { Store, StoreMenu } from '../model/types'
 import { useCart } from '../model/use-cart'
@@ -23,9 +24,9 @@ import styles from './store-menu-page.module.css'
 const PRODUCT_PARAM = 'p'
 const OPEN_STATUS_REFRESH_MS = 60_000
 
-type Confirmation = {
-    orderNumber: number
-    whatsappUrl: string
+type PlacedConfirmation = {
+    order: PlacedOrder
+    context: OrderMessageContext
 }
 
 function buildBrandStyle(store: Store): CSSProperties | undefined {
@@ -63,12 +64,13 @@ function StoreMenuView({ menu }: { menu: StoreMenu }) {
     const [searchParams, setSearchParams] = useSearchParams()
     const [query, setQuery] = useState('')
     const [isCheckoutOpen, setCheckoutOpen] = useState(false)
-    const [confirmation, setConfirmation] = useState<Confirmation | null>(null)
+    const [placed, setPlaced] = useState<PlacedConfirmation | null>(null)
 
     const selectedProduct = products.find((product) => product.id === searchParams.get(PRODUCT_PARAM))
     const visibleCategories = filterCategories(categories, query)
     const featuredProducts = products.filter((product) => product.featured)
     const showFeatured = featuredProducts.length > 0 && query.trim() === ''
+    const confirmation = placed ? buildOrderConfirmation(store, placed.order, placed.context) : null
 
     useEffect(() => {
         document.title = `${store.name} · Cardápio`
@@ -95,10 +97,9 @@ function StoreMenuView({ menu }: { menu: StoreMenu }) {
     }
 
     function handlePlaced(order: PlacedOrder, context: OrderMessageContext) {
-        const message = buildOrderMessage(order, context)
         cart.clear()
         setCheckoutOpen(false)
-        setConfirmation({ orderNumber: order.number, whatsappUrl: buildWhatsappUrl(store.whatsapp, message) })
+        setPlaced({ order, context })
     }
 
     return (
@@ -177,13 +178,7 @@ function StoreMenuView({ menu }: { menu: StoreMenu }) {
                 />
             ) : null}
 
-            {confirmation ? (
-                <OrderConfirmation
-                    orderNumber={confirmation.orderNumber}
-                    whatsappUrl={confirmation.whatsappUrl}
-                    onClose={() => setConfirmation(null)}
-                />
-            ) : null}
+            {confirmation ? <OrderConfirmation {...confirmation} onClose={() => setPlaced(null)} /> : null}
         </div>
     )
 }

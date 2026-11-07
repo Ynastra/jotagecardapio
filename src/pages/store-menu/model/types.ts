@@ -42,6 +42,7 @@ export type Store = {
     acceptsPickup: boolean
     enforceOpeningHours: boolean
     timezone: string
+    prepTimeMinutes: number
     city: string | null
     state: string | null
     addressDisplay: AddressDisplay

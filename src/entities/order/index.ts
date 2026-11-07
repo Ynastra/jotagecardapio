@@ -10,6 +10,7 @@ export type {
     PaymentMethod,
     PlacedOrder,
 } from './model/types'
+export { describeOrderDeadline, formatClockTime } from './model/deadline'
 export { FULFILLMENT_LABELS, PAYMENT_LABELS, getStatusLabel } from './model/labels'
 export { mapStoredAddress, mapStoredLines } from './model/mapping'
 export { buildOrderMessage, buildWhatsappUrl, type OrderMessageContext } from './model/whatsapp-message'

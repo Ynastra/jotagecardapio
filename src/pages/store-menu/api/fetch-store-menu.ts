@@ -4,7 +4,7 @@ import { selectOnlineProducts } from '../model/availability'
 import type { Category,OptionGroup, Product, Store, StoreMenu } from '../model/types'
 
 const STORE_COLUMNS =
-    'id, slug, name, address, whatsapp, logo_url, cover_url, theme, brand_color, min_order_cents, delivery_fee_cents, free_delivery_above_cents, accepts_delivery, accepts_pickup, enforce_opening_hours, timezone, city, state, address_display, require_cep, order_copy_whatsapp, hide_unavailable_items, cart_notice_title, cart_notice_body, pix_key, pix_key_type'
+    'id, slug, name, address, whatsapp, logo_url, cover_url, theme, brand_color, min_order_cents, delivery_fee_cents, free_delivery_above_cents, accepts_delivery, accepts_pickup, enforce_opening_hours, timezone, prep_time_minutes, city, state, address_display, require_cep, order_copy_whatsapp, hide_unavailable_items, cart_notice_title, cart_notice_body, pix_key, pix_key_type'
 
 const PORTION_UNIT_LABELS: Record<string, string> = {
     g: 'g',
@@ -33,6 +33,7 @@ type StoreRow = {
     accepts_pickup: boolean
     enforce_opening_hours: boolean
     timezone: string
+    prep_time_minutes: number
     city: string | null
     state: string | null
     address_display: 'hidden' | 'city' | 'full'
@@ -219,6 +220,7 @@ function buildStore(row: StoreRow, rows: MenuRows): Store {
         acceptsPickup: row.accepts_pickup,
         enforceOpeningHours: row.enforce_opening_hours,
         timezone: row.timezone,
+        prepTimeMinutes: row.prep_time_minutes,
         city: row.city,
         state: row.state,
         addressDisplay: row.address_display,
