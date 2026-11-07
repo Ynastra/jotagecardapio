@@ -759,4 +759,37 @@ $$;
 revoke execute on function public.get_order_tracking(text) from public;
 grant execute on function public.get_order_tracking(text) to anon, authenticated;
 
+-- Imagens da loja ---------------------------------------------------------
+
+-- Cada loja grava só dentro da pasta com o próprio id: <store_id>/arquivo.
+insert into storage.buckets (id, name, public) values ('store-media', 'store-media', true);
+
+create function public.is_store_media_member(object_name text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+    select coalesce(
+        (storage.foldername(object_name))[1]
+            ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+        and public.is_store_member(((storage.foldername(object_name))[1])::uuid),
+        false
+    );
+$$;
+
+create policy "imagens da loja são públicas" on storage.objects
+    for select using (bucket_id = 'store-media');
+create policy "membro envia imagem da loja" on storage.objects
+    for insert to authenticated
+    with check (bucket_id = 'store-media' and public.is_store_media_member(name));
+create policy "membro troca imagem da loja" on storage.objects
+    for update to authenticated
+    using (bucket_id = 'store-media' and public.is_store_media_member(name))
+    with check (bucket_id = 'store-media' and public.is_store_media_member(name));
+create policy "membro remove imagem da loja" on storage.objects
+    for delete to authenticated
+    using (bucket_id = 'store-media' and public.is_store_media_member(name));
+
 alter publication supabase_realtime add table public.orders;
