@@ -13,7 +13,9 @@ as $$
         'customer_name', 'Maria Teste',
         'customer_phone', '18999990000',
         'fulfillment', fulfillment_kind,
-        'address', jsonb_build_object('street', 'Rua Teste', 'number', '10'),
+        'address', jsonb_build_object(
+            'cep', '17780000', 'city', 'Lucélia', 'state', 'SP', 'street', 'Rua Teste', 'number', '10'
+        ),
         'payment_method', payment,
         'items', jsonb_build_array(jsonb_build_object(
             'product_id', (select id from public.products where name = 'COCA COLA ORIGINAL'),

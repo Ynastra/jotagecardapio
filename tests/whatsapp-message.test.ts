@@ -21,7 +21,16 @@ const order: PlacedOrder = {
             ],
         },
     ],
-    address: { street: 'Rua A', number: '10', neighborhood: 'Centro', complement: '', reference: 'Portão azul' },
+    address: {
+        cep: '17780000',
+        city: 'Lucélia',
+        state: 'SP',
+        street: 'Rua A',
+        number: '10',
+        neighborhood: 'Centro',
+        complement: '',
+        reference: 'Portão azul',
+    },
     subtotalCents: 7598,
     deliveryFeeCents: 500,
     paymentFeeCents: 0,
@@ -46,7 +55,7 @@ describe('buildOrderMessage', () => {
         expect(message).toContain('   Bacon Fatiado 3x (+R$ 4,00)')
         expect(message).toContain('   Obs.: sem cebola')
         expect(message).toContain('Entrega: R$ 5,00')
-        expect(message).toContain('*Entregar em:* Rua A, 10, Centro. Ref.: Portão azul')
+        expect(message).toContain('*Entregar em:* Rua A, 10, Centro, Lucélia/SP, CEP 17780-000. Ref.: Portão azul')
         expect(message).toContain('*Pagamento:* Dinheiro, troco para R$ 100,00')
         expect(message).toContain('*Cliente:* Maria · (18) 99664-9346')
     })

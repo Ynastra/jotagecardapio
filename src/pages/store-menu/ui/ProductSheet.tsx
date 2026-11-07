@@ -14,16 +14,18 @@ import type { Product } from '../model/types'
 import { OptionGroupField } from './OptionGroupField'
 import styles from './product-sheet.module.css'
 
-const MAX_ITEM_QUANTITY = 99
 const MAX_NOTES_LENGTH = 140
 
 type ProductSheetProps = {
     product: Product
+    // Quanto ainda cabe na sacola; 0 quando o estoque já está todo nela.
+    maxQuantity: number
     onAdd: (line: DraftLine) => void
     onClose: () => void
 }
 
-export function ProductSheet({ product, onAdd, onClose }: ProductSheetProps) {
+export function ProductSheet({ product, maxQuantity, onAdd, onClose }: ProductSheetProps) {
+    const canAdd = maxQuantity > 0
     const [selection, setSelection] = useState<OptionSelection>({})
     const [quantity, setQuantity] = useState(1)
     const [notes, setNotes] = useState('')
@@ -31,6 +33,8 @@ export function ProductSheet({ product, onAdd, onClose }: ProductSheetProps) {
 
     const unitPriceCents = calculateUnitPriceCents(product, selection)
     const unsatisfiedGroup = findUnsatisfiedGroup(product, selection)
+    const stepperMax = Math.max(1, maxQuantity)
+    const effectiveQuantity = Math.min(quantity, stepperMax)
 
     function handleAdd() {
         if (unsatisfiedGroup) {
@@ -43,7 +47,7 @@ export function ProductSheet({ product, onAdd, onClose }: ProductSheetProps) {
             key: createLocalId(),
             productId: product.id,
             name: product.name,
-            quantity,
+            quantity: effectiveQuantity,
             unitPriceCents,
             notes: notes.trim(),
             options: toDraftOptions(product, selection),
@@ -51,12 +55,26 @@ export function ProductSheet({ product, onAdd, onClose }: ProductSheetProps) {
     }
 
     const footer = (
-        <div className={styles.footer}>
-            <QuantityStepper label="quantidade" value={quantity} min={1} max={MAX_ITEM_QUANTITY} onChange={setQuantity} />
-            <Button className={styles.addButton} onClick={handleAdd} aria-disabled={unsatisfiedGroup !== undefined}>
-                <span>Adicionar</span>
-                <span>{formatCents(unitPriceCents * quantity)}</span>
-            </Button>
+        <div className={styles.footerContent}>
+            {canAdd ? null : <p className={styles.limitNote}>Você já tem na sacola todas as unidades disponíveis.</p>}
+            <div className={styles.footer}>
+                <QuantityStepper
+                    label="quantidade"
+                    value={effectiveQuantity}
+                    min={1}
+                    max={stepperMax}
+                    onChange={setQuantity}
+                />
+                <Button
+                    className={styles.addButton}
+                    onClick={handleAdd}
+                    disabled={!canAdd}
+                    aria-disabled={unsatisfiedGroup !== undefined}
+                >
+                    <span>Adicionar</span>
+                    <span>{formatCents(unitPriceCents * effectiveQuantity)}</span>
+                </Button>
+            </div>
         </div>
     )
 

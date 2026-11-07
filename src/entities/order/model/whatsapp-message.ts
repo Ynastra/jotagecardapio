@@ -1,4 +1,4 @@
-import { formatCents, formatBrazilianPhone } from '@/shared/lib'
+import { formatCents, formatBrazilianPhone, formatCep } from '@/shared/lib'
 
 import { PAYMENT_LABELS } from './labels'
 import type { Fulfillment, OrderAddress, OrderLine, PaymentMethod, PlacedOrder } from './types'
@@ -27,7 +27,9 @@ function describeLine(line: OrderLine): string[] {
 }
 
 function describeAddress(address: OrderAddress): string {
-    const parts = [`${address.street}, ${address.number}`, address.neighborhood, address.complement]
+    const cityLine = [address.city, address.state].filter(Boolean).join('/')
+    const cepLine = address.cep ? `CEP ${formatCep(address.cep)}` : ''
+    const parts = [`${address.street}, ${address.number}`, address.neighborhood, address.complement, cityLine, cepLine]
     const reference = address.reference ? `. Ref.: ${address.reference}` : ''
     const description = `${parts.filter(Boolean).join(', ')}${reference}`
     return description

@@ -1,4 +1,5 @@
 export { Button } from './button'
+export { PixPayment, type PixKeyKind } from './pix-payment'
 export { QuantityStepper } from './quantity-stepper'
 export { Sheet } from './sheet'
 export { StatusMessage } from './status-message'

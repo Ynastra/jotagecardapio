@@ -1,8 +1,14 @@
 import { formatCents } from '@/shared/lib'
 import { ThemeIcon, ThemeImage } from '@/shared/ui'
 
+import { getProductAvailability, type ProductAvailability } from '../model/availability'
 import type { Product } from '../model/types'
 import styles from './product-card.module.css'
+
+const AVAILABILITY_BADGES: Record<Exclude<ProductAvailability, 'available'>, string> = {
+    inactive: 'Indisponível',
+    soldOut: 'Esgotado',
+}
 
 type ProductCardProps = {
     product: Product
@@ -26,10 +32,18 @@ function ProductPrice({ product }: { product: Product }) {
 
 export function ProductCard({ product, onOpen, layout = 'row' }: ProductCardProps) {
     const hasMeta = product.portionLabel !== null || product.serves !== null
+    const availability = getProductAvailability(product)
+    const classes = availability === 'available' ? styles[layout] : `${styles[layout]} ${styles.unavailable}`
 
     return (
-        <button type="button" className={styles[layout]} onClick={() => onOpen(product.id)}>
+        <button
+            type="button"
+            className={classes}
+            disabled={availability !== 'available'}
+            onClick={() => onOpen(product.id)}
+        >
             <div className={styles.info}>
+                {availability === 'available' ? null : <span className={styles.badge}>{AVAILABILITY_BADGES[availability]}</span>}
                 <h3 className={styles.name}>{product.name}</h3>
                 {hasMeta && layout === 'row' ? (
                     <p className={styles.meta}>

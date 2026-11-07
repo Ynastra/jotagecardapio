@@ -1,3 +1,5 @@
+export { buildBrandStyle } from './brand-style'
+export { formatCep, isValidCep } from './cep'
 export { formatCents, parseReaisToCents } from './money'
 export { formatBrazilianPhone, isValidBrazilianPhone, keepDigits } from './phone'
 export { readStoredJson, writeStoredJson } from './storage'

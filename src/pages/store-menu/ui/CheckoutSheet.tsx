@@ -1,9 +1,18 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 
 import { FULFILLMENT_LABELS, PAYMENT_LABELS, type DraftLine, type PlacedOrder, type OrderMessageContext } from '@/entities/order'
-import { formatBrazilianPhone, formatCents, keepDigits, readStoredJson, writeStoredJson } from '@/shared/lib'
+import {
+    formatBrazilianPhone,
+    formatCents,
+    formatCep,
+    isValidCep,
+    keepDigits,
+    readStoredJson,
+    writeStoredJson,
+} from '@/shared/lib'
 import { Button, Sheet, StatusMessage, ThemeIcon, type IconName } from '@/shared/ui'
 
+import { lookupCep } from '../api/lookup-cep'
 import { placeOrder, PlaceOrderError } from '../api/place-order'
 import {
     buildPlaceOrderPayload,
@@ -23,6 +32,7 @@ import styles from './checkout-sheet.module.css'
 
 const CUSTOMER_STORAGE_KEY = 'jgcardapio:cliente'
 const MAX_NOTES_LENGTH = 280
+const CEP_NOT_FOUND_MESSAGE = 'Não achamos esse CEP. Preencha o endereço.'
 
 const PAYMENT_ICONS: Record<CheckoutForm['paymentMethod'], IconName> = {
     pix: 'pix',
@@ -39,6 +49,7 @@ type CheckoutSheetProps = {
     subtotalCents: number
     isStoreOpen: boolean
     onSetQuantity: (key: string, quantity: number) => void
+    getLineMaxQuantity: (line: DraftLine) => number
     onPlaced: (order: PlacedOrder, context: OrderMessageContext) => void
     onClose: () => void
 }
@@ -64,12 +75,17 @@ export function CheckoutSheet({
     subtotalCents,
     isStoreOpen,
     onSetQuantity,
+    getLineMaxQuantity,
     onPlaced,
     onClose,
 }: CheckoutSheetProps) {
+    const hasNotice = Boolean(store.cartNoticeTitle || store.cartNoticeBody)
     const [form, setForm] = useState<CheckoutForm>(() => loadInitialForm(store))
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const [isSubmitting, setSubmitting] = useState(false)
+    const [cepMessage, setCepMessage] = useState<string | null>(null)
+    const [isLookingUpCep, setLookingUpCep] = useState(false)
+    const latestCepRef = useRef('')
 
     const { deliveryFeeCents, paymentFeeCents, totalCents } = calculateOrderTotals(store, form, subtotalCents)
     const paymentOptions = getAvailablePaymentMethods(store, form.fulfillment)
@@ -80,6 +96,41 @@ export function CheckoutSheet({
 
     function update<Field extends keyof CheckoutForm>(field: Field, value: CheckoutForm[Field]) {
         setForm((current) => ({ ...current, [field]: value }))
+    }
+
+    // Só a consulta mais recente preenche o formulário, mesmo que as respostas cheguem fora de ordem.
+    async function changeCep(text: string) {
+        const cep = formatCep(text)
+        latestCepRef.current = cep
+        update('cep', cep)
+        setCepMessage(null)
+
+        if (!isValidCep(cep)) {
+            setLookingUpCep(false)
+            return
+        }
+
+        setLookingUpCep(true)
+        const address = await lookupCep(cep)
+
+        if (latestCepRef.current !== cep) {
+            return
+        }
+
+        setLookingUpCep(false)
+
+        if (!address) {
+            setCepMessage(CEP_NOT_FOUND_MESSAGE)
+            return
+        }
+
+        setForm((current) => ({
+            ...current,
+            street: address.street || current.street,
+            city: address.city || current.city,
+            state: address.state || current.state,
+            neighborhood: store.deliveryZones.length > 0 ? current.neighborhood : address.neighborhood || current.neighborhood,
+        }))
     }
 
     function changeFulfillment(fulfillment: CheckoutForm['fulfillment']) {
@@ -101,7 +152,7 @@ export function CheckoutSheet({
 
         setErrorMessage(null)
         setSubmitting(true)
-        const payload = buildPlaceOrderPayload(store.slug, form, lines)
+        const payload = buildPlaceOrderPayload(store, form, lines)
 
         try {
             const order = await placeOrder(payload)
@@ -132,6 +183,13 @@ export function CheckoutSheet({
         )
     }
 
+    const notice = hasNotice ? (
+        <aside className={styles.notice}>
+            {store.cartNoticeTitle ? <strong className={styles.noticeTitle}>{store.cartNoticeTitle}</strong> : null}
+            {store.cartNoticeBody ? <p>{store.cartNoticeBody}</p> : null}
+        </aside>
+    ) : null
+
     const footer = (
         <div className={styles.footerContent}>
             {isStoreOpen ? null : <p className={styles.closedWarning}>A loja está fechada. O envio libera quando ela abrir.</p>}
@@ -144,7 +202,7 @@ export function CheckoutSheet({
     return (
         <Sheet title="Sua sacola" onClose={onClose} footer={footer}>
             <form id="checkout-form" className={styles.form} onSubmit={handleSubmit} noValidate>
-                <CartLines lines={lines} onSetQuantity={onSetQuantity} />
+                <CartLines lines={lines} onSetQuantity={onSetQuantity} getMaxQuantity={getLineMaxQuantity} />
 
                 <fieldset className={styles.section}>
                     <legend className={styles.sectionTitle}>Como quer receber?</legend>
@@ -165,6 +223,22 @@ export function CheckoutSheet({
 
                     {form.fulfillment === 'delivery' ? (
                         <div className={styles.fields}>
+                            {store.requireCep ? (
+                                <>
+                                    <label className={styles.field}>
+                                        CEP
+                                        <input
+                                            inputMode="numeric"
+                                            autoComplete="postal-code"
+                                            placeholder="00000-000"
+                                            value={form.cep}
+                                            onChange={(event) => changeCep(event.target.value)}
+                                        />
+                                    </label>
+                                    {isLookingUpCep ? <p className={styles.hint}>Buscando o endereço</p> : null}
+                                    {cepMessage ? <p className={styles.hint}>{cepMessage}</p> : null}
+                                </>
+                            ) : null}
                             {store.deliveryZones.length > 0 ? (
                                 <label className={styles.field}>
                                     Bairro
@@ -208,6 +282,27 @@ export function CheckoutSheet({
                                     />
                                 </label>
                             </div>
+                            {store.requireCep ? (
+                                <div className={styles.fieldRow}>
+                                    <label className={`${styles.field} ${styles.grow}`}>
+                                        Cidade
+                                        <input
+                                            autoComplete="address-level2"
+                                            value={form.city}
+                                            onChange={(event) => update('city', event.target.value)}
+                                        />
+                                    </label>
+                                    <label className={`${styles.field} ${styles.short}`}>
+                                        UF
+                                        <input
+                                            autoComplete="address-level1"
+                                            maxLength={2}
+                                            value={form.state}
+                                            onChange={(event) => update('state', event.target.value.toUpperCase())}
+                                        />
+                                    </label>
+                                </div>
+                            ) : null}
                             <label className={styles.field}>
                                 Complemento
                                 <input
@@ -294,6 +389,8 @@ export function CheckoutSheet({
                         onChange={(event) => update('notes', event.target.value)}
                     />
                 </fieldset>
+
+                {notice}
 
                 <dl className={styles.summary}>
                     <div className={styles.summaryRow}>

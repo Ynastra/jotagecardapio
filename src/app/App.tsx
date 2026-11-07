@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
 import { HomePage } from '@/pages/home'
+import { OrderTrackingPage } from '@/pages/order-tracking'
 import { PanelPage } from '@/pages/panel'
 import { StoreMenuPage } from '@/pages/store-menu'
 
@@ -13,6 +14,7 @@ export function App() {
             <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/painel" element={<PanelPage />} />
+                <Route path="/:slug/pedido/:token" element={<OrderTrackingPage />} />
                 <Route path="/:slug" element={<StoreMenuPage />} />
                 <Route path="*" element={<StoreMenuPage />} />
             </Routes>

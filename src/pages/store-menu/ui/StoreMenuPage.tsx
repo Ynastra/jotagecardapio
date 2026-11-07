@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 
-import { buildOrderMessage, buildWhatsappUrl, type DraftLine, type OrderMessageContext, type PlacedOrder } from '@/entities/order'
-import { pickReadableTextColor, ThemeProvider } from '@/shared/lib'
+import type { DraftLine, OrderMessageContext, PlacedOrder } from '@/entities/order'
+import { buildBrandStyle, ThemeProvider } from '@/shared/lib'
 import { Button, StatusMessage, ThemeIcon } from '@/shared/ui'
 
+import { countProductInCart, getMaxQuantity, getProductAvailability } from '../model/availability'
 import { isStoreOpenNow } from '../model/opening-hours'
+import { buildOrderConfirmation } from '../model/order-confirmation'
 import { filterCategories } from '../model/search'
 import type { Store, StoreMenu } from '../model/types'
 import { useCart } from '../model/use-cart'
@@ -22,21 +24,9 @@ import styles from './store-menu-page.module.css'
 const PRODUCT_PARAM = 'p'
 const OPEN_STATUS_REFRESH_MS = 60_000
 
-type Confirmation = {
-    orderNumber: number
-    whatsappUrl: string
-}
-
-function buildBrandStyle(store: Store): CSSProperties | undefined {
-    if (!store.brandColor) {
-        return undefined
-    }
-
-    const brandStyle = {
-        '--color-brand': store.brandColor,
-        '--color-on-brand': pickReadableTextColor(store.brandColor),
-    } as CSSProperties
-    return brandStyle
+type PlacedConfirmation = {
+    order: PlacedOrder
+    context: OrderMessageContext
 }
 
 // O status aberto/fechado muda sozinho com o relógio, sem recarregar a página.
@@ -56,22 +46,35 @@ function useStoreOpen(store: Store): boolean {
 function StoreMenuView({ menu }: { menu: StoreMenu }) {
     const { store, categories } = menu
     const products = useMemo(() => categories.flatMap((category) => category.products), [categories])
-    const productIds = useMemo(() => new Set(products.map((product) => product.id)), [products])
-    const cart = useCart(store.slug, productIds)
+    const availableProductIds = useMemo(
+        () => new Set(products.filter((product) => getProductAvailability(product) === 'available').map((product) => product.id)),
+        [products],
+    )
+    const cart = useCart(store.slug, availableProductIds)
     const isOpen = useStoreOpen(store)
     const [searchParams, setSearchParams] = useSearchParams()
     const [query, setQuery] = useState('')
     const [isCheckoutOpen, setCheckoutOpen] = useState(false)
-    const [confirmation, setConfirmation] = useState<Confirmation | null>(null)
+    const [placed, setPlaced] = useState<PlacedConfirmation | null>(null)
 
-    const selectedProduct = products.find((product) => product.id === searchParams.get(PRODUCT_PARAM))
+    const requestedProduct = products.find((product) => product.id === searchParams.get(PRODUCT_PARAM))
+    const selectedProduct =
+        requestedProduct && getProductAvailability(requestedProduct) === 'available' ? requestedProduct : undefined
     const visibleCategories = filterCategories(categories, query)
     const featuredProducts = products.filter((product) => product.featured)
     const showFeatured = featuredProducts.length > 0 && query.trim() === ''
+    const confirmation = placed ? buildOrderConfirmation(store, placed.order, placed.context) : null
 
     useEffect(() => {
         document.title = `${store.name} · Cardápio`
     }, [store.name])
+
+    function getLineMaxQuantity(line: DraftLine): number {
+        const product = products.find((candidate) => candidate.id === line.productId)
+        const elsewhere = countProductInCart(cart.lines, line.productId, line.key)
+        const max = product ? getMaxQuantity(product, elsewhere) : line.quantity
+        return max
+    }
 
     function openProduct(productId: string) {
         setSearchParams({ [PRODUCT_PARAM]: productId })
@@ -87,10 +90,9 @@ function StoreMenuView({ menu }: { menu: StoreMenu }) {
     }
 
     function handlePlaced(order: PlacedOrder, context: OrderMessageContext) {
-        const message = buildOrderMessage(order, context)
         cart.clear()
         setCheckoutOpen(false)
-        setConfirmation({ orderNumber: order.number, whatsappUrl: buildWhatsappUrl(store.whatsapp, message) })
+        setPlaced({ order, context })
     }
 
     return (
@@ -146,7 +148,15 @@ function StoreMenuView({ menu }: { menu: StoreMenu }) {
                 <CartBar itemCount={cart.itemCount} subtotalCents={cart.subtotalCents} onOpen={() => setCheckoutOpen(true)} />
             ) : null}
 
-            {selectedProduct ? <ProductSheet key={selectedProduct.id} product={selectedProduct} onAdd={handleAdd} onClose={closeProduct} /> : null}
+            {selectedProduct ? (
+                <ProductSheet
+                    key={selectedProduct.id}
+                    product={selectedProduct}
+                    maxQuantity={getMaxQuantity(selectedProduct, countProductInCart(cart.lines, selectedProduct.id))}
+                    onAdd={handleAdd}
+                    onClose={closeProduct}
+                />
+            ) : null}
 
             {isCheckoutOpen ? (
                 <CheckoutSheet
@@ -155,18 +165,13 @@ function StoreMenuView({ menu }: { menu: StoreMenu }) {
                     subtotalCents={cart.subtotalCents}
                     isStoreOpen={isOpen}
                     onSetQuantity={cart.setQuantity}
+                    getLineMaxQuantity={getLineMaxQuantity}
                     onPlaced={handlePlaced}
                     onClose={() => setCheckoutOpen(false)}
                 />
             ) : null}
 
-            {confirmation ? (
-                <OrderConfirmation
-                    orderNumber={confirmation.orderNumber}
-                    whatsappUrl={confirmation.whatsappUrl}
-                    onClose={() => setConfirmation(null)}
-                />
-            ) : null}
+            {confirmation ? <OrderConfirmation {...confirmation} onClose={() => setPlaced(null)} /> : null}
         </div>
     )
 }

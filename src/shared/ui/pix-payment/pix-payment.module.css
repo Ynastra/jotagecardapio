@@ -1,0 +1,71 @@
+.block {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-muted);
+}
+
+.title {
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+}
+
+.total {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+}
+
+.keyGroup {
+    display: grid;
+    gap: var(--space-1);
+}
+
+.keyLabel {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.key {
+    font-size: var(--font-size-lg);
+    font-weight: 800;
+    overflow-wrap: anywhere;
+}
+
+.actions {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.copied {
+    color: var(--color-success);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+.failed {
+    color: var(--color-danger);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+.receipt {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    justify-content: center;
+    min-block-size: var(--touch-target);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.note {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}

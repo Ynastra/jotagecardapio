@@ -28,6 +28,17 @@ const store: Store = {
     acceptsPickup: true,
     enforceOpeningHours: true,
     timezone: 'America/Sao_Paulo',
+    prepTimeMinutes: 40,
+    city: 'Lucélia',
+    state: 'SP',
+    addressDisplay: 'full',
+    requireCep: false,
+    orderCopyWhatsapp: true,
+    hideUnavailableItems: true,
+    cartNoticeTitle: null,
+    cartNoticeBody: null,
+    pixKey: null,
+    pixKeyType: null,
     hours: [],
     deliveryZones: [],
     freeDeliveryAboveCents: null,
@@ -136,11 +147,40 @@ describe('getAvailablePaymentMethod', () => {
 describe('buildPlaceOrderPayload', () => {
     it('manda só dígitos do telefone e omite endereço e troco quando não se aplicam', () => {
         const form = { ...filledForm, fulfillment: 'pickup' as const, customerPhone: '(18) 99664-9346', changeFor: '50' }
-        const payload = buildPlaceOrderPayload(store.slug, form, [])
+        const payload = buildPlaceOrderPayload(store, form, [])
 
         expect(payload.customer_phone).toBe('18996649346')
         expect(payload.address).toBeNull()
         expect(payload.change_for_cents).toBeNull()
+    })
+})
+
+describe('CEP na entrega', () => {
+    const requiringCep = { ...store, requireCep: true }
+
+    it('exige 8 dígitos quando a loja pede CEP', () => {
+        expect(validateCheckout({ ...filledForm, cep: '' }, requiringCep, 3399)).toBe('Informe o CEP com 8 números.')
+        expect(validateCheckout({ ...filledForm, cep: '1778-000' }, requiringCep, 3399)).toBe('Informe o CEP com 8 números.')
+        expect(validateCheckout({ ...filledForm, cep: '17780-000' }, requiringCep, 3399)).toBeNull()
+    })
+
+    it('não cobra CEP quando a loja não pede ou quando é retirada', () => {
+        expect(validateCheckout({ ...filledForm, cep: '' }, store, 3399)).toBeNull()
+        expect(validateCheckout({ ...filledForm, fulfillment: 'pickup', cep: '' }, requiringCep, 3399)).toBeNull()
+    })
+
+    it('manda CEP só com dígitos, cidade e UF dentro do endereço', () => {
+        const form = { ...filledForm, cep: '17780-000', city: ' Lucélia ', state: 'sp' }
+        const payload = buildPlaceOrderPayload(requiringCep, form, [])
+
+        expect(payload.address).toMatchObject({ cep: '17780000', city: 'Lucélia', state: 'SP' })
+    })
+
+    it('não manda CEP, cidade e UF lembrados quando a loja não pede CEP', () => {
+        const form = { ...filledForm, cep: '17780-000', city: 'Lucélia', state: 'SP' }
+        const payload = buildPlaceOrderPayload(store, form, [])
+
+        expect(payload.address).toMatchObject({ cep: '', city: '', state: '' })
     })
 })
 

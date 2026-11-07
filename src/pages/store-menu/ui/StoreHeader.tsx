@@ -4,6 +4,7 @@ import { formatCents } from '@/shared/lib'
 import { ThemeIcon, ThemeImage } from '@/shared/ui'
 
 import { describeWeek, getLocalClock } from '../model/opening-hours'
+import { describeStoreAddress } from '../model/store-address'
 import type { Store } from '../model/types'
 import styles from './store-header.module.css'
 
@@ -16,6 +17,7 @@ export function StoreHeader({ store, isOpen }: StoreHeaderProps) {
     const [showHours, setShowHours] = useState(false)
     const week = describeWeek(store.hours)
     const today = getLocalClock(new Date(), store.timezone).weekday
+    const addressText = describeStoreAddress(store)
 
     return (
         <header className={styles.header}>
@@ -31,10 +33,10 @@ export function StoreHeader({ store, isOpen }: StoreHeaderProps) {
                     />
                     <div className={styles.details}>
                         <h1 className={styles.name}>{store.name}</h1>
-                        {store.address ? (
+                        {addressText ? (
                             <p className={styles.detail}>
                                 <ThemeIcon name="local" size={16} />
-                                <span>{store.address}</span>
+                                <span>{addressText}</span>
                             </p>
                         ) : null}
                         {store.minOrderCents > 0 ? (

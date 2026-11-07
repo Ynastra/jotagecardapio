@@ -56,6 +56,9 @@ const burger: Product = {
     portionLabel: null,
     imageUrl: null,
     featured: false,
+    active: true,
+    stock: null,
+    sellsDeliveryPickup: true,
     optionGroups: [meatPoint, boost, sauces],
 }
 

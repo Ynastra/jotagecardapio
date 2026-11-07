@@ -1,24 +1,42 @@
-import { Sheet, StatusMessage, ThemeIcon } from '@/shared/ui'
+import { Link } from 'react-router-dom'
+
+import { PixPayment, Sheet, StatusMessage, ThemeIcon, type PixKeyKind } from '@/shared/ui'
 
 import styles from './order-confirmation.module.css'
 
 type OrderConfirmationProps = {
-    orderNumber: number
-    whatsappUrl: string
+    publicCode: string
+    deadline: string
+    trackingPath: string
+    // null quando a loja não oferece o resumo pelo WhatsApp.
+    whatsappUrl: string | null
+    // null quando o pedido não é Pix ou a loja não tem chave cadastrada.
+    pix: { totalCents: number; pixKey: string; pixKeyKind: PixKeyKind | null; receiptUrl: string } | null
     onClose: () => void
 }
 
-export function OrderConfirmation({ orderNumber, whatsappUrl, onClose }: OrderConfirmationProps) {
+export function OrderConfirmation({ publicCode, deadline, trackingPath, whatsappUrl, pix, onClose }: OrderConfirmationProps) {
     return (
         <Sheet title="Pedido enviado" onClose={onClose}>
-            <StatusMessage illustration="pedido-enviado" title={`Pedido #${orderNumber} recebido`}>
-                <p>A loja já está vendo o seu pedido. Mande o resumo no WhatsApp para combinar o que precisar com ela.</p>
+            <StatusMessage illustration="pedido-enviado" title={`Pedido ${publicCode}`}>
+                <p className={styles.deadline}>{deadline}</p>
+                <p>A loja já está vendo o seu pedido. Acompanhe o andamento pelo botão abaixo.</p>
             </StatusMessage>
+            {pix ? (
+                <div className={styles.pix}>
+                    <PixPayment {...pix} />
+                </div>
+            ) : null}
             <div className={styles.actions}>
-                <a className={styles.whatsapp} href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                    <ThemeIcon name="whatsapp" size={22} />
-                    Enviar resumo no WhatsApp
-                </a>
+                <Link className={styles.primary} to={trackingPath}>
+                    Acompanhar pedido
+                </Link>
+                {whatsappUrl ? (
+                    <a className={styles.outline} href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                        <ThemeIcon name="whatsapp" size={22} />
+                        Enviar resumo no WhatsApp
+                    </a>
+                ) : null}
                 <button type="button" className={styles.secondary} onClick={onClose}>
                     Voltar ao cardápio
                 </button>
