@@ -1,0 +1,168 @@
+.card {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-inline-start: 6px solid var(--card-accent);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
+    cursor: pointer;
+}
+
+.received {
+    --card-accent: var(--color-status-received);
+}
+
+.preparing {
+    --card-accent: var(--color-status-preparing);
+}
+
+.ready {
+    --card-accent: var(--color-status-ready);
+}
+
+.completed {
+    --card-accent: var(--color-status-completed);
+}
+
+.canceled {
+    --card-accent: var(--color-status-canceled);
+}
+
+.completed,
+.canceled {
+    background-color: var(--color-surface-muted);
+}
+
+.fresh {
+    outline: 3px solid var(--color-jg-accent);
+    animation: freshPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes freshPulse {
+    50% {
+        outline-color: var(--color-status-received-soft);
+    }
+}
+
+.header {
+    display: flex;
+    gap: var(--space-3);
+    align-items: baseline;
+    justify-content: space-between;
+}
+
+.code {
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.time {
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.statusLabel {
+    color: var(--card-accent);
+    font-size: var(--font-size-lg);
+    font-weight: 800;
+}
+
+.canceledBadge {
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-status-canceled-soft);
+    color: var(--color-status-canceled);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+}
+
+.customer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.phone {
+    color: var(--color-text-secondary);
+}
+
+.address {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.payment {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+    justify-content: space-between;
+}
+
+.paymentStatus {
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-pill);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+}
+
+.pending {
+    background-color: var(--color-status-preparing-soft);
+    color: var(--color-status-preparing);
+}
+
+.paid {
+    background-color: var(--color-status-ready-soft);
+    color: var(--color-status-ready);
+}
+
+.total {
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+}
+
+.progress {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.mark {
+    block-size: var(--space-2);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-border);
+}
+
+.markReached {
+    background-color: var(--card-accent);
+}
+
+.actions {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.notify {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-block-size: var(--touch-target);
+    padding: 0 var(--space-4);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    color: var(--color-text);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.footer {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}

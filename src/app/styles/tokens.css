@@ -56,6 +56,17 @@
     --color-danger-soft: #fde8e6;
     --color-warning-soft: #fff4d6;
 
+    --color-status-received: #0178da;
+    --color-status-received-soft: #e1f0fd;
+    --color-status-preparing: #a35a00;
+    --color-status-preparing-soft: #fdefd6;
+    --color-status-ready: #1f7a45;
+    --color-status-ready-soft: #e2f3e8;
+    --color-status-completed: #57534e;
+    --color-status-completed-soft: #efeae4;
+    --color-status-canceled: #b42318;
+    --color-status-canceled-soft: #fde8e6;
+
     --shadow-card: 0 1px 2px rgb(28 25 23 / 6%), 0 4px 16px rgb(28 25 23 / 6%);
     --shadow-raised: 0 8px 28px rgb(28 25 23 / 18%);
     --shadow-sheet: 0 -12px 40px rgb(28 25 23 / 22%);

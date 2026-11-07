@@ -1,61 +1,109 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect } from 'react'
 
+import type { PanelOrder } from '@/entities/order'
 import { useCurrentStore } from '@/entities/store'
-import { unlockChime } from '@/shared/lib'
-import { StatusMessage, ThemeIcon } from '@/shared/ui'
+import { formatCents, unlockChime } from '@/shared/lib'
+import { StatusMessage } from '@/shared/ui'
 
-import { isActiveOrder } from '../model/order-flow'
-import { getPeriodStart } from '../model/period'
-import { usePanelOrders } from '../model/use-panel-orders'
-import { OrderCard } from './OrderCard'
-import styles from './panel-orders.module.css'
+import { ORDERS_QUERY_LIMIT } from '../model/board'
+import { useOrderBoard } from '../model/use-order-board'
+import { BoardCard } from './BoardCard'
+import { BoardColumn, type ColumnTone } from './BoardColumn'
+import { BoardToolbar } from './BoardToolbar'
+import styles from './order-board.module.css'
+
+const COLUMN_DEFINITIONS = [
+    { key: 'received', id: 'coluna-novos', title: 'Novos', tone: 'received' },
+    { key: 'preparing', id: 'coluna-em-preparo', title: 'Em preparo', tone: 'preparing' },
+    { key: 'ready', id: 'coluna-saiu-pronto', title: 'Saiu ou pronto', tone: 'ready' },
+    { key: 'finished', id: 'coluna-concluidos', title: 'Concluídos', tone: 'finished' },
+] as const satisfies readonly { key: string; id: string; title: string; tone: ColumnTone }[]
+
+function jumpToColumn(columnId: string) {
+    document.getElementById(columnId)?.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' })
+}
 
 export function PanelOrdersPage() {
     const store = useCurrentStore()
-    const periodStart = useMemo(() => getPeriodStart('today', new Date(), store.timezone), [store.timezone])
-    const { orders, isLoading, errorMessage, changeStatus } = usePanelOrders(store.id, periodStart)
-    const activeOrders = orders.filter(isActiveOrder)
-    const finishedOrders = orders.filter((order) => !isActiveOrder(order))
+    const board = useOrderBoard(store)
 
     useEffect(() => {
-        document.title = activeOrders.length > 0 ? `(${activeOrders.length}) Pedidos · ${store.name}` : `Pedidos · ${store.name}`
-    }, [activeOrders.length, store.name])
+        const base = `Pedidos · ${store.name}`
+        document.title = board.activeCount > 0 ? `(${board.activeCount}) ${base}` : base
+    }, [board.activeCount, store.name])
+
+    function renderCard(order: PanelOrder) {
+        return (
+            <BoardCard
+                key={order.id}
+                order={order}
+                timeZone={store.timezone}
+                isFresh={board.isFresh(order)}
+                notifyUrl={board.getNotifyUrl(order)}
+                onChangeStatus={board.changeStatus}
+                onOpen={board.markSeen}
+            />
+        )
+    }
 
     return (
-        <div className={styles.board} onPointerDown={unlockChime}>
-            <h1 className={styles.boardTitle}>
-                <ThemeIcon name="pedidos" size={26} />
-                Pedidos
-            </h1>
+        <div className={styles.page} onPointerDown={unlockChime}>
+            <h1 className={styles.title}>Pedidos</h1>
 
-            {errorMessage ? (
+            <BoardToolbar
+                channel={board.channel}
+                onChannelChange={board.setChannel}
+                search={board.search}
+                onSearchChange={board.setSearch}
+                period={board.period}
+                onPeriodChange={board.setPeriod}
+                orderCount={board.visibleCount}
+            />
+
+            <select
+                className={styles.columnPicker}
+                aria-label="Ir para a coluna"
+                defaultValue={COLUMN_DEFINITIONS[0].id}
+                onChange={(event) => jumpToColumn(event.target.value)}
+            >
+                {COLUMN_DEFINITIONS.map((column) => (
+                    <option key={column.id} value={column.id}>
+                        {column.title} ({board.columns[column.key].length})
+                    </option>
+                ))}
+            </select>
+
+            {board.errorMessage ? (
                 <p className={styles.error} role="alert">
-                    {errorMessage}
+                    {board.errorMessage}
                 </p>
             ) : null}
-            {isLoading ? <p className={styles.muted}>Carregando pedidos</p> : null}
-            {!isLoading && orders.length === 0 ? (
+            {board.isTruncated ? <p className={styles.notice}>Mostrando os {ORDERS_QUERY_LIMIT} mais recentes</p> : null}
+            {board.isLoading ? <p className={styles.muted}>Carregando pedidos</p> : null}
+            {board.hasNoOrders ? (
                 <StatusMessage illustration="painel-sem-pedidos" title="Nenhum pedido ainda">
                     <p>Os pedidos aparecem aqui na hora, com um aviso sonoro.</p>
                 </StatusMessage>
             ) : null}
 
-            {activeOrders.length > 0 ? (
-                <section className={styles.column}>
-                    <h2 className={styles.columnTitle}>Em andamento</h2>
-                    {activeOrders.map((order) => (
-                        <OrderCard key={order.id} order={order} onChangeStatus={changeStatus} />
-                    ))}
-                </section>
-            ) : null}
-            {finishedOrders.length > 0 ? (
-                <section className={styles.column}>
-                    <h2 className={styles.columnTitle}>Finalizados</h2>
-                    {finishedOrders.map((order) => (
-                        <OrderCard key={order.id} order={order} onChangeStatus={changeStatus} />
-                    ))}
-                </section>
-            ) : null}
+            <div className={styles.board}>
+                {COLUMN_DEFINITIONS.map((column) => {
+                    const columnOrders = board.columns[column.key]
+                    const totalLabel = column.key === 'finished' ? formatCents(board.finishedTotalCents) : undefined
+                    return (
+                        <BoardColumn
+                            key={column.id}
+                            columnId={column.id}
+                            title={column.title}
+                            tone={column.tone}
+                            count={columnOrders.length}
+                            totalLabel={totalLabel}
+                        >
+                            {columnOrders.map(renderCard)}
+                        </BoardColumn>
+                    )
+                })}
+            </div>
         </div>
     )
 }
