@@ -22,6 +22,7 @@ const order: PlacedOrder = {
     address: { street: 'Rua A', number: '10', neighborhood: 'Centro', complement: '', reference: 'Portão azul' },
     subtotalCents: 7598,
     deliveryFeeCents: 500,
+    paymentFeeCents: 0,
     totalCents: 8098,
     changeForCents: 10000,
     createdAt: '2026-11-07T22:00:00Z',

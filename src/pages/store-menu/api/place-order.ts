@@ -10,6 +10,7 @@ type PlacedOrderRow = {
     address: unknown
     subtotal_cents: number
     delivery_fee_cents: number
+    payment_fee_cents: number
     total_cents: number
     change_for_cents: number | null
     created_at: string
@@ -38,6 +39,7 @@ export async function placeOrder(payload: PlaceOrderPayload): Promise<PlacedOrde
         address: mapStoredAddress(row.address),
         subtotalCents: row.subtotal_cents,
         deliveryFeeCents: row.delivery_fee_cents,
+        paymentFeeCents: row.payment_fee_cents,
         totalCents: row.total_cents,
         changeForCents: row.change_for_cents,
         createdAt: row.created_at,

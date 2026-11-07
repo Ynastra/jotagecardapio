@@ -43,6 +43,7 @@ export function buildOrderMessage(order: PlacedOrder, context: OrderMessageConte
     const isDelivery = context.fulfillment === 'delivery'
     const itemBlocks = order.items.flatMap((line) => [...describeLine(line), ''])
     const deliveryFeeLine = isDelivery ? [`Entrega: ${formatCents(order.deliveryFeeCents)}`] : []
+    const paymentFeeLine = order.paymentFeeCents > 0 ? [`Taxa de pagamento: ${formatCents(order.paymentFeeCents)}`] : []
     const destination =
         isDelivery && order.address ? `*Entregar em:* ${describeAddress(order.address)}` : '*Retirada na loja*'
     const notesLine = context.notes ? [`*Observações:* ${context.notes}`] : []
@@ -53,6 +54,7 @@ export function buildOrderMessage(order: PlacedOrder, context: OrderMessageConte
         ...itemBlocks,
         `Subtotal: ${formatCents(order.subtotalCents)}`,
         ...deliveryFeeLine,
+        ...paymentFeeLine,
         `*Total: ${formatCents(order.totalCents)}*`,
         '',
         destination,

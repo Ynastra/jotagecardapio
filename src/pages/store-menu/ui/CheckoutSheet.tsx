@@ -7,10 +7,12 @@ import { Button, Sheet, StatusMessage, ThemeIcon, type IconName } from '@/shared
 import { placeOrder, PlaceOrderError } from '../api/place-order'
 import {
     buildPlaceOrderPayload,
+    calculateOrderTotals,
     describeOrderError,
     EMPTY_CHECKOUT_FORM,
     getAvailableFulfillment,
-    getDeliveryFeeCents,
+    getAvailablePaymentMethod,
+    getAvailablePaymentMethods,
     REMEMBERED_FIELDS,
     validateCheckout,
     type CheckoutForm,
@@ -27,6 +29,8 @@ const PAYMENT_ICONS: Record<CheckoutForm['paymentMethod'], IconName> = {
     cash: 'dinheiro',
     credit: 'cartao',
     debit: 'cartao',
+    meal_voucher: 'cartao',
+    food_voucher: 'cartao',
 }
 
 type CheckoutSheetProps = {
@@ -43,7 +47,9 @@ function loadInitialForm(store: Store): CheckoutForm {
     const remembered = readStoredJson<Partial<CheckoutForm>>(CUSTOMER_STORAGE_KEY, {})
     const merged = { ...EMPTY_CHECKOUT_FORM, ...remembered }
 
-    const form = { ...merged, fulfillment: getAvailableFulfillment(store, merged.fulfillment) }
+    const fulfillment = getAvailableFulfillment(store, merged.fulfillment)
+    const paymentMethod = getAvailablePaymentMethod(store, fulfillment, merged.paymentMethod)
+    const form = { ...merged, fulfillment, paymentMethod }
     return form
 }
 
@@ -65,8 +71,8 @@ export function CheckoutSheet({
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const [isSubmitting, setSubmitting] = useState(false)
 
-    const deliveryFeeCents = getDeliveryFeeCents(store, form)
-    const totalCents = subtotalCents + deliveryFeeCents
+    const { deliveryFeeCents, paymentFeeCents, totalCents } = calculateOrderTotals(store, form, subtotalCents)
+    const paymentOptions = getAvailablePaymentMethods(store, form.fulfillment)
     const isEmpty = lines.length === 0
     const fulfillmentOptions = (['delivery', 'pickup'] as const).filter((option) =>
         option === 'delivery' ? store.acceptsDelivery : store.acceptsPickup,
@@ -74,6 +80,14 @@ export function CheckoutSheet({
 
     function update<Field extends keyof CheckoutForm>(field: Field, value: CheckoutForm[Field]) {
         setForm((current) => ({ ...current, [field]: value }))
+    }
+
+    function changeFulfillment(fulfillment: CheckoutForm['fulfillment']) {
+        setForm((current) => ({
+            ...current,
+            fulfillment,
+            paymentMethod: getAvailablePaymentMethod(store, fulfillment, current.paymentMethod),
+        }))
     }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -141,7 +155,7 @@ export function CheckoutSheet({
                                     type="radio"
                                     name="fulfillment"
                                     checked={form.fulfillment === option}
-                                    onChange={() => update('fulfillment', option)}
+                                    onChange={() => changeFulfillment(option)}
                                 />
                                 <ThemeIcon name={option === 'delivery' ? 'entrega' : 'retirada'} size={22} />
                                 {FULFILLMENT_LABELS[option]}
@@ -244,7 +258,7 @@ export function CheckoutSheet({
                 <fieldset className={styles.section}>
                     <legend className={styles.sectionTitle}>Pagamento na entrega ou retirada</legend>
                     <div className={styles.choices}>
-                        {(Object.keys(PAYMENT_LABELS) as CheckoutForm['paymentMethod'][]).map((method) => (
+                        {paymentOptions.map(({ method }) => (
                             <label key={method} className={styles.choice}>
                                 <input
                                     type="radio"
@@ -290,6 +304,12 @@ export function CheckoutSheet({
                         <div className={styles.summaryRow}>
                             <dt>Entrega</dt>
                             <dd>{deliveryFeeCents > 0 ? formatCents(deliveryFeeCents) : 'Grátis'}</dd>
+                        </div>
+                    ) : null}
+                    {paymentFeeCents > 0 ? (
+                        <div className={styles.summaryRow}>
+                            <dt>Taxa de pagamento</dt>
+                            <dd>{formatCents(paymentFeeCents)}</dd>
                         </div>
                     ) : null}
                     <div className={`${styles.summaryRow} ${styles.total}`}>

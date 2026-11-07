@@ -17,12 +17,24 @@ declare
     product record;
 begin
     insert into public.stores (
-        id, slug, name, address, whatsapp, brand_color, min_order_cents, delivery_fee_cents
+        id, slug, name, address, whatsapp, brand_color, min_order_cents, delivery_fee_cents,
+        prep_time_minutes, city, state, address_display, require_cep, order_copy_whatsapp,
+        hide_unavailable_items, delivery_mode, delivery_max_km
     ) values (
         store, 'zedoburguerlucelia', 'Zé do Burguer',
         'Rua Francisco Xavier de Oliveira, 48, Lado Este, Lucélia - SP, 17780-043',
-        '5518996649346', '#060504', 700, 800
+        '5518996649346', '#060504', 700, 800,
+        30, 'Lucélia', 'SP', 'full', true, true,
+        true, 'radius', 6
     );
+
+    insert into public.store_payment_methods (store_id, method, enabled_delivery, enabled_pickup) values
+        (store, 'pix', true, true),
+        (store, 'cash', true, true),
+        (store, 'credit', true, true),
+        (store, 'debit', true, true),
+        (store, 'meal_voucher', false, false),
+        (store, 'food_voucher', false, false);
 
     insert into public.store_hours (store_id, weekday, opens_at, closes_at) values
         (store, 0, '18:30', '22:00'),

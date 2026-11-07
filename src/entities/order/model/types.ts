@@ -1,6 +1,6 @@
 export type Fulfillment = 'delivery' | 'pickup'
 
-export type PaymentMethod = 'pix' | 'cash' | 'credit' | 'debit'
+export type PaymentMethod = 'pix' | 'cash' | 'credit' | 'debit' | 'meal_voucher' | 'food_voucher'
 
 export type OrderStatus = 'received' | 'preparing' | 'ready' | 'completed' | 'canceled'
 
@@ -56,6 +56,7 @@ export type PlacedOrder = {
     address: OrderAddress | null
     subtotalCents: number
     deliveryFeeCents: number
+    paymentFeeCents: number
     totalCents: number
     changeForCents: number | null
     createdAt: string

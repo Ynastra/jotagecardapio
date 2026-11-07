@@ -22,8 +22,34 @@ create table public.stores (
     accepts_pickup boolean not null default true,
     enforce_opening_hours boolean not null default true,
     timezone text not null default 'America/Sao_Paulo',
+    prep_time_minutes integer not null default 30,
+    city text,
+    state text,
+    address_display text not null default 'full',
+    require_cep boolean not null default false,
+    order_copy_whatsapp boolean not null default false,
+    hide_unavailable_items boolean not null default false,
+    cart_notice_title text,
+    cart_notice_body text,
+    pix_key text,
+    pix_key_type text,
+    -- Na fase atual o modo radius cobra a taxa base sem conferir a distância.
+    delivery_mode text not null default 'fixed',
+    delivery_max_km numeric(5, 1),
+    free_delivery_above_cents integer,
     active boolean not null default true,
     created_at timestamptz not null default now(),
+    constraint stores_prep_time_positive check (prep_time_minutes > 0),
+    constraint stores_state_format check (state is null or state ~ '^[A-Z]{2}$'),
+    constraint stores_address_display_valid check (address_display in ('hidden', 'city', 'full')),
+    constraint stores_pix_key_type_valid check (
+        pix_key_type is null or pix_key_type in ('cnpj', 'cpf', 'email', 'phone', 'random')
+    ),
+    constraint stores_delivery_mode_valid check (delivery_mode in ('fixed', 'radius', 'neighborhood')),
+    constraint stores_delivery_max_km_positive check (delivery_max_km is null or delivery_max_km > 0),
+    constraint stores_free_delivery_positive check (
+        free_delivery_above_cents is null or free_delivery_above_cents >= 0
+    ),
     constraint stores_slug_format check (slug ~ '^[a-z0-9]{3,40}$'),
     -- Caminhos que o próprio app usa não podem virar endereço de loja.
     constraint stores_slug_not_reserved check (
@@ -52,6 +78,19 @@ create table public.store_members (
     user_id uuid not null references auth.users (id) on delete cascade,
     role text not null default 'owner' check (role in ('owner', 'staff')),
     primary key (store_id, user_id)
+);
+
+-- A taxa extra de cada forma de pagamento é um percentual do valor a pagar
+-- (subtotal mais entrega) ou um valor fixo, conforme fee_kind.
+create table public.store_payment_methods (
+    store_id uuid not null references public.stores (id) on delete cascade,
+    method text not null check (method in ('pix', 'cash', 'credit', 'debit', 'meal_voucher', 'food_voucher')),
+    enabled_delivery boolean not null default false,
+    enabled_pickup boolean not null default false,
+    fee_kind text not null default 'fixed' check (fee_kind in ('percent', 'fixed')),
+    fee_percent numeric(5, 2) not null default 0 check (fee_percent between 0 and 100),
+    fee_fixed_cents integer not null default 0 check (fee_fixed_cents >= 0),
+    primary key (store_id, method)
 );
 
 create table public.delivery_zones (
@@ -144,12 +183,14 @@ create table public.orders (
     fulfillment text not null check (fulfillment in ('delivery', 'pickup')),
     address jsonb,
     delivery_zone_id uuid references public.delivery_zones (id) on delete set null,
-    payment_method text not null check (payment_method in ('pix', 'cash', 'credit', 'debit')),
+    payment_method text not null
+        check (payment_method in ('pix', 'cash', 'credit', 'debit', 'meal_voucher', 'food_voucher')),
     change_for_cents integer,
     notes text,
     items jsonb not null,
     subtotal_cents integer not null,
     delivery_fee_cents integer not null,
+    payment_fee_cents integer not null default 0,
     total_cents integer not null,
     status text not null default 'received'
         check (status in ('received', 'preparing', 'ready', 'completed', 'canceled')),
@@ -227,6 +268,7 @@ alter table public.stores enable row level security;
 alter table public.store_hours enable row level security;
 alter table public.store_members enable row level security;
 alter table public.delivery_zones enable row level security;
+alter table public.store_payment_methods enable row level security;
 alter table public.categories enable row level security;
 alter table public.products enable row level security;
 alter table public.option_groups enable row level security;
@@ -250,6 +292,11 @@ create policy "membro edita horários" on public.store_hours
 create policy "bairros públicos" on public.delivery_zones
     for select using ((active and public.is_store_public(store_id)) or public.is_store_member(store_id));
 create policy "membro edita bairros" on public.delivery_zones
+    for all using (public.is_store_member(store_id)) with check (public.is_store_member(store_id));
+
+create policy "formas de pagamento públicas" on public.store_payment_methods
+    for select using (public.is_store_public(store_id) or public.is_store_member(store_id));
+create policy "membro edita formas de pagamento" on public.store_payment_methods
     for all using (public.is_store_member(store_id)) with check (public.is_store_member(store_id));
 
 create policy "categorias públicas" on public.categories
@@ -303,6 +350,7 @@ declare
     target_zone public.delivery_zones%rowtype;
     target_product public.products%rowtype;
     new_order public.orders%rowtype;
+    payment_rule public.store_payment_methods%rowtype;
 
     fulfillment text := payload ->> 'fulfillment';
     payment_method text := payload ->> 'payment_method';
@@ -326,6 +374,7 @@ declare
     lines jsonb := '[]'::jsonb;
     subtotal_cents integer := 0;
     delivery_fee_cents integer := 0;
+    payment_fee_cents integer := 0;
     total_cents integer;
     next_number integer;
 begin
@@ -344,7 +393,8 @@ begin
     if length(customer_phone) not between 10 and 13 then
         raise exception 'invalid_customer_phone';
     end if;
-    if payment_method is null or payment_method not in ('pix', 'cash', 'credit', 'debit') then
+    if payment_method is null
+        or payment_method not in ('pix', 'cash', 'credit', 'debit', 'meal_voucher', 'food_voucher') then
         raise exception 'invalid_payment_method';
     end if;
     if length(coalesce(order_notes, '')) > max_text_length then
@@ -474,7 +524,27 @@ begin
         raise exception 'below_minimum_order';
     end if;
 
-    total_cents := subtotal_cents + delivery_fee_cents;
+    if fulfillment = 'delivery'
+        and target_store.free_delivery_above_cents is not null
+        and subtotal_cents >= target_store.free_delivery_above_cents then
+        delivery_fee_cents := 0;
+    end if;
+
+    select * into payment_rule
+    from public.store_payment_methods
+    where store_id = target_store.id and method = payment_method;
+    if not found
+        or not (case fulfillment when 'delivery' then payment_rule.enabled_delivery else payment_rule.enabled_pickup end) then
+        raise exception 'payment_method_unavailable';
+    end if;
+
+    if payment_rule.fee_kind = 'percent' then
+        payment_fee_cents := round((subtotal_cents + delivery_fee_cents) * payment_rule.fee_percent / 100)::integer;
+    else
+        payment_fee_cents := payment_rule.fee_fixed_cents;
+    end if;
+
+    total_cents := subtotal_cents + delivery_fee_cents + payment_fee_cents;
 
     if payment_method <> 'cash' then
         change_for_cents := null;
@@ -488,10 +558,12 @@ begin
 
     insert into public.orders (
         store_id, number, customer_name, customer_phone, fulfillment, address, delivery_zone_id,
-        payment_method, change_for_cents, notes, items, subtotal_cents, delivery_fee_cents, total_cents
+        payment_method, change_for_cents, notes, items, subtotal_cents, delivery_fee_cents, payment_fee_cents,
+        total_cents
     ) values (
         target_store.id, next_number, customer_name, customer_phone, fulfillment, order_address, target_zone.id,
-        payment_method, change_for_cents, order_notes, lines, subtotal_cents, delivery_fee_cents, total_cents
+        payment_method, change_for_cents, order_notes, lines, subtotal_cents, delivery_fee_cents, payment_fee_cents,
+        total_cents
     )
     returning * into new_order;
 
@@ -502,6 +574,7 @@ begin
         'address', new_order.address,
         'subtotal_cents', new_order.subtotal_cents,
         'delivery_fee_cents', new_order.delivery_fee_cents,
+        'payment_fee_cents', new_order.payment_fee_cents,
         'total_cents', new_order.total_cents,
         'change_for_cents', new_order.change_for_cents,
         'created_at', new_order.created_at

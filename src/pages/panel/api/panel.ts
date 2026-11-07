@@ -3,7 +3,7 @@ import { supabase } from '@/shared/api'
 
 const RECENT_ORDERS_LIMIT = 60
 const ORDER_COLUMNS =
-    'id, number, customer_name, customer_phone, fulfillment, address, payment_method, change_for_cents, notes, items, subtotal_cents, delivery_fee_cents, total_cents, status, created_at'
+    'id, number, customer_name, customer_phone, fulfillment, address, payment_method, change_for_cents, notes, items, subtotal_cents, delivery_fee_cents, payment_fee_cents, total_cents, status, created_at'
 
 export type PanelStore = {
     id: string
@@ -24,6 +24,7 @@ type OrderRow = {
     items: unknown
     subtotal_cents: number
     delivery_fee_cents: number
+    payment_fee_cents: number
     total_cents: number
     status: OrderStatus
     created_at: string
@@ -43,6 +44,7 @@ function mapOrder(row: OrderRow): PanelOrder {
         items: mapStoredLines(row.items),
         subtotalCents: row.subtotal_cents,
         deliveryFeeCents: row.delivery_fee_cents,
+        paymentFeeCents: row.payment_fee_cents,
         totalCents: row.total_cents,
         status: row.status,
         createdAt: row.created_at,

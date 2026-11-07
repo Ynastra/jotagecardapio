@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 
 import {
     buildPlaceOrderPayload,
+    calculateOrderTotals,
     describeOrderError,
     EMPTY_CHECKOUT_FORM,
+    getAvailablePaymentMethod,
     getDeliveryFeeCents,
     validateCheckout,
     type CheckoutForm,
@@ -28,6 +30,11 @@ const store: Store = {
     timezone: 'America/Sao_Paulo',
     hours: [],
     deliveryZones: [],
+    freeDeliveryAboveCents: null,
+    paymentMethods: [
+        { method: 'pix', enabledDelivery: true, enabledPickup: true, feeKind: 'fixed', feePercent: 0, feeFixedCents: 0 },
+        { method: 'cash', enabledDelivery: true, enabledPickup: true, feeKind: 'fixed', feePercent: 0, feeFixedCents: 0 },
+    ],
 }
 
 const filledForm: CheckoutForm = {
@@ -74,6 +81,55 @@ describe('getDeliveryFeeCents', () => {
         expect(getDeliveryFeeCents(withZones, { ...filledForm, deliveryZoneId: 'centro' })).toBe(300)
         expect(getDeliveryFeeCents(store, filledForm)).toBe(500)
         expect(getDeliveryFeeCents(store, { ...filledForm, fulfillment: 'pickup' })).toBe(0)
+    })
+})
+
+describe('calculateOrderTotals', () => {
+    it('zera a entrega no valor de frete grátis e soma a taxa fixa do pagamento', () => {
+        const withRules = {
+            ...store,
+            freeDeliveryAboveCents: 3000,
+            paymentMethods: [
+                { method: 'pix' as const, enabledDelivery: true, enabledPickup: true, feeKind: 'fixed' as const, feePercent: 0, feeFixedCents: 150 },
+            ],
+        }
+
+        expect(calculateOrderTotals(withRules, filledForm, 2999)).toEqual({
+            deliveryFeeCents: 500,
+            paymentFeeCents: 150,
+            totalCents: 3649,
+        })
+        expect(calculateOrderTotals(withRules, filledForm, 3000)).toEqual({
+            deliveryFeeCents: 0,
+            paymentFeeCents: 150,
+            totalCents: 3150,
+        })
+    })
+
+    it('arredonda a taxa percentual sobre subtotal mais entrega', () => {
+        const withPercent = {
+            ...store,
+            paymentMethods: [
+                { method: 'pix' as const, enabledDelivery: true, enabledPickup: true, feeKind: 'percent' as const, feePercent: 2.5, feeFixedCents: 0 },
+            ],
+        }
+
+        expect(calculateOrderTotals(withPercent, filledForm, 700).paymentFeeCents).toBe(30)
+    })
+})
+
+describe('getAvailablePaymentMethod', () => {
+    it('troca para a primeira forma ligada quando a escolhida está desligada', () => {
+        const onlyDeliveryCash = {
+            ...store,
+            paymentMethods: [
+                { method: 'pix' as const, enabledDelivery: false, enabledPickup: true, feeKind: 'fixed' as const, feePercent: 0, feeFixedCents: 0 },
+                { method: 'cash' as const, enabledDelivery: true, enabledPickup: true, feeKind: 'fixed' as const, feePercent: 0, feeFixedCents: 0 },
+            ],
+        }
+
+        expect(getAvailablePaymentMethod(onlyDeliveryCash, 'delivery', 'pix')).toBe('cash')
+        expect(getAvailablePaymentMethod(onlyDeliveryCash, 'pickup', 'pix')).toBe('pix')
     })
 })
 

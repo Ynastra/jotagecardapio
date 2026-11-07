@@ -3,7 +3,7 @@ import { supabase } from '@/shared/api'
 import type { Category, OptionGroup, Product, Store, StoreMenu } from '../model/types'
 
 const STORE_COLUMNS =
-    'id, slug, name, address, whatsapp, logo_url, cover_url, theme, brand_color, min_order_cents, delivery_fee_cents, accepts_delivery, accepts_pickup, enforce_opening_hours, timezone'
+    'id, slug, name, address, whatsapp, logo_url, cover_url, theme, brand_color, min_order_cents, delivery_fee_cents, free_delivery_above_cents, accepts_delivery, accepts_pickup, enforce_opening_hours, timezone'
 
 type StoreRow = {
     id: string
@@ -17,6 +17,7 @@ type StoreRow = {
     brand_color: string | null
     min_order_cents: number
     delivery_fee_cents: number
+    free_delivery_above_cents: number | null
     accepts_delivery: boolean
     accepts_pickup: boolean
     enforce_opening_hours: boolean
@@ -26,6 +27,14 @@ type StoreRow = {
 type MenuRows = {
     hours: { weekday: number; opens_at: string; closes_at: string }[]
     zones: { id: string; neighborhood: string; fee_cents: number }[]
+    paymentMethods: {
+        method: Store['paymentMethods'][number]['method']
+        enabled_delivery: boolean
+        enabled_pickup: boolean
+        fee_kind: 'percent' | 'fixed'
+        fee_percent: number
+        fee_fixed_cents: number
+    }[]
     categories: { id: string; name: string; icon_url: string | null }[]
     products: {
         id: string
@@ -64,9 +73,13 @@ function unwrap<Row>(result: { data: Row[] | null; error: { message: string } | 
 }
 
 async function fetchMenuRows(storeId: string): Promise<MenuRows> {
-    const [hours, zones, categories, products, links, groups, options] = await Promise.all([
+    const [hours, zones, paymentMethods, categories, products, links, groups, options] = await Promise.all([
         supabase.from('store_hours').select('weekday, opens_at, closes_at').eq('store_id', storeId),
         supabase.from('delivery_zones').select('id, neighborhood, fee_cents').eq('store_id', storeId).order('neighborhood'),
+        supabase
+            .from('store_payment_methods')
+            .select('method, enabled_delivery, enabled_pickup, fee_kind, fee_percent, fee_fixed_cents')
+            .eq('store_id', storeId),
         supabase.from('categories').select('id, name, icon_url').eq('store_id', storeId).order('position'),
         supabase
             .from('products')
@@ -89,6 +102,7 @@ async function fetchMenuRows(storeId: string): Promise<MenuRows> {
     const rows = {
         hours: unwrap(hours),
         zones: unwrap(zones),
+        paymentMethods: unwrap(paymentMethods),
         categories: unwrap(categories),
         products: unwrap(products),
         links: unwrap(links),
@@ -160,12 +174,21 @@ function buildStore(row: StoreRow, rows: MenuRows): Store {
         brandColor: row.brand_color,
         minOrderCents: row.min_order_cents,
         deliveryFeeCents: row.delivery_fee_cents,
+        freeDeliveryAboveCents: row.free_delivery_above_cents,
         acceptsDelivery: row.accepts_delivery,
         acceptsPickup: row.accepts_pickup,
         enforceOpeningHours: row.enforce_opening_hours,
         timezone: row.timezone,
         hours: rows.hours.map((range) => ({ weekday: range.weekday, opensAt: range.opens_at, closesAt: range.closes_at })),
         deliveryZones: rows.zones.map((zone) => ({ id: zone.id, neighborhood: zone.neighborhood, feeCents: zone.fee_cents })),
+        paymentMethods: rows.paymentMethods.map((payment) => ({
+            method: payment.method,
+            enabledDelivery: payment.enabled_delivery,
+            enabledPickup: payment.enabled_pickup,
+            feeKind: payment.fee_kind,
+            feePercent: payment.fee_percent,
+            feeFixedCents: payment.fee_fixed_cents,
+        })),
     }
     return store
 }

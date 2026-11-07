@@ -1,9 +1,10 @@
 import type { DraftLine, Fulfillment, PaymentMethod } from '@/entities/order'
 import { formatCents, isValidBrazilianPhone, keepDigits, parseReaisToCents } from '@/shared/lib'
 
-import type { Store } from './types'
+import type { Store, StorePaymentMethod } from './types'
 
 const MIN_NAME_LENGTH = 2
+const PERCENT_DIVISOR = 100
 
 export type CheckoutForm = {
     customerName: string
@@ -59,6 +60,12 @@ export type PlaceOrderPayload = {
     items: { product_id: string; quantity: number; notes: string; options: { option_id: string; quantity: number }[] }[]
 }
 
+export type OrderTotals = {
+    deliveryFeeCents: number
+    paymentFeeCents: number
+    totalCents: number
+}
+
 export function getAvailableFulfillment(store: Store, requested: Fulfillment): Fulfillment {
     const canDeliver = requested === 'delivery' && store.acceptsDelivery
     const canPickUp = requested === 'pickup' && store.acceptsPickup
@@ -78,6 +85,48 @@ export function getDeliveryFeeCents(store: Store, form: CheckoutForm): number {
     return fee
 }
 
+export function getAvailablePaymentMethods(store: Store, fulfillment: Fulfillment): StorePaymentMethod[] {
+    const available = store.paymentMethods.filter((payment) =>
+        fulfillment === 'delivery' ? payment.enabledDelivery : payment.enabledPickup,
+    )
+    return available
+}
+
+export function getAvailablePaymentMethod(store: Store, fulfillment: Fulfillment, requested: PaymentMethod): PaymentMethod {
+    const available = getAvailablePaymentMethods(store, fulfillment)
+    const isRequestedAvailable = available.some((payment) => payment.method === requested)
+    const keepsRequested = isRequestedAvailable || available.length === 0
+
+    const method = keepsRequested ? requested : available[0].method
+    return method
+}
+
+function getPaymentFeeCents(payment: StorePaymentMethod | undefined, payableCents: number): number {
+    if (!payment) {
+        return 0
+    }
+
+    const percentFeeCents = Math.round((payableCents * payment.feePercent) / PERCENT_DIVISOR)
+    const feeCents = payment.feeKind === 'percent' ? percentFeeCents : payment.feeFixedCents
+    return feeCents
+}
+
+// Estimativa do navegador; o valor que vale é o que a place_order grava.
+export function calculateOrderTotals(store: Store, form: CheckoutForm, subtotalCents: number): OrderTotals {
+    const isFreeDelivery = store.freeDeliveryAboveCents !== null && subtotalCents >= store.freeDeliveryAboveCents
+    const deliveryFeeCents = isFreeDelivery ? 0 : getDeliveryFeeCents(store, form)
+
+    const payment = store.paymentMethods.find((candidate) => candidate.method === form.paymentMethod)
+    const paymentFeeCents = getPaymentFeeCents(payment, subtotalCents + deliveryFeeCents)
+
+    const totals = {
+        deliveryFeeCents,
+        paymentFeeCents,
+        totalCents: subtotalCents + deliveryFeeCents + paymentFeeCents,
+    }
+    return totals
+}
+
 function validateDelivery(form: CheckoutForm, store: Store): string | null {
     if (form.fulfillment === 'pickup') {
         return null
@@ -93,7 +142,14 @@ function validateDelivery(form: CheckoutForm, store: Store): string | null {
     return noError
 }
 
-function validatePayment(form: CheckoutForm, totalCents: number): string | null {
+function validatePayment(form: CheckoutForm, store: Store, totalCents: number): string | null {
+    const isMethodAvailable = getAvailablePaymentMethods(store, form.fulfillment).some(
+        (payment) => payment.method === form.paymentMethod,
+    )
+    if (!isMethodAvailable) {
+        return 'Escolha a forma de pagamento.'
+    }
+
     const changeForCents = parseReaisToCents(form.changeFor)
     const needsMoreChange = form.paymentMethod === 'cash' && changeForCents !== null && changeForCents < totalCents
 
@@ -108,7 +164,7 @@ function validatePayment(form: CheckoutForm, totalCents: number): string | null 
 
 // Devolve a primeira coisa que falta, na ordem em que a pessoa vê o formulário.
 export function validateCheckout(form: CheckoutForm, store: Store, subtotalCents: number): string | null {
-    const totalCents = subtotalCents + getDeliveryFeeCents(store, form)
+    const { totalCents } = calculateOrderTotals(store, form, subtotalCents)
 
     if (subtotalCents < store.minOrderCents) {
         const message = `O pedido mínimo é ${formatCents(store.minOrderCents)}.`
@@ -121,7 +177,7 @@ export function validateCheckout(form: CheckoutForm, store: Store, subtotalCents
         return 'Informe um telefone com DDD.'
     }
 
-    const firstError = validateDelivery(form, store) ?? validatePayment(form, totalCents)
+    const firstError = validateDelivery(form, store) ?? validatePayment(form, store, totalCents)
     return firstError
 }
 
@@ -164,6 +220,7 @@ const ORDER_ERROR_MESSAGES: Record<string, string> = {
     invalid_customer_name: 'Confira o seu nome.',
     invalid_customer_phone: 'Confira o telefone com DDD.',
     invalid_payment_method: 'Escolha a forma de pagamento.',
+    payment_method_unavailable: 'Esta forma de pagamento não está disponível para este pedido. Escolha outra.',
     invalid_address: 'Confira a rua e o número da entrega.',
     delivery_unavailable: 'A loja não está fazendo entregas. Escolha retirar na loja.',
     pickup_unavailable: 'A loja não está com retirada no balcão. Escolha entrega.',
