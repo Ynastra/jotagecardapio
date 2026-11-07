@@ -13,12 +13,16 @@ export function HomePage() {
     return (
         <ThemeProvider folders={['base']}>
             <main className={styles.home}>
-                <h1 className={styles.title}>JG Cardápio</h1>
-                <p className={styles.lead}>Cardápio online com pedido direto no WhatsApp e painel em tempo real para a sua loja.</p>
-                <a className={styles.panelLink} href="/painel">
-                    <ThemeIcon name="pedidos" size={20} />
-                    Entrar no painel da loja
-                </a>
+                <div className={styles.content}>
+                    <h1>
+                        <img className={styles.logo} src="/marca/logo-horizontal-branco.png" alt="JG Cardápio" />
+                    </h1>
+                    <p className={styles.lead}>Cardápio online com pedido direto no WhatsApp e painel em tempo real para a sua loja.</p>
+                    <a className={styles.panelLink} href="/painel">
+                        <ThemeIcon name="pedidos" size={20} />
+                        Entrar no painel da loja
+                    </a>
+                </div>
             </main>
         </ThemeProvider>
     )

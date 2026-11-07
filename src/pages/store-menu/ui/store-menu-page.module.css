@@ -49,10 +49,15 @@
 }
 
 .footer {
+    display: flex;
+    justify-content: center;
     padding: var(--space-6);
-    color: var(--color-text-muted);
-    font-size: var(--font-size-xs);
-    text-align: center;
+}
+
+.seal {
+    display: block;
+    block-size: var(--seal-height);
+    inline-size: auto;
 }
 
 .loading {

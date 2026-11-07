@@ -141,7 +141,9 @@ function StoreMenuView({ menu }: { menu: StoreMenu }) {
             </main>
 
             <footer className={styles.footer}>
-                <a href="/">feito com JG Cardápio</a>
+                <a href="/">
+                    <img className={styles.seal} src="/marca/selo-feito-com.png" alt="Feito com JG Cardápio" />
+                </a>
             </footer>
 
             {cart.itemCount > 0 ? (
