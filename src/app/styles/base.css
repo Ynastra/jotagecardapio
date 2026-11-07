@@ -1,0 +1,55 @@
+html {
+    background-color: var(--color-bg);
+}
+
+body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: var(--font-size-md);
+}
+
+h1,
+h2,
+h3 {
+    font-family: var(--font-display);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+}
+
+a {
+    color: inherit;
+}
+
+:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
+input,
+textarea,
+select {
+    inline-size: 100%;
+    min-block-size: var(--touch-target);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface);
+}
+
+input[type='radio'],
+input[type='checkbox'] {
+    inline-size: 22px;
+    min-block-size: 22px;
+    block-size: 22px;
+    padding: 0;
+    accent-color: var(--color-brand);
+}
+
+textarea {
+    resize: vertical;
+}
+
+label {
+    font-weight: 600;
+}

@@ -1,0 +1,69 @@
+/* Tokens de cor, espaço, raio, sombra e fonte. Todo componente lê daqui,
+   nunca valor cru, para cada loja e cada tema trocarem o visual inteiro só
+   redefinindo variáveis. A cor da marca da loja chega em tempo de execução,
+   sobrescrevendo --color-brand e --color-on-brand na raiz da página. */
+:root {
+    color-scheme: light;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-md: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.375rem;
+    --font-size-2xl: 1.75rem;
+    --font-size-3xl: 2.5rem;
+
+    --font-body: 'Figtree Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-display: 'Bricolage Grotesque Variable', var(--font-body);
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 22px;
+    --radius-pill: 999px;
+
+    --color-bg: #f6f3ef;
+    --color-surface: #ffffff;
+    --color-surface-muted: #efeae4;
+    --color-text: #1c1917;
+    --color-text-secondary: #57534e;
+    --color-text-muted: #6f6861;
+    --color-border: #e7e0d8;
+    --color-border-strong: #c9bfb4;
+    --color-overlay: rgb(28 25 23 / 55%);
+
+    --color-brand: #1c1917;
+    --color-on-brand: #ffffff;
+    --color-accent: #e85d12;
+    --color-accent-soft: #fdebdf;
+
+    --color-success: #1f7a45;
+    --color-success-soft: #e2f3e8;
+    --color-danger: #b42318;
+    --color-danger-soft: #fde8e6;
+    --color-warning-soft: #fff4d6;
+
+    --shadow-card: 0 1px 2px rgb(28 25 23 / 6%), 0 4px 16px rgb(28 25 23 / 6%);
+    --shadow-raised: 0 8px 28px rgb(28 25 23 / 18%);
+    --shadow-sheet: 0 -12px 40px rgb(28 25 23 / 22%);
+
+    --z-sticky: 10;
+    --z-cart-bar: 20;
+
+    --touch-target: 44px;
+    --padding-safe-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+    --cart-bar-clearance: 112px;
+    --cover-overlap: calc(var(--space-12) * -1);
+    --logo-overlap: calc(var(--space-10) * -1);
+    --content-max: 760px;
+    --sheet-max: 560px;
+}

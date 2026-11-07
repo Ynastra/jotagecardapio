@@ -1,0 +1,188 @@
+import { supabase } from '@/shared/api'
+
+import type { Category, OptionGroup, Product, Store, StoreMenu } from '../model/types'
+
+const STORE_COLUMNS =
+    'id, slug, name, address, whatsapp, logo_url, cover_url, theme, brand_color, min_order_cents, delivery_fee_cents, accepts_delivery, accepts_pickup, enforce_opening_hours, timezone'
+
+type StoreRow = {
+    id: string
+    slug: string
+    name: string
+    address: string | null
+    whatsapp: string
+    logo_url: string | null
+    cover_url: string | null
+    theme: string
+    brand_color: string | null
+    min_order_cents: number
+    delivery_fee_cents: number
+    accepts_delivery: boolean
+    accepts_pickup: boolean
+    enforce_opening_hours: boolean
+    timezone: string
+}
+
+type MenuRows = {
+    hours: { weekday: number; opens_at: string; closes_at: string }[]
+    zones: { id: string; neighborhood: string; fee_cents: number }[]
+    categories: { id: string; name: string; icon_url: string | null }[]
+    products: {
+        id: string
+        category_id: string
+        name: string
+        description: string | null
+        price_cents: number
+        promo_price_cents: number | null
+        serves: number | null
+        portion_label: string | null
+        image_url: string | null
+        featured: boolean
+    }[]
+    links: { product_id: string; group_id: string }[]
+    groups: { id: string; title: string; min_choices: number; max_choices: number | null }[]
+    options: {
+        id: string
+        group_id: string
+        name: string
+        description: string | null
+        price_cents: number
+        max_quantity: number
+    }[]
+}
+
+export class MenuLoadError extends Error {}
+
+function unwrap<Row>(result: { data: Row[] | null; error: { message: string } | null }): Row[] {
+    if (result.error) {
+        throw new MenuLoadError(result.error.message)
+    }
+
+    const rows = result.data ?? []
+    return rows
+}
+
+async function fetchMenuRows(storeId: string): Promise<MenuRows> {
+    const [hours, zones, categories, products, links, groups, options] = await Promise.all([
+        supabase.from('store_hours').select('weekday, opens_at, closes_at').eq('store_id', storeId),
+        supabase.from('delivery_zones').select('id, neighborhood, fee_cents').eq('store_id', storeId).order('neighborhood'),
+        supabase.from('categories').select('id, name, icon_url').eq('store_id', storeId).order('position'),
+        supabase
+            .from('products')
+            .select('id, category_id, name, description, price_cents, promo_price_cents, serves, portion_label, image_url, featured')
+            .eq('store_id', storeId)
+            .order('position'),
+        supabase.from('product_option_groups').select('product_id, group_id').eq('store_id', storeId).order('position'),
+        supabase.from('option_groups').select('id, title, min_choices, max_choices').eq('store_id', storeId),
+        supabase
+            .from('options')
+            .select('id, group_id, name, description, price_cents, max_quantity')
+            .eq('store_id', storeId)
+            .order('position'),
+    ])
+
+    const rows = {
+        hours: unwrap(hours),
+        zones: unwrap(zones),
+        categories: unwrap(categories),
+        products: unwrap(products),
+        links: unwrap(links),
+        groups: unwrap(groups),
+        options: unwrap(options),
+    }
+    return rows
+}
+
+function buildOptionGroups(rows: MenuRows): Map<string, OptionGroup> {
+    const groups = new Map(
+        rows.groups.map((group) => [
+            group.id,
+            {
+                id: group.id,
+                title: group.title,
+                minChoices: group.min_choices,
+                maxChoices: group.max_choices,
+                options: rows.options
+                    .filter((option) => option.group_id === group.id)
+                    .map((option) => ({
+                        id: option.id,
+                        name: option.name,
+                        description: option.description,
+                        priceCents: option.price_cents,
+                        maxQuantity: option.max_quantity,
+                    })),
+            },
+        ]),
+    )
+    return groups
+}
+
+function buildProducts(rows: MenuRows): Product[] {
+    const groupsById = buildOptionGroups(rows)
+    const products = rows.products.map((product) => ({
+        id: product.id,
+        categoryId: product.category_id,
+        name: product.name,
+        description: product.description,
+        priceCents: product.price_cents,
+        promoPriceCents: product.promo_price_cents,
+        serves: product.serves,
+        portionLabel: product.portion_label,
+        imageUrl: product.image_url,
+        featured: product.featured,
+        optionGroups: rows.links
+            .filter((link) => link.product_id === product.id)
+            .map((link) => groupsById.get(link.group_id))
+            .filter((group): group is OptionGroup => group !== undefined && group.options.length > 0),
+    }))
+    return products
+}
+
+function buildStore(row: StoreRow, rows: MenuRows): Store {
+    const store = {
+        id: row.id,
+        slug: row.slug,
+        name: row.name,
+        address: row.address,
+        whatsapp: row.whatsapp,
+        logoUrl: row.logo_url,
+        coverUrl: row.cover_url,
+        theme: row.theme,
+        brandColor: row.brand_color,
+        minOrderCents: row.min_order_cents,
+        deliveryFeeCents: row.delivery_fee_cents,
+        acceptsDelivery: row.accepts_delivery,
+        acceptsPickup: row.accepts_pickup,
+        enforceOpeningHours: row.enforce_opening_hours,
+        timezone: row.timezone,
+        hours: rows.hours.map((range) => ({ weekday: range.weekday, opensAt: range.opens_at, closesAt: range.closes_at })),
+        deliveryZones: rows.zones.map((zone) => ({ id: zone.id, neighborhood: zone.neighborhood, feeCents: zone.fee_cents })),
+    }
+    return store
+}
+
+// null quando o endereço não corresponde a nenhuma loja ativa.
+export async function fetchStoreMenu(slug: string): Promise<StoreMenu | null> {
+    const { data: storeRow, error } = await supabase.from('stores').select(STORE_COLUMNS).eq('slug', slug).maybeSingle<StoreRow>()
+
+    if (error) {
+        throw new MenuLoadError(error.message)
+    }
+    if (!storeRow) {
+        return null
+    }
+
+    const rows = await fetchMenuRows(storeRow.id)
+    const products = buildProducts(rows)
+    const categories: Category[] = rows.categories
+        .map((category) => ({
+            id: category.id,
+            name: category.name,
+            iconUrl: category.icon_url,
+            products: products.filter((product) => product.categoryId === category.id),
+        }))
+        .filter((category) => category.products.length > 0)
+
+    const menu = { store: buildStore(storeRow, rows), categories }
+    return menu
+}

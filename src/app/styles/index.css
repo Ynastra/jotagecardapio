@@ -1,0 +1,11 @@
+/* Ordem das camadas, da menos para a mais forte: o que vem depois vence o que
+   vem antes sem depender de especificidade. Os CSS Modules dos componentes
+   ficam fora de camada e por isso vencem todas. */
+@layer reset, tokens, base, shared;
+
+@import '@fontsource-variable/figtree';
+@import '@fontsource-variable/bricolage-grotesque';
+@import './reset.css' layer(reset);
+@import './tokens.css' layer(tokens);
+@import './base.css' layer(base);
+@import './shared.css' layer(shared);

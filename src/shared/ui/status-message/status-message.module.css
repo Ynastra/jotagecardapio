@@ -1,0 +1,22 @@
+.status {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-3);
+    padding: var(--space-10) var(--space-5);
+    text-align: center;
+}
+
+.illustration {
+    inline-size: min(280px, 70%);
+    block-size: auto;
+}
+
+.title {
+    margin: 0;
+    font-size: var(--font-size-xl);
+}
+
+.body {
+    max-inline-size: 36ch;
+    color: var(--color-text-secondary);
+}

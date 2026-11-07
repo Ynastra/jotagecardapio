@@ -1,0 +1,33 @@
+.stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface-muted);
+}
+
+.step {
+    display: grid;
+    place-items: center;
+    inline-size: var(--touch-target);
+    block-size: var(--touch-target);
+    border-radius: var(--radius-pill);
+    color: var(--color-text);
+}
+
+.step:disabled {
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+}
+
+.value {
+    min-inline-size: 2ch;
+    font-weight: 700;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.compact .step {
+    inline-size: 36px;
+    block-size: 36px;
+}

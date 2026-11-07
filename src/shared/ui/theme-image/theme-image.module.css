@@ -1,0 +1,8 @@
+.image {
+    display: block;
+    object-fit: cover;
+}
+
+.placeholder {
+    background-color: var(--color-surface-muted);
+}

@@ -1,0 +1,31 @@
+.bar {
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    z-index: var(--z-cart-bar);
+    padding: var(--space-3) var(--space-4) var(--padding-safe-bottom);
+    background: linear-gradient(to top, var(--color-bg) 70%, transparent);
+}
+
+.button {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    justify-content: space-between;
+    inline-size: 100%;
+    max-inline-size: var(--content-max);
+    min-block-size: 56px;
+    margin-inline: auto;
+    padding: var(--space-2) var(--space-5);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-brand);
+    color: var(--color-on-brand);
+    font-weight: 700;
+    box-shadow: var(--shadow-raised);
+}
+
+.count {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+}

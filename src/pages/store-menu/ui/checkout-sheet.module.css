@@ -1,0 +1,147 @@
+.form {
+    display: grid;
+    gap: var(--space-2);
+    padding-block-end: var(--space-4);
+}
+
+.lines {
+    display: grid;
+}
+
+.line {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) var(--space-5);
+    border-block-end: 1px solid var(--color-border);
+}
+
+.lineInfo {
+    display: grid;
+    gap: var(--space-1);
+    min-inline-size: 0;
+}
+
+.lineName {
+    font-weight: 700;
+}
+
+.lineDetail {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.section {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+}
+
+.sectionTitle {
+    margin-block-end: var(--space-3);
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+}
+
+.choices {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--space-2);
+}
+
+.choice {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    min-block-size: 52px;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+}
+
+.choice:has(input:checked) {
+    border-color: var(--color-brand);
+    box-shadow: inset 0 0 0 1px var(--color-brand);
+}
+
+.fields {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.fieldRow {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.field {
+    display: grid;
+    gap: var(--space-1);
+    font-size: var(--font-size-sm);
+}
+
+.grow {
+    flex: 1;
+}
+
+.short {
+    inline-size: 96px;
+}
+
+.hint {
+    display: flex;
+    gap: var(--space-2);
+    align-items: flex-start;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.summary {
+    display: grid;
+    gap: var(--space-1);
+    margin: var(--space-2) var(--space-5) 0;
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-muted);
+}
+
+.summaryRow {
+    display: flex;
+    justify-content: space-between;
+}
+
+.summaryRow dd {
+    margin: 0;
+}
+
+.total {
+    font-size: var(--font-size-lg);
+    font-weight: 800;
+}
+
+.error {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    margin: var(--space-2) var(--space-5) 0;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background-color: var(--color-danger-soft);
+    color: var(--color-danger);
+    font-weight: 600;
+}
+
+.footerContent {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.closedWarning {
+    color: var(--color-danger);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    text-align: center;
+}
