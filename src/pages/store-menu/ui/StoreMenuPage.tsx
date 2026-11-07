@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 
 import type { DraftLine, OrderMessageContext, PlacedOrder } from '@/entities/order'
-import { pickReadableTextColor, ThemeProvider } from '@/shared/lib'
+import { buildBrandStyle, ThemeProvider } from '@/shared/lib'
 import { Button, StatusMessage, ThemeIcon } from '@/shared/ui'
 
 import { countProductInCart, getMaxQuantity } from '../model/availability'
@@ -27,18 +27,6 @@ const OPEN_STATUS_REFRESH_MS = 60_000
 type PlacedConfirmation = {
     order: PlacedOrder
     context: OrderMessageContext
-}
-
-function buildBrandStyle(store: Store): CSSProperties | undefined {
-    if (!store.brandColor) {
-        return undefined
-    }
-
-    const brandStyle = {
-        '--color-brand': store.brandColor,
-        '--color-on-brand': pickReadableTextColor(store.brandColor),
-    } as CSSProperties
-    return brandStyle
 }
 
 // O status aberto/fechado muda sozinho com o relógio, sem recarregar a página.
