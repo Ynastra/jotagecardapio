@@ -298,6 +298,16 @@ as $$
     select exists (select 1 from public.stores where id = target_store and active);
 $$;
 
+create function public.hides_unavailable_items(target_store uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+    select exists (select 1 from public.stores where id = target_store and hide_unavailable_items);
+$$;
+
 create function public.is_store_open(target_store uuid, at_time timestamptz)
 returns boolean
 language sql
@@ -371,7 +381,10 @@ create policy "membro edita categorias" on public.categories
     for all using (public.is_store_member(store_id)) with check (public.is_store_member(store_id));
 
 create policy "produtos públicos" on public.products
-    for select using ((active and public.is_store_public(store_id)) or public.is_store_member(store_id));
+    for select using (
+        (public.is_store_public(store_id) and (active or not public.hides_unavailable_items(store_id)))
+        or public.is_store_member(store_id)
+    );
 create policy "membro edita produtos" on public.products
     for all using (public.is_store_member(store_id)) with check (public.is_store_member(store_id));
 
@@ -469,6 +482,7 @@ declare
     zone_id_text text := nullif(payload ->> 'delivery_zone_id', '');
     change_for_cents integer := nullif(payload ->> 'change_for_cents', '')::integer;
     order_address jsonb := null;
+    address_cep text := regexp_replace(coalesce(payload -> 'address' ->> 'cep', ''), '\D', '', 'g');
 
     item jsonb;
     chosen jsonb;
@@ -520,7 +534,13 @@ begin
             or nullif(btrim(coalesce(payload -> 'address' ->> 'number', '')), '') is null then
             raise exception 'invalid_address';
         end if;
+        if target_store.require_cep and length(address_cep) <> 8 then
+            raise exception 'invalid_cep';
+        end if;
         order_address := jsonb_build_object(
+            'cep', left(address_cep, 8),
+            'city', left(btrim(coalesce(payload -> 'address' ->> 'city', '')), max_name_length),
+            'state', left(upper(btrim(coalesce(payload -> 'address' ->> 'state', ''))), 2),
             'street', left(btrim(payload -> 'address' ->> 'street'), max_name_length),
             'number', left(btrim(payload -> 'address' ->> 'number'), 20),
             'neighborhood', left(btrim(coalesce(payload -> 'address' ->> 'neighborhood', '')), max_name_length),
@@ -729,8 +749,8 @@ grant execute on function public.place_order(jsonb) to anon, authenticated;
 
 -- Acompanhamento pelo cliente -------------------------------------------
 
--- Devolve só o que a página do cliente mostra: dados públicos da loja (nome e
--- WhatsApp) e o pedido, sem telefone, nome nem endereço do cliente.
+-- Devolve só o que a página do cliente mostra: dados públicos da loja (nome,
+-- WhatsApp e, em pedido Pix, a chave) e o pedido, sem telefone, nome nem endereço do cliente.
 -- Token desconhecido devolve nulo, sem distinguir de pedido inexistente.
 create function public.get_order_tracking(token text)
 returns jsonb
@@ -746,7 +766,11 @@ as $$
             'whatsapp', s.whatsapp,
             'logo_url', s.logo_url,
             'brand_color', s.brand_color,
-            'theme', s.theme
+            'theme', s.theme,
+            'timezone', s.timezone,
+            'prep_time_minutes', s.prep_time_minutes,
+            'pix_key', case when o.payment_method = 'pix' then s.pix_key end,
+            'pix_key_type', case when o.payment_method = 'pix' then s.pix_key_type end
         ),
         'public_code', o.public_code,
         'status', o.status,
