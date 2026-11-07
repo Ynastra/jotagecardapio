@@ -1,17 +1,19 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 
 import { useCurrentStore } from '@/entities/store'
 import { unlockChime } from '@/shared/lib'
 import { StatusMessage, ThemeIcon } from '@/shared/ui'
 
 import { isActiveOrder } from '../model/order-flow'
+import { getPeriodStart } from '../model/period'
 import { usePanelOrders } from '../model/use-panel-orders'
 import { OrderCard } from './OrderCard'
 import styles from './panel-orders.module.css'
 
 export function PanelOrdersPage() {
     const store = useCurrentStore()
-    const { orders, isLoading, errorMessage, changeStatus } = usePanelOrders(store.id)
+    const periodStart = useMemo(() => getPeriodStart('today', new Date(), store.timezone), [store.timezone])
+    const { orders, isLoading, errorMessage, changeStatus } = usePanelOrders(store.id, periodStart)
     const activeOrders = orders.filter(isActiveOrder)
     const finishedOrders = orders.filter((order) => !isActiveOrder(order))
 

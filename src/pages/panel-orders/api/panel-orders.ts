@@ -1,7 +1,6 @@
 import { mapStoredAddress, mapStoredLines, type OrderStatus, type PanelOrder } from '@/entities/order'
 import { supabase } from '@/shared/api'
 
-const RECENT_ORDERS_LIMIT = 60
 const ORDER_COLUMNS =
     'id, number, public_code, tracking_token, payment_status, preparing_at, ready_at, completed_at, canceled_at, customer_name, customer_phone, fulfillment, address, payment_method, change_for_cents, notes, items, subtotal_cents, delivery_fee_cents, payment_fee_cents, total_cents, status, created_at'
 
@@ -60,13 +59,20 @@ function mapOrder(row: OrderRow): PanelOrder {
     return order
 }
 
-export async function fetchRecentOrders(storeId: string): Promise<PanelOrder[]> {
+export type OrdersQuery = {
+    storeId: string
+    since: Date
+    limit: number
+}
+
+export async function fetchOrders({ storeId, since, limit }: OrdersQuery): Promise<PanelOrder[]> {
     const { data, error } = await supabase
         .from('orders')
         .select(ORDER_COLUMNS)
         .eq('store_id', storeId)
+        .gte('created_at', since.toISOString())
         .order('created_at', { ascending: false })
-        .limit(RECENT_ORDERS_LIMIT)
+        .limit(limit)
 
     if (error) {
         throw error

@@ -3,29 +3,35 @@ import { useCallback, useEffect, useState } from 'react'
 import type { OrderStatus, PanelOrder } from '@/entities/order'
 import { playNewOrderChime } from '@/shared/lib'
 
-import { fetchRecentOrders, subscribeToOrders, updateOrderStatus } from '../api/panel-orders'
+import { fetchOrders, subscribeToOrders, updateOrderStatus } from '../api/panel-orders'
+import { hasReachedQueryLimit, ORDERS_QUERY_LIMIT } from './board'
 import { upsertOrder } from './order-flow'
 
 export type PanelOrdersState = {
     orders: PanelOrder[]
     isLoading: boolean
+    isTruncated: boolean
     errorMessage: string | null
     changeStatus: (orderId: string, status: OrderStatus) => Promise<void>
 }
 
-export function usePanelOrders(storeId: string): PanelOrdersState {
+export function usePanelOrders(storeId: string, periodStart: Date): PanelOrdersState {
     const [orders, setOrders] = useState<PanelOrder[]>([])
     const [isLoading, setLoading] = useState(true)
+    const [isTruncated, setTruncated] = useState(false)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
+    const periodStartMs = periodStart.getTime()
 
     useEffect(() => {
         let isCurrent = true
         setLoading(true)
 
-        fetchRecentOrders(storeId)
+        fetchOrders({ storeId, since: new Date(periodStartMs), limit: ORDERS_QUERY_LIMIT })
             .then((loaded) => {
                 if (isCurrent) {
                     setOrders(loaded)
+                    setTruncated(hasReachedQueryLimit(loaded.length))
+                    setErrorMessage(null)
                 }
             })
             .catch((error: unknown) => {
@@ -40,6 +46,12 @@ export function usePanelOrders(storeId: string): PanelOrdersState {
                 }
             })
 
+        return () => {
+            isCurrent = false
+        }
+    }, [storeId, periodStartMs])
+
+    useEffect(() => {
         const unsubscribe = subscribeToOrders(storeId, (order, isNew) => {
             setOrders((current) => upsertOrder(current, order))
             if (isNew) {
@@ -47,10 +59,7 @@ export function usePanelOrders(storeId: string): PanelOrdersState {
             }
         })
 
-        return () => {
-            isCurrent = false
-            unsubscribe()
-        }
+        return unsubscribe
     }, [storeId])
 
     const changeStatus = useCallback(async (orderId: string, status: OrderStatus) => {
@@ -64,5 +73,5 @@ export function usePanelOrders(storeId: string): PanelOrdersState {
         }
     }, [])
 
-    return { orders, isLoading, errorMessage, changeStatus }
+    return { orders, isLoading, isTruncated, errorMessage, changeStatus }
 }
