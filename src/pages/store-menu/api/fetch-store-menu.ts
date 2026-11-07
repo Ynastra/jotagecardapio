@@ -3,7 +3,7 @@ import { supabase } from '@/shared/api'
 import type { Category, OptionGroup, Product, Store, StoreMenu } from '../model/types'
 
 const STORE_COLUMNS =
-    'id, slug, name, address, whatsapp, logo_url, cover_url, theme, brand_color, min_order_cents, delivery_fee_cents, free_delivery_above_cents, accepts_delivery, accepts_pickup, enforce_opening_hours, timezone'
+    'id, slug, name, address, whatsapp, logo_url, cover_url, theme, brand_color, min_order_cents, delivery_fee_cents, free_delivery_above_cents, accepts_delivery, accepts_pickup, enforce_opening_hours, timezone, city, state, address_display, require_cep, order_copy_whatsapp, hide_unavailable_items, cart_notice_title, cart_notice_body, pix_key, pix_key_type'
 
 const PORTION_UNIT_LABELS: Record<string, string> = {
     g: 'g',
@@ -32,6 +32,16 @@ type StoreRow = {
     accepts_pickup: boolean
     enforce_opening_hours: boolean
     timezone: string
+    city: string | null
+    state: string | null
+    address_display: 'hidden' | 'city' | 'full'
+    require_cep: boolean
+    order_copy_whatsapp: boolean
+    hide_unavailable_items: boolean
+    cart_notice_title: string | null
+    cart_notice_body: string | null
+    pix_key: string | null
+    pix_key_type: 'cnpj' | 'cpf' | 'email' | 'phone' | 'random' | null
 }
 
 type MenuRows = {
@@ -202,6 +212,16 @@ function buildStore(row: StoreRow, rows: MenuRows): Store {
         acceptsPickup: row.accepts_pickup,
         enforceOpeningHours: row.enforce_opening_hours,
         timezone: row.timezone,
+        city: row.city,
+        state: row.state,
+        addressDisplay: row.address_display,
+        requireCep: row.require_cep,
+        orderCopyWhatsapp: row.order_copy_whatsapp,
+        hideUnavailableItems: row.hide_unavailable_items,
+        cartNoticeTitle: row.cart_notice_title,
+        cartNoticeBody: row.cart_notice_body,
+        pixKey: row.pix_key,
+        pixKeyType: row.pix_key_type,
         hours: rows.hours.map((range) => ({ weekday: range.weekday, opensAt: range.opens_at, closesAt: range.closes_at })),
         deliveryZones: rows.zones.map((zone) => ({ id: zone.id, neighborhood: zone.neighborhood, feeCents: zone.fee_cents })),
         paymentMethods: rows.paymentMethods.map((payment) => ({

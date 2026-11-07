@@ -22,6 +22,10 @@ export type StorePaymentMethod = {
     feeFixedCents: number
 }
 
+export type AddressDisplay = 'hidden' | 'city' | 'full'
+
+export type PixKeyType = 'cnpj' | 'cpf' | 'email' | 'phone' | 'random'
+
 export type Store = {
     id: string
     slug: string
@@ -38,6 +42,16 @@ export type Store = {
     acceptsPickup: boolean
     enforceOpeningHours: boolean
     timezone: string
+    city: string | null
+    state: string | null
+    addressDisplay: AddressDisplay
+    requireCep: boolean
+    orderCopyWhatsapp: boolean
+    hideUnavailableItems: boolean
+    cartNoticeTitle: string | null
+    cartNoticeBody: string | null
+    pixKey: string | null
+    pixKeyType: PixKeyType | null
     hours: StoreHours[]
     deliveryZones: DeliveryZone[]
     freeDeliveryAboveCents: number | null
