@@ -42,6 +42,9 @@ export type OrderLine = {
 }
 
 export type OrderAddress = {
+    cep: string
+    city: string
+    state: string
     street: string
     number: string
     neighborhood: string

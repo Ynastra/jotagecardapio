@@ -1,5 +1,5 @@
 import type { DraftLine, Fulfillment, PaymentMethod } from '@/entities/order'
-import { formatCents, isValidBrazilianPhone, keepDigits, parseReaisToCents } from '@/shared/lib'
+import { formatCents, isValidBrazilianPhone, isValidCep, keepDigits, parseReaisToCents } from '@/shared/lib'
 
 import type { Store, StorePaymentMethod } from './types'
 
@@ -10,6 +10,9 @@ export type CheckoutForm = {
     customerName: string
     customerPhone: string
     fulfillment: Fulfillment
+    cep: string
+    city: string
+    state: string
     street: string
     number: string
     neighborhood: string
@@ -25,6 +28,9 @@ export const EMPTY_CHECKOUT_FORM: CheckoutForm = {
     customerName: '',
     customerPhone: '',
     fulfillment: 'delivery',
+    cep: '',
+    city: '',
+    state: '',
     street: '',
     number: '',
     neighborhood: '',
@@ -40,6 +46,9 @@ export const EMPTY_CHECKOUT_FORM: CheckoutForm = {
 export const REMEMBERED_FIELDS = [
     'customerName',
     'customerPhone',
+    'cep',
+    'city',
+    'state',
     'street',
     'number',
     'neighborhood',
@@ -52,7 +61,16 @@ export type PlaceOrderPayload = {
     customer_name: string
     customer_phone: string
     fulfillment: Fulfillment
-    address: { street: string; number: string; neighborhood: string; complement: string; reference: string } | null
+    address: {
+        cep: string
+        city: string
+        state: string
+        street: string
+        number: string
+        neighborhood: string
+        complement: string
+        reference: string
+    } | null
     delivery_zone_id: string | null
     payment_method: PaymentMethod
     change_for_cents: number | null
@@ -131,6 +149,9 @@ function validateDelivery(form: CheckoutForm, store: Store): string | null {
     if (form.fulfillment === 'pickup') {
         return null
     }
+    if (store.requireCep && !isValidCep(form.cep)) {
+        return 'Informe o CEP com 8 números.'
+    }
     if (!form.street.trim() || !form.number.trim()) {
         return 'Informe a rua e o número para a entrega.'
     }
@@ -185,6 +206,9 @@ export function buildPlaceOrderPayload(storeSlug: string, form: CheckoutForm, li
     const isDelivery = form.fulfillment === 'delivery'
     const address = isDelivery
         ? {
+              cep: keepDigits(form.cep),
+              city: form.city.trim(),
+              state: form.state.trim().toUpperCase(),
               street: form.street.trim(),
               number: form.number.trim(),
               neighborhood: form.neighborhood.trim(),
@@ -221,7 +245,8 @@ const ORDER_ERROR_MESSAGES: Record<string, string> = {
     invalid_customer_phone: 'Confira o telefone com DDD.',
     invalid_payment_method: 'Escolha a forma de pagamento.',
     payment_method_unavailable: 'Esta forma de pagamento não está disponível para este pedido. Escolha outra.',
-    invalid_address: 'Confira a rua e o número da entrega.',
+    invalid_cep: 'Confira o CEP da entrega.',
+    invalid_address:'Confira a rua e o número da entrega.',
     delivery_unavailable: 'A loja não está fazendo entregas. Escolha retirar na loja.',
     pickup_unavailable: 'A loja não está com retirada no balcão. Escolha entrega.',
     invalid_delivery_zone: 'Este bairro não está mais na área de entrega.',
