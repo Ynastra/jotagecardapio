@@ -17,12 +17,34 @@ declare
     product record;
 begin
     insert into public.stores (
-        id, slug, name, address, whatsapp, brand_color, min_order_cents, delivery_fee_cents
+        id, slug, name, address, whatsapp, brand_color, min_order_cents, delivery_fee_cents,
+        prep_time_minutes, city, state, address_display, require_cep, order_copy_whatsapp,
+        hide_unavailable_items, delivery_mode, delivery_max_km
     ) values (
         store, 'zedoburguerlucelia', 'Zé do Burguer',
         'Rua Francisco Xavier de Oliveira, 48, Lado Este, Lucélia - SP, 17780-043',
-        '5518996649346', '#060504', 700, 800
+        '5518996649346', '#060504', 700, 800,
+        30, 'Lucélia', 'SP', 'full', true, true,
+        true, 'radius', 6
     );
+
+    insert into public.store_whatsapp_messages (store_id, type) values
+        (store, 'greeting'),
+        (store, 'away'),
+        (store, 'confirmed'),
+        (store, 'preparing'),
+        (store, 'out_for_delivery'),
+        (store, 'ready_for_pickup'),
+        (store, 'completed'),
+        (store, 'canceled');
+
+    insert into public.store_payment_methods (store_id, method, enabled_delivery, enabled_pickup) values
+        (store, 'pix', true, true),
+        (store, 'cash', true, true),
+        (store, 'credit', true, true),
+        (store, 'debit', true, true),
+        (store, 'meal_voucher', false, false),
+        (store, 'food_voucher', false, false);
 
     insert into public.store_hours (store_id, weekday, opens_at, closes_at) values
         (store, 0, '18:30', '22:00'),
@@ -37,31 +59,32 @@ begin
         (drinks, store, 'BEBIDAS', 2);
 
     insert into public.products (
-        store_id, category_id, name, description, price_cents, promo_price_cents, serves, portion_label, featured, position
+        store_id, category_id, name, description, price_cents, promo_price_cents, serves,
+        portion_amount, portion_unit, featured, position
     ) values
-        (store, burgers, 'KIDS', 'Pão brioche macio, hambúrguer de 100g suculento, 1 fatia de cheddar e maionese da casa, em uma combinação irresistível para os pequenos.', 2399, null, 1, null, true, 0),
-        (store, burgers, 'X-BURGUER', 'Pão de brioche macio, hambúrguer de 180g, 2 fatias de cheddar derretido, ketchup e mostarda, finalizado com cebola e picles de pepino para um toque agridoce e crocante.', 3099, null, 1, null, false, 1),
-        (store, burgers, 'X-SALADA', 'Pão de brioche macio, hambúrguer de 180g, 2 fatias de cheddar derretido, alface, tomate, cebola e maionese da casa. O alface poderá ser substituído por rúcula; informe nas observações.', 3199, null, 1, null, false, 2),
-        (store, burgers, 'X-BACON', 'Pão de brioche macio, hambúrguer de 180g, 2 fatias de cheddar derretido, 3 fatias de bacon crocante e maionese da casa, combinando suculência, cremosidade e textura irresistível.', 3399, null, 1, null, false, 3),
-        (store, burgers, 'X-MELT', 'Pão de brioche macio, hambúrguer de 180g, molho de cheddar, cebola caramelizada e maionese da casa, em uma combinação cremosa e marcante.', 3099, null, 1, null, false, 4),
-        (store, burgers, 'X-CHICKEN', 'Pão de brioche macio, hambúrguer de frango empanado de 100 g, 2 fatias de cheddar derretido, 2 fatias de bacon, molho barbecue (BBQ), alface e maionese da casa.', 3099, null, 1, null, true, 5),
-        (store, portions, 'BATATA FRITA - SIMPLES P', 'Batata frita crocante, dourada e sequinha. Porção de 150g de batata, pesada antes do preparo. O clássico acompanhamento para seu hambúrguer!', 700, null, 1, '150 g', false, 0),
-        (store, portions, 'BATATA FRITA - SIMPLES G', 'Batata frita crocante, dourada e sequinha. Porção de 500g de batata, pesada antes do preparo.', 2400, null, 2, '500 g', false, 1),
-        (store, portions, 'BATATA FRITA - CHEDDAR E BACON G', 'Batata frita crocante, dourada e sequinha, coberta com um delicioso molho cheddar cremoso e finalizada com uma irresistível farofa de bacon crocante. Porção de 500g de batata, pesada antes do preparo.', 3600, null, 2, '500 g', false, 2),
-        (store, portions, 'MINI CHICKENS', 'Mini Chickens crocantes, dourados e sequinhos. Porção de 6 unidades.', 1400, 1200, 1, '6 un', true, 3),
-        (store, drinks, 'COCA COLA ORIGINAL', null, 700, null, 1, '350 ml', false, 0),
-        (store, drinks, 'COCA COLA ZERO', null, 700, null, 1, '350 ml', false, 1),
-        (store, drinks, 'GUARANÁ ANTARCTICA', null, 600, null, 1, '350 ml', false, 2),
-        (store, drinks, 'GUARANÁ ANTARCTICA ZERO', null, 600, null, 1, '350 ml', false, 3),
-        (store, drinks, 'FANTA LARANJA', null, 600, null, 1, '350 ml', false, 4),
-        (store, drinks, 'SPRITE', null, 600, null, 1, '350 ml', false, 5);
+        (store, burgers, 'KIDS', 'Pão brioche macio, hambúrguer de 100g suculento, 1 fatia de cheddar e maionese da casa, em uma combinação irresistível para os pequenos.', 2399, null, 1, null, null, true, 0),
+        (store, burgers, 'X-BURGUER', 'Pão de brioche macio, hambúrguer de 180g, 2 fatias de cheddar derretido, ketchup e mostarda, finalizado com cebola e picles de pepino para um toque agridoce e crocante.', 3099, null, 1, null, null, false, 1),
+        (store, burgers, 'X-SALADA', 'Pão de brioche macio, hambúrguer de 180g, 2 fatias de cheddar derretido, alface, tomate, cebola e maionese da casa. O alface poderá ser substituído por rúcula; informe nas observações.', 3199, null, 1, null, null, false, 2),
+        (store, burgers, 'X-BACON', 'Pão de brioche macio, hambúrguer de 180g, 2 fatias de cheddar derretido, 3 fatias de bacon crocante e maionese da casa, combinando suculência, cremosidade e textura irresistível.', 3399, null, 1, null, null, false, 3),
+        (store, burgers, 'X-MELT', 'Pão de brioche macio, hambúrguer de 180g, molho de cheddar, cebola caramelizada e maionese da casa, em uma combinação cremosa e marcante.', 3099, null, 1, null, null, false, 4),
+        (store, burgers, 'X-CHICKEN', 'Pão de brioche macio, hambúrguer de frango empanado de 100 g, 2 fatias de cheddar derretido, 2 fatias de bacon, molho barbecue (BBQ), alface e maionese da casa.', 3099, null, 1, null, null, true, 5),
+        (store, portions, 'BATATA FRITA - SIMPLES P', 'Batata frita crocante, dourada e sequinha. Porção de 150g de batata, pesada antes do preparo. O clássico acompanhamento para seu hambúrguer!', 700, null, 1, 150, 'g', false, 0),
+        (store, portions, 'BATATA FRITA - SIMPLES G', 'Batata frita crocante, dourada e sequinha. Porção de 500g de batata, pesada antes do preparo.', 2400, null, 2, 500, 'g', false, 1),
+        (store, portions, 'BATATA FRITA - CHEDDAR E BACON G', 'Batata frita crocante, dourada e sequinha, coberta com um delicioso molho cheddar cremoso e finalizada com uma irresistível farofa de bacon crocante. Porção de 500g de batata, pesada antes do preparo.', 3600, null, 2, 500, 'g', false, 2),
+        (store, portions, 'MINI CHICKENS', 'Mini Chickens crocantes, dourados e sequinhos. Porção de 6 unidades.', 1400, 1200, 1, 6, 'un', true, 3),
+        (store, drinks, 'COCA COLA ORIGINAL', null, 700, null, 1, 350, 'ml', false, 0),
+        (store, drinks, 'COCA COLA ZERO', null, 700, null, 1, 350, 'ml', false, 1),
+        (store, drinks, 'GUARANÁ ANTARCTICA', null, 600, null, 1, 350, 'ml', false, 2),
+        (store, drinks, 'GUARANÁ ANTARCTICA ZERO', null, 600, null, 1, 350, 'ml', false, 3),
+        (store, drinks, 'FANTA LARANJA', null, 600, null, 1, 350, 'ml', false, 4),
+        (store, drinks, 'SPRITE', null, 600, null, 1, 350, 'ml', false, 5);
 
-    insert into public.option_groups (id, store_id, title, min_choices, max_choices) values
-        (meat_point, store, 'Qual o ponto da carne?', 1, 1),
-        (combo, store, 'Deseja transformar em um combo?', 0, 1),
-        (burger_boost, store, 'Que tal turbinar seu hambúrguer?', 0, null),
-        (sauces, store, 'Deseja adicionar nossos molhos?', 1, 3),
-        (fries_boost, store, 'Que tal turbinar a sua batata?', 0, null);
+    insert into public.option_groups (id, store_id, title) values
+        (meat_point, store, 'Qual o ponto da carne?'),
+        (combo, store, 'Deseja transformar em um combo?'),
+        (burger_boost, store, 'Que tal turbinar seu hambúrguer?'),
+        (sauces, store, 'Deseja adicionar nossos molhos?'),
+        (fries_boost, store, 'Que tal turbinar a sua batata?');
 
     insert into public.options (store_id, group_id, name, description, price_cents, max_quantity, position) values
         (store, meat_point, 'Mal passado', null, 0, 1, 0),
@@ -101,17 +124,17 @@ begin
 
     for product in select id, name from public.products where store_id = store and category_id = burgers loop
         if product.name in ('X-BURGUER', 'X-SALADA', 'X-BACON', 'X-MELT') then
-            insert into public.product_option_groups (store_id, product_id, group_id, position)
-            values (store, product.id, meat_point, 0);
+            insert into public.product_option_groups (store_id, product_id, group_id, position, min_choices, max_choices)
+            values (store, product.id, meat_point, 0, 1, 1);
         end if;
-        insert into public.product_option_groups (store_id, product_id, group_id, position) values
-            (store, product.id, combo, 1),
-            (store, product.id, burger_boost, 2),
-            (store, product.id, sauces, 3);
+        insert into public.product_option_groups (store_id, product_id, group_id, position, min_choices, max_choices) values
+            (store, product.id, combo, 1, 0, 1),
+            (store, product.id, burger_boost, 2, 0, null),
+            (store, product.id, sauces, 3, 1, 3);
     end loop;
 
-    insert into public.product_option_groups (store_id, product_id, group_id, position)
-    select store, id, fries_boost, 0 from public.products where store_id = store and category_id = portions;
+    insert into public.product_option_groups (store_id, product_id, group_id, position, min_choices, max_choices)
+    select store, id, fries_boost, 0, 0, null from public.products where store_id = store and category_id = portions;
 
     -- O serviço de autenticação não aceita nulo nas colunas de token ao ler o
     -- usuário no login, por isso as strings vazias.

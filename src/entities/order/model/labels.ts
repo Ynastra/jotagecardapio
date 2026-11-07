@@ -5,6 +5,8 @@ export const PAYMENT_LABELS: Record<PaymentMethod, string> = {
     cash: 'Dinheiro',
     credit: 'Crédito',
     debit: 'Débito',
+    meal_voucher: 'Vale-refeição',
+    food_voucher: 'Vale-alimentação',
 }
 
 export const FULFILLMENT_LABELS: Record<Fulfillment, string> = {

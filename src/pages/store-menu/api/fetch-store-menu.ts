@@ -3,7 +3,17 @@ import { supabase } from '@/shared/api'
 import type { Category, OptionGroup, Product, Store, StoreMenu } from '../model/types'
 
 const STORE_COLUMNS =
-    'id, slug, name, address, whatsapp, logo_url, cover_url, theme, brand_color, min_order_cents, delivery_fee_cents, accepts_delivery, accepts_pickup, enforce_opening_hours, timezone'
+    'id, slug, name, address, whatsapp, logo_url, cover_url, theme, brand_color, min_order_cents, delivery_fee_cents, free_delivery_above_cents, accepts_delivery, accepts_pickup, enforce_opening_hours, timezone'
+
+const PORTION_UNIT_LABELS: Record<string, string> = {
+    g: 'g',
+    kg: 'kg',
+    l: 'l',
+    ml: 'ml',
+    un: 'un',
+    capsulas: 'cápsulas',
+    fatias: 'fatias',
+}
 
 type StoreRow = {
     id: string
@@ -17,6 +27,7 @@ type StoreRow = {
     brand_color: string | null
     min_order_cents: number
     delivery_fee_cents: number
+    free_delivery_above_cents: number | null
     accepts_delivery: boolean
     accepts_pickup: boolean
     enforce_opening_hours: boolean
@@ -26,6 +37,14 @@ type StoreRow = {
 type MenuRows = {
     hours: { weekday: number; opens_at: string; closes_at: string }[]
     zones: { id: string; neighborhood: string; fee_cents: number }[]
+    paymentMethods: {
+        method: Store['paymentMethods'][number]['method']
+        enabled_delivery: boolean
+        enabled_pickup: boolean
+        fee_kind: 'percent' | 'fixed'
+        fee_percent: number
+        fee_fixed_cents: number
+    }[]
     categories: { id: string; name: string; icon_url: string | null }[]
     products: {
         id: string
@@ -35,17 +54,19 @@ type MenuRows = {
         price_cents: number
         promo_price_cents: number | null
         serves: number | null
-        portion_label: string | null
+        portion_amount: number | null
+        portion_unit: string | null
         image_url: string | null
         featured: boolean
     }[]
-    links: { product_id: string; group_id: string }[]
-    groups: { id: string; title: string; min_choices: number; max_choices: number | null }[]
+    links: { product_id: string; group_id: string; min_choices: number; max_choices: number | null }[]
+    groups: { id: string; title: string }[]
     options: {
         id: string
         group_id: string
         name: string
         description: string | null
+        image_url: string | null
         price_cents: number
         max_quantity: number
     }[]
@@ -63,20 +84,30 @@ function unwrap<Row>(result: { data: Row[] | null; error: { message: string } | 
 }
 
 async function fetchMenuRows(storeId: string): Promise<MenuRows> {
-    const [hours, zones, categories, products, links, groups, options] = await Promise.all([
+    const [hours, zones, paymentMethods, categories, products, links, groups, options] = await Promise.all([
         supabase.from('store_hours').select('weekday, opens_at, closes_at').eq('store_id', storeId),
         supabase.from('delivery_zones').select('id, neighborhood, fee_cents').eq('store_id', storeId).order('neighborhood'),
+        supabase
+            .from('store_payment_methods')
+            .select('method, enabled_delivery, enabled_pickup, fee_kind, fee_percent, fee_fixed_cents')
+            .eq('store_id', storeId),
         supabase.from('categories').select('id, name, icon_url').eq('store_id', storeId).order('position'),
         supabase
             .from('products')
-            .select('id, category_id, name, description, price_cents, promo_price_cents, serves, portion_label, image_url, featured')
+            .select(
+                'id, category_id, name, description, price_cents, promo_price_cents, serves, portion_amount, portion_unit, image_url, featured',
+            )
             .eq('store_id', storeId)
             .order('position'),
-        supabase.from('product_option_groups').select('product_id, group_id').eq('store_id', storeId).order('position'),
-        supabase.from('option_groups').select('id, title, min_choices, max_choices').eq('store_id', storeId),
+        supabase
+            .from('product_option_groups')
+            .select('product_id, group_id, min_choices, max_choices')
+            .eq('store_id', storeId)
+            .order('position'),
+        supabase.from('option_groups').select('id, title').eq('store_id', storeId),
         supabase
             .from('options')
-            .select('id, group_id, name, description, price_cents, max_quantity')
+            .select('id, group_id, name, description, image_url, price_cents, max_quantity')
             .eq('store_id', storeId)
             .order('position'),
     ])
@@ -84,6 +115,7 @@ async function fetchMenuRows(storeId: string): Promise<MenuRows> {
     const rows = {
         hours: unwrap(hours),
         zones: unwrap(zones),
+        paymentMethods: unwrap(paymentMethods),
         categories: unwrap(categories),
         products: unwrap(products),
         links: unwrap(links),
@@ -93,32 +125,49 @@ async function fetchMenuRows(storeId: string): Promise<MenuRows> {
     return rows
 }
 
-function buildOptionGroups(rows: MenuRows): Map<string, OptionGroup> {
-    const groups = new Map(
-        rows.groups.map((group) => [
-            group.id,
-            {
-                id: group.id,
-                title: group.title,
-                minChoices: group.min_choices,
-                maxChoices: group.max_choices,
-                options: rows.options
-                    .filter((option) => option.group_id === group.id)
-                    .map((option) => ({
-                        id: option.id,
-                        name: option.name,
-                        description: option.description,
-                        priceCents: option.price_cents,
-                        maxQuantity: option.max_quantity,
-                    })),
-            },
-        ]),
-    )
-    return groups
+function describePortion(amount: number | null, unit: string | null): string | null {
+    if (amount === null || unit === null) {
+        return null
+    }
+
+    const unitLabel = PORTION_UNIT_LABELS[unit] ?? unit
+    const description = `${amount.toLocaleString('pt-BR')} ${unitLabel}`
+    return description
+}
+
+function buildOptionGroup(rows: MenuRows, group: MenuRows['groups'][number], link: MenuRows['links'][number]): OptionGroup {
+    const optionGroup = {
+        id: group.id,
+        title: group.title,
+        minChoices: link.min_choices,
+        maxChoices: link.max_choices,
+        options: rows.options
+            .filter((option) => option.group_id === group.id)
+            .map((option) => ({
+                id: option.id,
+                name: option.name,
+                description: option.description,
+                imageUrl: option.image_url,
+                priceCents: option.price_cents,
+                maxQuantity: option.max_quantity,
+            })),
+    }
+    return optionGroup
+}
+
+function buildProductOptionGroups(rows: MenuRows, productId: string): OptionGroup[] {
+    const groupsById = new Map(rows.groups.map((group) => [group.id, group]))
+    const optionGroups = rows.links
+        .filter((link) => link.product_id === productId)
+        .flatMap((link) => {
+            const group = groupsById.get(link.group_id)
+            return group ? [buildOptionGroup(rows, group, link)] : []
+        })
+        .filter((group) => group.options.length > 0)
+    return optionGroups
 }
 
 function buildProducts(rows: MenuRows): Product[] {
-    const groupsById = buildOptionGroups(rows)
     const products = rows.products.map((product) => ({
         id: product.id,
         categoryId: product.category_id,
@@ -127,13 +176,10 @@ function buildProducts(rows: MenuRows): Product[] {
         priceCents: product.price_cents,
         promoPriceCents: product.promo_price_cents,
         serves: product.serves,
-        portionLabel: product.portion_label,
+        portionLabel: describePortion(product.portion_amount, product.portion_unit),
         imageUrl: product.image_url,
         featured: product.featured,
-        optionGroups: rows.links
-            .filter((link) => link.product_id === product.id)
-            .map((link) => groupsById.get(link.group_id))
-            .filter((group): group is OptionGroup => group !== undefined && group.options.length > 0),
+        optionGroups: buildProductOptionGroups(rows, product.id),
     }))
     return products
 }
@@ -151,12 +197,21 @@ function buildStore(row: StoreRow, rows: MenuRows): Store {
         brandColor: row.brand_color,
         minOrderCents: row.min_order_cents,
         deliveryFeeCents: row.delivery_fee_cents,
+        freeDeliveryAboveCents: row.free_delivery_above_cents,
         acceptsDelivery: row.accepts_delivery,
         acceptsPickup: row.accepts_pickup,
         enforceOpeningHours: row.enforce_opening_hours,
         timezone: row.timezone,
         hours: rows.hours.map((range) => ({ weekday: range.weekday, opensAt: range.opens_at, closesAt: range.closes_at })),
         deliveryZones: rows.zones.map((zone) => ({ id: zone.id, neighborhood: zone.neighborhood, feeCents: zone.fee_cents })),
+        paymentMethods: rows.paymentMethods.map((payment) => ({
+            method: payment.method,
+            enabledDelivery: payment.enabled_delivery,
+            enabledPickup: payment.enabled_pickup,
+            feeKind: payment.fee_kind,
+            feePercent: payment.fee_percent,
+            feeFixedCents: payment.fee_fixed_cents,
+        })),
     }
     return store
 }

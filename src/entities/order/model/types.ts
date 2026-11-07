@@ -1,6 +1,6 @@
 export type Fulfillment = 'delivery' | 'pickup'
 
-export type PaymentMethod = 'pix' | 'cash' | 'credit' | 'debit'
+export type PaymentMethod = 'pix' | 'cash' | 'credit' | 'debit' | 'meal_voucher' | 'food_voucher'
 
 export type OrderStatus = 'received' | 'preparing' | 'ready' | 'completed' | 'canceled'
 
@@ -49,13 +49,20 @@ export type OrderAddress = {
     reference: string
 }
 
+export type OrderPaymentStatus = 'pending' | 'paid'
+
 export type PlacedOrder = {
     id: string
     number: number
+    // Código curto que o cliente vê, no formato 007-490361.
+    publicCode: string
+    // Vai no link de acompanhamento do pedido.
+    trackingToken: string
     items: OrderLine[]
     address: OrderAddress | null
     subtotalCents: number
     deliveryFeeCents: number
+    paymentFeeCents: number
     totalCents: number
     changeForCents: number | null
     createdAt: string
@@ -68,4 +75,9 @@ export type PanelOrder = PlacedOrder & {
     paymentMethod: PaymentMethod
     notes: string | null
     status: OrderStatus
+    paymentStatus: OrderPaymentStatus
+    preparingAt: string | null
+    readyAt: string | null
+    completedAt: string | null
+    canceledAt: string | null
 }

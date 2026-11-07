@@ -22,8 +22,34 @@ create table public.stores (
     accepts_pickup boolean not null default true,
     enforce_opening_hours boolean not null default true,
     timezone text not null default 'America/Sao_Paulo',
+    prep_time_minutes integer not null default 30,
+    city text,
+    state text,
+    address_display text not null default 'full',
+    require_cep boolean not null default false,
+    order_copy_whatsapp boolean not null default false,
+    hide_unavailable_items boolean not null default false,
+    cart_notice_title text,
+    cart_notice_body text,
+    pix_key text,
+    pix_key_type text,
+    -- Na fase atual o modo radius cobra a taxa base sem conferir a distância.
+    delivery_mode text not null default 'fixed',
+    delivery_max_km numeric(5, 1),
+    free_delivery_above_cents integer,
     active boolean not null default true,
     created_at timestamptz not null default now(),
+    constraint stores_prep_time_positive check (prep_time_minutes > 0),
+    constraint stores_state_format check (state is null or state ~ '^[A-Z]{2}$'),
+    constraint stores_address_display_valid check (address_display in ('hidden', 'city', 'full')),
+    constraint stores_pix_key_type_valid check (
+        pix_key_type is null or pix_key_type in ('cnpj', 'cpf', 'email', 'phone', 'random')
+    ),
+    constraint stores_delivery_mode_valid check (delivery_mode in ('fixed', 'radius', 'neighborhood')),
+    constraint stores_delivery_max_km_positive check (delivery_max_km is null or delivery_max_km > 0),
+    constraint stores_free_delivery_positive check (
+        free_delivery_above_cents is null or free_delivery_above_cents >= 0
+    ),
     constraint stores_slug_format check (slug ~ '^[a-z0-9]{3,40}$'),
     -- Caminhos que o próprio app usa não podem virar endereço de loja.
     constraint stores_slug_not_reserved check (
@@ -54,6 +80,19 @@ create table public.store_members (
     primary key (store_id, user_id)
 );
 
+-- A taxa extra de cada forma de pagamento é um percentual do valor a pagar
+-- (subtotal mais entrega) ou um valor fixo, conforme fee_kind.
+create table public.store_payment_methods (
+    store_id uuid not null references public.stores (id) on delete cascade,
+    method text not null check (method in ('pix', 'cash', 'credit', 'debit', 'meal_voucher', 'food_voucher')),
+    enabled_delivery boolean not null default false,
+    enabled_pickup boolean not null default false,
+    fee_kind text not null default 'fixed' check (fee_kind in ('percent', 'fixed')),
+    fee_percent numeric(5, 2) not null default 0 check (fee_percent between 0 and 100),
+    fee_fixed_cents integer not null default 0 check (fee_fixed_cents >= 0),
+    primary key (store_id, method)
+);
+
 create table public.delivery_zones (
     id uuid primary key default gen_random_uuid(),
     store_id uuid not null references public.stores (id) on delete cascade,
@@ -82,12 +121,35 @@ create table public.products (
     price_cents integer not null check (price_cents >= 0),
     promo_price_cents integer,
     serves smallint check (serves is null or serves > 0),
-    portion_label text,
+    portion_amount numeric(10, 2),
+    portion_unit text,
     image_url text,
+    highlight_tag text,
+    info_tags text[] not null default '{}',
+    allergen_tags text[] not null default '{}',
+    -- null = estoque não controlado; place_order confere e desconta quando há valor.
+    stock integer,
+    sell_delivery_pickup boolean not null default true,
+    sell_table boolean not null default true,
     featured boolean not null default false,
     active boolean not null default true,
     position integer not null default 0,
     unique (id, store_id),
+    constraint products_portion_complete check ((portion_amount is null) = (portion_unit is null)),
+    constraint products_portion_amount_positive check (portion_amount is null or portion_amount > 0),
+    constraint products_portion_unit_valid check (
+        portion_unit is null or portion_unit in ('g', 'kg', 'l', 'ml', 'un', 'capsulas', 'fatias')
+    ),
+    constraint products_highlight_tag_valid check (
+        highlight_tag is null or highlight_tag in ('new', 'best_seller', 'promo')
+    ),
+    constraint products_info_tags_valid check (
+        info_tags <@ array['cold_drink', 'alcoholic', 'vegan', 'vegetarian', 'hot_dish', 'sugar_free', 'lactose_free', 'gluten_free']
+    ),
+    constraint products_allergen_tags_valid check (
+        allergen_tags <@ array['contains_gluten', 'contains_lactose', 'contains_peanut', 'contains_seafood']
+    ),
+    constraint products_stock_not_negative check (stock is null or stock >= 0),
     -- A chave composta impede um produto de apontar para categoria de outra loja.
     foreign key (category_id, store_id) references public.categories (id, store_id) on delete cascade,
     constraint products_promo_below_price check (
@@ -96,16 +158,13 @@ create table public.products (
 );
 
 -- Grupos de opcionais pertencem à loja e são ligados a vários produtos, porque
--- o mesmo "Ponto da carne" ou "Turbinar" se repete em todos os lanches.
--- max_choices nulo significa sem limite de unidades no grupo.
+-- o mesmo "Ponto da carne" ou "Turbinar" se repete em todos os lanches. As
+-- regras de quantidade (mínimo e máximo) ficam no vínculo com o produto.
 create table public.option_groups (
     id uuid primary key default gen_random_uuid(),
     store_id uuid not null references public.stores (id) on delete cascade,
     title text not null,
-    min_choices integer not null default 0 check (min_choices >= 0),
-    max_choices integer check (max_choices is null or max_choices >= 1),
-    unique (id, store_id),
-    constraint option_groups_max_covers_min check (max_choices is null or max_choices >= min_choices)
+    unique (id, store_id)
 );
 
 create table public.options (
@@ -114,6 +173,7 @@ create table public.options (
     group_id uuid not null,
     name text not null,
     description text,
+    image_url text,
     price_cents integer not null default 0 check (price_cents >= 0),
     -- null = sem limite de unidades deste opcional no item.
     max_quantity integer default 1 check (max_quantity is null or max_quantity >= 1),
@@ -122,14 +182,19 @@ create table public.options (
     foreign key (group_id, store_id) references public.option_groups (id, store_id) on delete cascade
 );
 
+-- min_choices >= 1 torna o grupo obrigatório neste produto.
+-- max_choices nulo significa sem limite de unidades no grupo.
 create table public.product_option_groups (
     store_id uuid not null,
     product_id uuid not null,
     group_id uuid not null,
     position integer not null default 0,
+    min_choices integer not null default 0 check (min_choices >= 0),
+    max_choices integer check (max_choices is null or max_choices >= 1),
     primary key (product_id, group_id),
     foreign key (product_id, store_id) references public.products (id, store_id) on delete cascade,
-    foreign key (group_id, store_id) references public.option_groups (id, store_id) on delete cascade
+    foreign key (group_id, store_id) references public.option_groups (id, store_id) on delete cascade,
+    constraint product_option_groups_max_covers_min check (max_choices is null or max_choices >= min_choices)
 );
 
 create table public.orders (
@@ -141,18 +206,63 @@ create table public.orders (
     fulfillment text not null check (fulfillment in ('delivery', 'pickup')),
     address jsonb,
     delivery_zone_id uuid references public.delivery_zones (id) on delete set null,
-    payment_method text not null check (payment_method in ('pix', 'cash', 'credit', 'debit')),
+    payment_method text not null
+        check (payment_method in ('pix', 'cash', 'credit', 'debit', 'meal_voucher', 'food_voucher')),
     change_for_cents integer,
     notes text,
     items jsonb not null,
     subtotal_cents integer not null,
     delivery_fee_cents integer not null,
+    payment_fee_cents integer not null default 0,
     total_cents integer not null,
     status text not null default 'received'
         check (status in ('received', 'preparing', 'ready', 'completed', 'canceled')),
+    payment_status text not null default 'pending' check (payment_status in ('pending', 'paid')),
+    preparing_at timestamptz,
+    ready_at timestamptz,
+    completed_at timestamptz,
+    canceled_at timestamptz,
+    -- Sequencial do dia no fuso da loja; o código público é o que o cliente vê.
+    daily_number integer not null,
+    public_code text not null,
+    -- Link de acompanhamento do cliente: não adivinhável e sem login.
+    tracking_token text not null unique
+        default replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', ''),
     created_at timestamptz not null default now(),
     unique (store_id, number)
 );
+
+create function public.enforce_featured_limit()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+    max_featured constant integer := 6;
+    featured_count integer;
+begin
+    if not new.featured
+        or (tg_op = 'UPDATE' and old.featured and old.store_id = new.store_id) then
+        return new;
+    end if;
+
+    -- Duas marcações simultâneas na mesma loja não podem passar do limite juntas.
+    perform pg_advisory_xact_lock(hashtextextended(new.store_id::text, 1));
+    select count(*) into featured_count
+    from public.products
+    where store_id = new.store_id and featured and id <> new.id;
+
+    if featured_count >= max_featured then
+        raise exception 'featured_limit_reached';
+    end if;
+    return new;
+end;
+$$;
+
+create trigger products_featured_limit
+    before insert or update of featured, store_id on public.products
+    for each row execute function public.enforce_featured_limit();
 
 create index store_hours_store_idx on public.store_hours (store_id);
 create index categories_store_idx on public.categories (store_id);
@@ -224,6 +334,7 @@ alter table public.stores enable row level security;
 alter table public.store_hours enable row level security;
 alter table public.store_members enable row level security;
 alter table public.delivery_zones enable row level security;
+alter table public.store_payment_methods enable row level security;
 alter table public.categories enable row level security;
 alter table public.products enable row level security;
 alter table public.option_groups enable row level security;
@@ -247,6 +358,11 @@ create policy "membro edita horários" on public.store_hours
 create policy "bairros públicos" on public.delivery_zones
     for select using ((active and public.is_store_public(store_id)) or public.is_store_member(store_id));
 create policy "membro edita bairros" on public.delivery_zones
+    for all using (public.is_store_member(store_id)) with check (public.is_store_member(store_id));
+
+create policy "formas de pagamento públicas" on public.store_payment_methods
+    for select using (public.is_store_public(store_id) or public.is_store_member(store_id));
+create policy "membro edita formas de pagamento" on public.store_payment_methods
     for all using (public.is_store_member(store_id)) with check (public.is_store_member(store_id));
 
 create policy "categorias públicas" on public.categories
@@ -281,7 +397,50 @@ create policy "membro muda status do pedido" on public.orders
 
 -- Pedido só nasce pela place_order, e o painel só mexe no status.
 revoke insert, delete, update on public.orders from anon, authenticated;
-grant update (status) on public.orders to authenticated;
+grant update (status, payment_status) on public.orders to authenticated;
+
+-- Grava o horário da etapa na mudança de status e apaga o das etapas à frente
+-- quando o status volta. O cancelamento tem horário próprio e não mexe nas etapas.
+create function public.stamp_order_stage()
+returns trigger
+language plpgsql
+as $$
+begin
+    if new.status is not distinct from old.status then
+        return new;
+    end if;
+
+    if new.status = 'canceled' then
+        new.canceled_at := now();
+        return new;
+    end if;
+
+    new.canceled_at := null;
+    if new.status = 'received' then
+        new.preparing_at := null;
+    elsif new.status = 'preparing' then
+        new.preparing_at := now();
+    end if;
+
+    if new.status in ('received', 'preparing') then
+        new.ready_at := null;
+    elsif new.status = 'ready' then
+        new.ready_at := now();
+    end if;
+
+    if new.status in ('received', 'preparing', 'ready') then
+        new.completed_at := null;
+    else
+        new.completed_at := now();
+    end if;
+
+    return new;
+end;
+$$;
+
+create trigger orders_stamp_stage
+    before update of status on public.orders
+    for each row execute function public.stamp_order_stage();
 
 -- Criação de pedido -------------------------------------------------------
 
@@ -300,6 +459,7 @@ declare
     target_zone public.delivery_zones%rowtype;
     target_product public.products%rowtype;
     new_order public.orders%rowtype;
+    payment_rule public.store_payment_methods%rowtype;
 
     fulfillment text := payload ->> 'fulfillment';
     payment_method text := payload ->> 'payment_method';
@@ -323,8 +483,11 @@ declare
     lines jsonb := '[]'::jsonb;
     subtotal_cents integer := 0;
     delivery_fee_cents integer := 0;
+    payment_fee_cents integer := 0;
     total_cents integer;
     next_number integer;
+    next_daily_number integer;
+    code_suffix_digits constant integer := 6;
 begin
     select * into target_store from public.stores where slug = payload ->> 'store_slug' and active;
     if not found then
@@ -341,7 +504,8 @@ begin
     if length(customer_phone) not between 10 and 13 then
         raise exception 'invalid_customer_phone';
     end if;
-    if payment_method is null or payment_method not in ('pix', 'cash', 'credit', 'debit') then
+    if payment_method is null
+        or payment_method not in ('pix', 'cash', 'credit', 'debit', 'meal_voucher', 'food_voucher') then
         raise exception 'invalid_payment_method';
     end if;
     if length(coalesce(order_notes, '')) > max_text_length then
@@ -389,10 +553,25 @@ begin
         raise exception 'empty_order';
     end if;
 
+    -- Só produto com estoque controlado é travado, todos de uma vez e em ordem
+    -- de id, para pedidos com os mesmos itens em ordem inversa não se travarem.
+    perform 1
+    from public.products
+    where store_id = target_store.id
+      and stock is not null
+      and id in (
+          select (value ->> 'product_id')::uuid from jsonb_array_elements(payload -> 'items')
+      )
+    order by id
+    for update;
+
     for item in select value from jsonb_array_elements(payload -> 'items') loop
         select * into target_product
         from public.products
-        where id = (item ->> 'product_id')::uuid and store_id = target_store.id and active;
+        where id = (item ->> 'product_id')::uuid
+          and store_id = target_store.id
+          and active
+          and sell_delivery_pickup;
         if not found then
             raise exception 'product_unavailable';
         end if;
@@ -400,6 +579,13 @@ begin
         item_quantity := (item ->> 'quantity')::integer;
         if item_quantity is null or item_quantity < 1 or item_quantity > max_item_quantity then
             raise exception 'invalid_quantity';
+        end if;
+
+        if target_product.stock is not null then
+            if target_product.stock < item_quantity then
+                raise exception 'insufficient_stock' using detail = target_product.name;
+            end if;
+            update public.products set stock = stock - item_quantity where id = target_product.id;
         end if;
 
         -- Opção repetida no mesmo item burlaria o max_quantity.
@@ -439,7 +625,7 @@ begin
         end loop;
 
         for product_group in
-            select g.id, g.title, g.min_choices, g.max_choices
+            select g.id, g.title, link.min_choices, link.max_choices
             from public.option_groups g
             join public.product_option_groups link on link.group_id = g.id
             where link.product_id = target_product.id
@@ -471,7 +657,27 @@ begin
         raise exception 'below_minimum_order';
     end if;
 
-    total_cents := subtotal_cents + delivery_fee_cents;
+    if fulfillment = 'delivery'
+        and target_store.free_delivery_above_cents is not null
+        and subtotal_cents >= target_store.free_delivery_above_cents then
+        delivery_fee_cents := 0;
+    end if;
+
+    select * into payment_rule
+    from public.store_payment_methods
+    where store_id = target_store.id and method = payment_method;
+    if not found
+        or not (case fulfillment when 'delivery' then payment_rule.enabled_delivery else payment_rule.enabled_pickup end) then
+        raise exception 'payment_method_unavailable';
+    end if;
+
+    if payment_rule.fee_kind = 'percent' then
+        payment_fee_cents := round((subtotal_cents + delivery_fee_cents) * payment_rule.fee_percent / 100)::integer;
+    else
+        payment_fee_cents := payment_rule.fee_fixed_cents;
+    end if;
+
+    total_cents := subtotal_cents + delivery_fee_cents + payment_fee_cents;
 
     if payment_method <> 'cash' then
         change_for_cents := null;
@@ -482,23 +688,35 @@ begin
     -- Trava por loja para dois pedidos simultâneos não pegarem o mesmo número.
     perform pg_advisory_xact_lock(hashtextextended(target_store.id::text, 0));
     select coalesce(max(number), 0) + 1 into next_number from public.orders where store_id = target_store.id;
+    select coalesce(max(daily_number), 0) + 1 into next_daily_number
+    from public.orders
+    where store_id = target_store.id
+      and (created_at at time zone target_store.timezone)::date = (now() at time zone target_store.timezone)::date;
 
     insert into public.orders (
-        store_id, number, customer_name, customer_phone, fulfillment, address, delivery_zone_id,
-        payment_method, change_for_cents, notes, items, subtotal_cents, delivery_fee_cents, total_cents
+        store_id, number, daily_number, public_code, customer_name, customer_phone, fulfillment, address, delivery_zone_id,
+        payment_method, change_for_cents, notes, items, subtotal_cents, delivery_fee_cents, payment_fee_cents,
+        total_cents
     ) values (
-        target_store.id, next_number, customer_name, customer_phone, fulfillment, order_address, target_zone.id,
-        payment_method, change_for_cents, order_notes, lines, subtotal_cents, delivery_fee_cents, total_cents
+        target_store.id, next_number, next_daily_number,
+        lpad(next_daily_number::text, 3, '0') || '-'
+            || lpad(floor(random() * 10 ^ code_suffix_digits)::integer::text, code_suffix_digits, '0'),
+        customer_name, customer_phone, fulfillment, order_address, target_zone.id,
+        payment_method, change_for_cents, order_notes, lines, subtotal_cents, delivery_fee_cents, payment_fee_cents,
+        total_cents
     )
     returning * into new_order;
 
     return jsonb_build_object(
         'id', new_order.id,
         'number', new_order.number,
+        'public_code', new_order.public_code,
+        'tracking_token', new_order.tracking_token,
         'items', new_order.items,
         'address', new_order.address,
         'subtotal_cents', new_order.subtotal_cents,
         'delivery_fee_cents', new_order.delivery_fee_cents,
+        'payment_fee_cents', new_order.payment_fee_cents,
         'total_cents', new_order.total_cents,
         'change_for_cents', new_order.change_for_cents,
         'created_at', new_order.created_at
@@ -508,5 +726,124 @@ $$;
 
 revoke execute on function public.place_order(jsonb) from public;
 grant execute on function public.place_order(jsonb) to anon, authenticated;
+
+-- Acompanhamento pelo cliente -------------------------------------------
+
+-- Devolve só o que a página do cliente mostra: dados públicos da loja (nome e
+-- WhatsApp) e o pedido, sem telefone, nome nem endereço do cliente.
+-- Token desconhecido devolve nulo, sem distinguir de pedido inexistente.
+create function public.get_order_tracking(token text)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+    select jsonb_build_object(
+        'store', jsonb_build_object(
+            'name', s.name,
+            'slug', s.slug,
+            'whatsapp', s.whatsapp,
+            'logo_url', s.logo_url,
+            'brand_color', s.brand_color,
+            'theme', s.theme
+        ),
+        'public_code', o.public_code,
+        'status', o.status,
+        'payment_status', o.payment_status,
+        'fulfillment', o.fulfillment,
+        'payment_method', o.payment_method,
+        'created_at', o.created_at,
+        'preparing_at', o.preparing_at,
+        'ready_at', o.ready_at,
+        'completed_at', o.completed_at,
+        'canceled_at', o.canceled_at,
+        'estimated_ready_at', o.created_at + make_interval(mins => s.prep_time_minutes),
+        'items', o.items,
+        'subtotal_cents', o.subtotal_cents,
+        'delivery_fee_cents', o.delivery_fee_cents,
+        'payment_fee_cents', o.payment_fee_cents,
+        'total_cents', o.total_cents
+    )
+    from public.orders o
+    join public.stores s on s.id = o.store_id
+    where o.tracking_token = token;
+$$;
+
+revoke execute on function public.get_order_tracking(text) from public;
+grant execute on function public.get_order_tracking(text) to anon, authenticated;
+
+-- WhatsApp ----------------------------------------------------------------
+
+-- custom_body nulo usa o texto padrão do app. interval_minutes vale só para a
+-- saudação: tempo mínimo entre duas saudações ao mesmo cliente.
+create table public.store_whatsapp_messages (
+    store_id uuid not null references public.stores (id) on delete cascade,
+    type text not null check (
+        type in ('greeting', 'away', 'confirmed', 'preparing', 'out_for_delivery', 'ready_for_pickup', 'completed', 'canceled')
+    ),
+    active boolean not null default true,
+    custom_body text,
+    interval_minutes integer check (interval_minutes is null or interval_minutes > 0),
+    primary key (store_id, type)
+);
+
+-- Quem grava a sessão é o servidor de envio, com a chave de serviço; o painel só lê.
+create table public.store_whatsapp_sessions (
+    store_id uuid primary key references public.stores (id) on delete cascade,
+    provider text not null check (provider in ('qr', 'meta')),
+    state text not null default 'disconnected' check (state in ('disconnected', 'connecting', 'connected')),
+    phone text,
+    updated_at timestamptz not null default now()
+);
+
+alter table public.store_whatsapp_messages enable row level security;
+alter table public.store_whatsapp_sessions enable row level security;
+
+create policy "membro vê mensagens do WhatsApp" on public.store_whatsapp_messages
+    for select using (public.is_store_member(store_id));
+create policy "membro edita mensagens do WhatsApp" on public.store_whatsapp_messages
+    for all using (public.is_store_member(store_id)) with check (public.is_store_member(store_id));
+
+create policy "membro vê sessão do WhatsApp" on public.store_whatsapp_sessions
+    for select using (public.is_store_member(store_id));
+
+revoke insert, update, delete on public.store_whatsapp_sessions from anon, authenticated;
+
+-- Imagens da loja ---------------------------------------------------------
+
+-- Cada loja grava só dentro da pasta com o próprio id: <store_id>/arquivo.
+insert into storage.buckets (id, name, public) values ('store-media', 'store-media', true);
+
+create function public.is_store_media_member(object_name text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+    select coalesce(
+        (storage.foldername(object_name))[1]
+            ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+        and public.is_store_member(((storage.foldername(object_name))[1])::uuid),
+        false
+    );
+$$;
+
+-- A URL pública do bucket serve os arquivos sem esta política; ela só controla
+-- a listagem pela API, restrita à pasta da própria loja.
+create policy "membro lista imagens da loja" on storage.objects
+    for select to authenticated
+    using (bucket_id = 'store-media' and public.is_store_media_member(name));
+create policy "membro envia imagem da loja" on storage.objects
+    for insert to authenticated
+    with check (bucket_id = 'store-media' and public.is_store_media_member(name));
+create policy "membro troca imagem da loja" on storage.objects
+    for update to authenticated
+    using (bucket_id = 'store-media' and public.is_store_media_member(name))
+    with check (bucket_id = 'store-media' and public.is_store_media_member(name));
+create policy "membro remove imagem da loja" on storage.objects
+    for delete to authenticated
+    using (bucket_id = 'store-media' and public.is_store_media_member(name));
 
 alter publication supabase_realtime add table public.orders;

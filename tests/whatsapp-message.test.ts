@@ -5,6 +5,8 @@ import { buildOrderMessage, buildWhatsappUrl, type PlacedOrder } from '@/entitie
 const order: PlacedOrder = {
     id: 'pedido',
     number: 12,
+    publicCode: '012-490361',
+    trackingToken: 'token-de-acompanhamento',
     items: [
         {
             productId: 'x-bacon',
@@ -22,6 +24,7 @@ const order: PlacedOrder = {
     address: { street: 'Rua A', number: '10', neighborhood: 'Centro', complement: '', reference: 'Portão azul' },
     subtotalCents: 7598,
     deliveryFeeCents: 500,
+    paymentFeeCents: 0,
     totalCents: 8098,
     changeForCents: 10000,
     createdAt: '2026-11-07T22:00:00Z',

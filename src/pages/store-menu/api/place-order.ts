@@ -6,10 +6,13 @@ import type { PlaceOrderPayload } from '../model/checkout'
 type PlacedOrderRow = {
     id: string
     number: number
+    public_code: string
+    tracking_token: string
     items: unknown
     address: unknown
     subtotal_cents: number
     delivery_fee_cents: number
+    payment_fee_cents: number
     total_cents: number
     change_for_cents: number | null
     created_at: string
@@ -34,10 +37,13 @@ export async function placeOrder(payload: PlaceOrderPayload): Promise<PlacedOrde
     const order = {
         id: row.id,
         number: row.number,
+        publicCode: row.public_code,
+        trackingToken: row.tracking_token,
         items: mapStoredLines(row.items),
         address: mapStoredAddress(row.address),
         subtotalCents: row.subtotal_cents,
         deliveryFeeCents: row.delivery_fee_cents,
+        paymentFeeCents: row.payment_fee_cents,
         totalCents: row.total_cents,
         changeForCents: row.change_for_cents,
         createdAt: row.created_at,

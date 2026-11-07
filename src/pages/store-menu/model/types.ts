@@ -1,3 +1,5 @@
+import type { PaymentMethod } from '@/entities/order'
+
 export type StoreHours = {
     // 0 = domingo, igual ao Date do JavaScript e ao Postgres.
     weekday: number
@@ -9,6 +11,15 @@ export type DeliveryZone = {
     id: string
     neighborhood: string
     feeCents: number
+}
+
+export type StorePaymentMethod = {
+    method: PaymentMethod
+    enabledDelivery: boolean
+    enabledPickup: boolean
+    feeKind: 'percent' | 'fixed'
+    feePercent: number
+    feeFixedCents: number
 }
 
 export type Store = {
@@ -29,12 +40,15 @@ export type Store = {
     timezone: string
     hours: StoreHours[]
     deliveryZones: DeliveryZone[]
+    freeDeliveryAboveCents: number | null
+    paymentMethods: StorePaymentMethod[]
 }
 
 export type ProductOption = {
     id: string
     name: string
     description: string | null
+    imageUrl?: string | null
     priceCents: number
     // null = sem limite por item.
     maxQuantity: number | null
