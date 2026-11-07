@@ -1,0 +1,60 @@
+import { NavLink } from 'react-router-dom'
+
+import type { Store } from '@/entities/store'
+import { supabase } from '@/shared/api'
+
+import { MENU_ITEMS } from './menu-items'
+import styles from './panel-layout.module.css'
+
+type PanelMenuProps = {
+    store: Store
+    isOpen: boolean
+    onNavigate: () => void
+}
+
+export function PanelMenu({ store, isOpen, onNavigate }: PanelMenuProps) {
+    const menuClasses = [styles.menu, isOpen ? styles.menuOpen : ''].filter(Boolean).join(' ')
+
+    return (
+        <nav className={menuClasses} aria-label="Menu do painel">
+            <img className={styles.logo} src="/marca/logo-horizontal-branco.png" alt="JG Cardápio" />
+            <p className={styles.storeName}>{store.name}</p>
+
+            <ul className={styles.menuList}>
+                {MENU_ITEMS.map((item) => (
+                    <li key={item.path}>
+                        {item.isReady ? (
+                            <NavLink
+                                to={`/painel/${item.path}`}
+                                className={({ isActive }) =>
+                                    [styles.menuItem, isActive ? styles.menuItemActive : ''].filter(Boolean).join(' ')
+                                }
+                                onClick={onNavigate}
+                            >
+                                {item.label}
+                            </NavLink>
+                        ) : (
+                            <span className={`${styles.menuItem} ${styles.menuItemDisabled}`} aria-disabled="true">
+                                {item.label}
+                                <span className={styles.soon}>Em breve</span>
+                            </span>
+                        )}
+                    </li>
+                ))}
+            </ul>
+
+            <ul className={styles.menuFooter}>
+                <li>
+                    <a className={styles.menuItem} href={`/${store.slug}`} target="_blank" rel="noopener noreferrer">
+                        Ver cardápio
+                    </a>
+                </li>
+                <li>
+                    <button type="button" className={styles.menuItem} onClick={() => supabase.auth.signOut()}>
+                        Sair
+                    </button>
+                </li>
+            </ul>
+        </nav>
+    )
+}

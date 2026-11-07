@@ -5,7 +5,7 @@ import { formatBrazilianPhone, formatCents } from '@/shared/lib'
 import { Button, ThemeIcon } from '@/shared/ui'
 
 import { getNextStep, isActiveOrder } from '../model/order-flow'
-import styles from './panel.module.css'
+import styles from './panel-orders.module.css'
 
 const timeFormatter = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' })
 

@@ -62,6 +62,10 @@
 
     --z-sticky: 10;
     --z-cart-bar: 20;
+    --z-panel-menu: 30;
+    --panel-menu-width: 260px;
+    --color-on-jg-muted: rgb(255 255 255 / 62%);
+    --color-jg-hover: rgb(255 255 255 / 10%);
 
     --touch-target: 44px;
     --padding-safe-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));

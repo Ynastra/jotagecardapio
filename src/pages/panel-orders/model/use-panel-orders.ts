@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import type { OrderStatus, PanelOrder } from '@/entities/order'
+import { playNewOrderChime } from '@/shared/lib'
 
-import { fetchRecentOrders, subscribeToOrders, updateOrderStatus } from '../api/panel'
-import { playNewOrderChime } from './chime'
+import { fetchRecentOrders, subscribeToOrders, updateOrderStatus } from '../api/panel-orders'
 import { upsertOrder } from './order-flow'
 
 export type PanelOrdersState = {

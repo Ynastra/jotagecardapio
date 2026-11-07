@@ -5,12 +5,6 @@ const RECENT_ORDERS_LIMIT = 60
 const ORDER_COLUMNS =
     'id, number, public_code, tracking_token, payment_status, preparing_at, ready_at, completed_at, canceled_at, customer_name, customer_phone, fulfillment, address, payment_method, change_for_cents, notes, items, subtotal_cents, delivery_fee_cents, payment_fee_cents, total_cents, status, created_at'
 
-export type PanelStore = {
-    id: string
-    name: string
-    slug: string
-}
-
 type OrderRow = {
     id: string
     number: number
@@ -64,18 +58,6 @@ function mapOrder(row: OrderRow): PanelOrder {
         createdAt: row.created_at,
     }
     return order
-}
-
-export async function fetchMyStores(): Promise<PanelStore[]> {
-    const { data, error } = await supabase.from('store_members').select('stores (id, name, slug)')
-
-    if (error) {
-        throw error
-    }
-
-    const rows = (data ?? []) as unknown as { stores: PanelStore | null }[]
-    const stores = rows.map((row) => row.stores).filter((store): store is PanelStore => store !== null)
-    return stores
 }
 
 export async function fetchRecentOrders(storeId: string): Promise<PanelOrder[]> {
