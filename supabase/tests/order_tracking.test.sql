@@ -1,6 +1,6 @@
 begin;
 
-select plan(19);
+select plan(21);
 
 update public.stores set enforce_opening_hours = false where slug = 'zedoburguerlucelia';
 
@@ -106,6 +106,20 @@ select is(
         ->> 'public_code') = (select result ->> 'public_code' from placed where customer = 'Segundo'),
     true,
     'token certo devolve o pedido'
+);
+
+select is(
+    public.get_order_tracking((select result ->> 'tracking_token' from placed where customer = 'Segundo'))
+        -> 'store' ->> 'whatsapp',
+    '5518996649346',
+    'tracking devolve o WhatsApp da loja'
+);
+
+select is(
+    public.get_order_tracking((select result ->> 'tracking_token' from placed where customer = 'Segundo'))
+        -> 'store' ->> 'name',
+    'Zé do Burguer',
+    'tracking devolve o nome da loja'
 );
 
 select is(

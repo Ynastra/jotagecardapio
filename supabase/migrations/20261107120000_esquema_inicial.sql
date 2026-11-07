@@ -717,7 +717,8 @@ grant execute on function public.place_order(jsonb) to anon, authenticated;
 
 -- Acompanhamento pelo cliente -------------------------------------------
 
--- Devolve só o que a página do cliente mostra, nunca telefone nem endereço.
+-- Devolve só o que a página do cliente mostra: dados públicos da loja (nome e
+-- WhatsApp) e o pedido, sem telefone, nome nem endereço do cliente.
 -- Token desconhecido devolve nulo, sem distinguir de pedido inexistente.
 create function public.get_order_tracking(token text)
 returns jsonb
@@ -730,6 +731,7 @@ as $$
         'store', jsonb_build_object(
             'name', s.name,
             'slug', s.slug,
+            'whatsapp', s.whatsapp,
             'logo_url', s.logo_url,
             'brand_color', s.brand_color,
             'theme', s.theme
