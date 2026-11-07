@@ -56,12 +56,12 @@ begin
         (store, drinks, 'FANTA LARANJA', null, 600, null, 1, '350 ml', false, 4),
         (store, drinks, 'SPRITE', null, 600, null, 1, '350 ml', false, 5);
 
-    insert into public.option_groups (id, store_id, title, min_choices, max_choices) values
-        (meat_point, store, 'Qual o ponto da carne?', 1, 1),
-        (combo, store, 'Deseja transformar em um combo?', 0, 1),
-        (burger_boost, store, 'Que tal turbinar seu hambúrguer?', 0, null),
-        (sauces, store, 'Deseja adicionar nossos molhos?', 1, 3),
-        (fries_boost, store, 'Que tal turbinar a sua batata?', 0, null);
+    insert into public.option_groups (id, store_id, title) values
+        (meat_point, store, 'Qual o ponto da carne?'),
+        (combo, store, 'Deseja transformar em um combo?'),
+        (burger_boost, store, 'Que tal turbinar seu hambúrguer?'),
+        (sauces, store, 'Deseja adicionar nossos molhos?'),
+        (fries_boost, store, 'Que tal turbinar a sua batata?');
 
     insert into public.options (store_id, group_id, name, description, price_cents, max_quantity, position) values
         (store, meat_point, 'Mal passado', null, 0, 1, 0),
@@ -101,17 +101,17 @@ begin
 
     for product in select id, name from public.products where store_id = store and category_id = burgers loop
         if product.name in ('X-BURGUER', 'X-SALADA', 'X-BACON', 'X-MELT') then
-            insert into public.product_option_groups (store_id, product_id, group_id, position)
-            values (store, product.id, meat_point, 0);
+            insert into public.product_option_groups (store_id, product_id, group_id, position, min_choices, max_choices)
+            values (store, product.id, meat_point, 0, 1, 1);
         end if;
-        insert into public.product_option_groups (store_id, product_id, group_id, position) values
-            (store, product.id, combo, 1),
-            (store, product.id, burger_boost, 2),
-            (store, product.id, sauces, 3);
+        insert into public.product_option_groups (store_id, product_id, group_id, position, min_choices, max_choices) values
+            (store, product.id, combo, 1, 0, 1),
+            (store, product.id, burger_boost, 2, 0, null),
+            (store, product.id, sauces, 3, 1, 3);
     end loop;
 
-    insert into public.product_option_groups (store_id, product_id, group_id, position)
-    select store, id, fries_boost, 0 from public.products where store_id = store and category_id = portions;
+    insert into public.product_option_groups (store_id, product_id, group_id, position, min_choices, max_choices)
+    select store, id, fries_boost, 0, 0, null from public.products where store_id = store and category_id = portions;
 
     -- O serviço de autenticação não aceita nulo nas colunas de token ao ler o
     -- usuário no login, por isso as strings vazias.

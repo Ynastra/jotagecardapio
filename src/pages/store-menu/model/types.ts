@@ -35,6 +35,7 @@ export type ProductOption = {
     id: string
     name: string
     description: string | null
+    imageUrl?: string | null
     priceCents: number
     // null = sem limite por item.
     maxQuantity: number | null

@@ -39,13 +39,14 @@ type MenuRows = {
         image_url: string | null
         featured: boolean
     }[]
-    links: { product_id: string; group_id: string }[]
-    groups: { id: string; title: string; min_choices: number; max_choices: number | null }[]
+    links: { product_id: string; group_id: string; min_choices: number; max_choices: number | null }[]
+    groups: { id: string; title: string }[]
     options: {
         id: string
         group_id: string
         name: string
         description: string | null
+        image_url: string | null
         price_cents: number
         max_quantity: number
     }[]
@@ -72,11 +73,15 @@ async function fetchMenuRows(storeId: string): Promise<MenuRows> {
             .select('id, category_id, name, description, price_cents, promo_price_cents, serves, portion_label, image_url, featured')
             .eq('store_id', storeId)
             .order('position'),
-        supabase.from('product_option_groups').select('product_id, group_id').eq('store_id', storeId).order('position'),
-        supabase.from('option_groups').select('id, title, min_choices, max_choices').eq('store_id', storeId),
+        supabase
+            .from('product_option_groups')
+            .select('product_id, group_id, min_choices, max_choices')
+            .eq('store_id', storeId)
+            .order('position'),
+        supabase.from('option_groups').select('id, title').eq('store_id', storeId),
         supabase
             .from('options')
-            .select('id, group_id, name, description, price_cents, max_quantity')
+            .select('id, group_id, name, description, image_url, price_cents, max_quantity')
             .eq('store_id', storeId)
             .order('position'),
     ])
@@ -93,32 +98,39 @@ async function fetchMenuRows(storeId: string): Promise<MenuRows> {
     return rows
 }
 
-function buildOptionGroups(rows: MenuRows): Map<string, OptionGroup> {
-    const groups = new Map(
-        rows.groups.map((group) => [
-            group.id,
-            {
-                id: group.id,
-                title: group.title,
-                minChoices: group.min_choices,
-                maxChoices: group.max_choices,
-                options: rows.options
-                    .filter((option) => option.group_id === group.id)
-                    .map((option) => ({
-                        id: option.id,
-                        name: option.name,
-                        description: option.description,
-                        priceCents: option.price_cents,
-                        maxQuantity: option.max_quantity,
-                    })),
-            },
-        ]),
-    )
-    return groups
+function buildOptionGroup(rows: MenuRows, group: MenuRows['groups'][number], link: MenuRows['links'][number]): OptionGroup {
+    const optionGroup = {
+        id: group.id,
+        title: group.title,
+        minChoices: link.min_choices,
+        maxChoices: link.max_choices,
+        options: rows.options
+            .filter((option) => option.group_id === group.id)
+            .map((option) => ({
+                id: option.id,
+                name: option.name,
+                description: option.description,
+                imageUrl: option.image_url,
+                priceCents: option.price_cents,
+                maxQuantity: option.max_quantity,
+            })),
+    }
+    return optionGroup
+}
+
+function buildProductOptionGroups(rows: MenuRows, productId: string): OptionGroup[] {
+    const groupsById = new Map(rows.groups.map((group) => [group.id, group]))
+    const optionGroups = rows.links
+        .filter((link) => link.product_id === productId)
+        .flatMap((link) => {
+            const group = groupsById.get(link.group_id)
+            return group ? [buildOptionGroup(rows, group, link)] : []
+        })
+        .filter((group) => group.options.length > 0)
+    return optionGroups
 }
 
 function buildProducts(rows: MenuRows): Product[] {
-    const groupsById = buildOptionGroups(rows)
     const products = rows.products.map((product) => ({
         id: product.id,
         categoryId: product.category_id,
@@ -130,10 +142,7 @@ function buildProducts(rows: MenuRows): Product[] {
         portionLabel: product.portion_label,
         imageUrl: product.image_url,
         featured: product.featured,
-        optionGroups: rows.links
-            .filter((link) => link.product_id === product.id)
-            .map((link) => groupsById.get(link.group_id))
-            .filter((group): group is OptionGroup => group !== undefined && group.options.length > 0),
+        optionGroups: buildProductOptionGroups(rows, product.id),
     }))
     return products
 }

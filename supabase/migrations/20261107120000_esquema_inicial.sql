@@ -96,16 +96,13 @@ create table public.products (
 );
 
 -- Grupos de opcionais pertencem à loja e são ligados a vários produtos, porque
--- o mesmo "Ponto da carne" ou "Turbinar" se repete em todos os lanches.
--- max_choices nulo significa sem limite de unidades no grupo.
+-- o mesmo "Ponto da carne" ou "Turbinar" se repete em todos os lanches. As
+-- regras de quantidade (mínimo e máximo) ficam no vínculo com o produto.
 create table public.option_groups (
     id uuid primary key default gen_random_uuid(),
     store_id uuid not null references public.stores (id) on delete cascade,
     title text not null,
-    min_choices integer not null default 0 check (min_choices >= 0),
-    max_choices integer check (max_choices is null or max_choices >= 1),
-    unique (id, store_id),
-    constraint option_groups_max_covers_min check (max_choices is null or max_choices >= min_choices)
+    unique (id, store_id)
 );
 
 create table public.options (
@@ -114,6 +111,7 @@ create table public.options (
     group_id uuid not null,
     name text not null,
     description text,
+    image_url text,
     price_cents integer not null default 0 check (price_cents >= 0),
     -- null = sem limite de unidades deste opcional no item.
     max_quantity integer default 1 check (max_quantity is null or max_quantity >= 1),
@@ -122,14 +120,19 @@ create table public.options (
     foreign key (group_id, store_id) references public.option_groups (id, store_id) on delete cascade
 );
 
+-- min_choices >= 1 torna o grupo obrigatório neste produto.
+-- max_choices nulo significa sem limite de unidades no grupo.
 create table public.product_option_groups (
     store_id uuid not null,
     product_id uuid not null,
     group_id uuid not null,
     position integer not null default 0,
+    min_choices integer not null default 0 check (min_choices >= 0),
+    max_choices integer check (max_choices is null or max_choices >= 1),
     primary key (product_id, group_id),
     foreign key (product_id, store_id) references public.products (id, store_id) on delete cascade,
-    foreign key (group_id, store_id) references public.option_groups (id, store_id) on delete cascade
+    foreign key (group_id, store_id) references public.option_groups (id, store_id) on delete cascade,
+    constraint product_option_groups_max_covers_min check (max_choices is null or max_choices >= min_choices)
 );
 
 create table public.orders (
@@ -439,7 +442,7 @@ begin
         end loop;
 
         for product_group in
-            select g.id, g.title, g.min_choices, g.max_choices
+            select g.id, g.title, link.min_choices, link.max_choices
             from public.option_groups g
             join public.product_option_groups link on link.group_id = g.id
             where link.product_id = target_product.id
