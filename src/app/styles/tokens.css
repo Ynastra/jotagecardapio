@@ -46,6 +46,10 @@
     --color-accent: #e85d12;
     --color-accent-soft: #fdebdf;
 
+    --color-jg-primary: #041f4a;
+    --color-jg-accent: #0178da;
+    --color-on-jg: #ffffff;
+
     --color-success: #1f7a45;
     --color-success-soft: #e2f3e8;
     --color-danger: #b42318;
@@ -64,6 +68,8 @@
     --cart-bar-clearance: 112px;
     --cover-overlap: calc(var(--space-12) * -1);
     --logo-overlap: calc(var(--space-10) * -1);
+    --seal-height: 20px;
+    --logo-home-width: 280px;
     --content-max: 760px;
     --sheet-max: 560px;
 }
