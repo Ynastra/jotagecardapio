@@ -4,6 +4,7 @@ export type {
     Fulfillment,
     OrderAddress,
     OrderLine,
+    OrderPaymentStatus,
     OrderStatus,
     PanelOrder,
     PaymentMethod,

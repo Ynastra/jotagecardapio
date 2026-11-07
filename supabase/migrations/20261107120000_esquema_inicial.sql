@@ -194,6 +194,17 @@ create table public.orders (
     total_cents integer not null,
     status text not null default 'received'
         check (status in ('received', 'preparing', 'ready', 'completed', 'canceled')),
+    payment_status text not null default 'pending' check (payment_status in ('pending', 'paid')),
+    preparing_at timestamptz,
+    ready_at timestamptz,
+    completed_at timestamptz,
+    canceled_at timestamptz,
+    -- Sequencial do dia no fuso da loja; o código público é o que o cliente vê.
+    daily_number integer not null,
+    public_code text not null,
+    -- Link de acompanhamento do cliente: não adivinhável e sem login.
+    tracking_token text not null unique
+        default replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', ''),
     created_at timestamptz not null default now(),
     unique (store_id, number)
 );
@@ -331,7 +342,50 @@ create policy "membro muda status do pedido" on public.orders
 
 -- Pedido só nasce pela place_order, e o painel só mexe no status.
 revoke insert, delete, update on public.orders from anon, authenticated;
-grant update (status) on public.orders to authenticated;
+grant update (status, payment_status) on public.orders to authenticated;
+
+-- Grava o horário da etapa na mudança de status e apaga o das etapas à frente
+-- quando o status volta. O cancelamento tem horário próprio e não mexe nas etapas.
+create function public.stamp_order_stage()
+returns trigger
+language plpgsql
+as $$
+begin
+    if new.status is not distinct from old.status then
+        return new;
+    end if;
+
+    if new.status = 'canceled' then
+        new.canceled_at := now();
+        return new;
+    end if;
+
+    new.canceled_at := null;
+    if new.status = 'received' then
+        new.preparing_at := null;
+    elsif new.status = 'preparing' then
+        new.preparing_at := now();
+    end if;
+
+    if new.status in ('received', 'preparing') then
+        new.ready_at := null;
+    elsif new.status = 'ready' then
+        new.ready_at := now();
+    end if;
+
+    if new.status in ('received', 'preparing', 'ready') then
+        new.completed_at := null;
+    else
+        new.completed_at := now();
+    end if;
+
+    return new;
+end;
+$$;
+
+create trigger orders_stamp_stage
+    before update of status on public.orders
+    for each row execute function public.stamp_order_stage();
 
 -- Criação de pedido -------------------------------------------------------
 
@@ -377,6 +431,8 @@ declare
     payment_fee_cents integer := 0;
     total_cents integer;
     next_number integer;
+    next_daily_number integer;
+    code_suffix_digits constant integer := 6;
 begin
     select * into target_store from public.stores where slug = payload ->> 'store_slug' and active;
     if not found then
@@ -555,13 +611,20 @@ begin
     -- Trava por loja para dois pedidos simultâneos não pegarem o mesmo número.
     perform pg_advisory_xact_lock(hashtextextended(target_store.id::text, 0));
     select coalesce(max(number), 0) + 1 into next_number from public.orders where store_id = target_store.id;
+    select coalesce(max(daily_number), 0) + 1 into next_daily_number
+    from public.orders
+    where store_id = target_store.id
+      and (created_at at time zone target_store.timezone)::date = (now() at time zone target_store.timezone)::date;
 
     insert into public.orders (
-        store_id, number, customer_name, customer_phone, fulfillment, address, delivery_zone_id,
+        store_id, number, daily_number, public_code, customer_name, customer_phone, fulfillment, address, delivery_zone_id,
         payment_method, change_for_cents, notes, items, subtotal_cents, delivery_fee_cents, payment_fee_cents,
         total_cents
     ) values (
-        target_store.id, next_number, customer_name, customer_phone, fulfillment, order_address, target_zone.id,
+        target_store.id, next_number, next_daily_number,
+        lpad(next_daily_number::text, 3, '0') || '-'
+            || lpad(floor(random() * 10 ^ code_suffix_digits)::integer::text, code_suffix_digits, '0'),
+        customer_name, customer_phone, fulfillment, order_address, target_zone.id,
         payment_method, change_for_cents, order_notes, lines, subtotal_cents, delivery_fee_cents, payment_fee_cents,
         total_cents
     )
@@ -570,6 +633,8 @@ begin
     return jsonb_build_object(
         'id', new_order.id,
         'number', new_order.number,
+        'public_code', new_order.public_code,
+        'tracking_token', new_order.tracking_token,
         'items', new_order.items,
         'address', new_order.address,
         'subtotal_cents', new_order.subtotal_cents,
@@ -584,5 +649,49 @@ $$;
 
 revoke execute on function public.place_order(jsonb) from public;
 grant execute on function public.place_order(jsonb) to anon, authenticated;
+
+-- Acompanhamento pelo cliente -------------------------------------------
+
+-- Devolve só o que a página do cliente mostra, nunca telefone nem endereço.
+-- Token desconhecido devolve nulo, sem distinguir de pedido inexistente.
+create function public.get_order_tracking(token text)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+    select jsonb_build_object(
+        'store', jsonb_build_object(
+            'name', s.name,
+            'slug', s.slug,
+            'logo_url', s.logo_url,
+            'brand_color', s.brand_color,
+            'theme', s.theme
+        ),
+        'public_code', o.public_code,
+        'status', o.status,
+        'payment_status', o.payment_status,
+        'fulfillment', o.fulfillment,
+        'payment_method', o.payment_method,
+        'created_at', o.created_at,
+        'preparing_at', o.preparing_at,
+        'ready_at', o.ready_at,
+        'completed_at', o.completed_at,
+        'canceled_at', o.canceled_at,
+        'estimated_ready_at', o.created_at + make_interval(mins => s.prep_time_minutes),
+        'items', o.items,
+        'subtotal_cents', o.subtotal_cents,
+        'delivery_fee_cents', o.delivery_fee_cents,
+        'payment_fee_cents', o.payment_fee_cents,
+        'total_cents', o.total_cents
+    )
+    from public.orders o
+    join public.stores s on s.id = o.store_id
+    where o.tracking_token = token;
+$$;
+
+revoke execute on function public.get_order_tracking(text) from public;
+grant execute on function public.get_order_tracking(text) to anon, authenticated;
 
 alter publication supabase_realtime add table public.orders;

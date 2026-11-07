@@ -3,7 +3,7 @@ import { supabase } from '@/shared/api'
 
 const RECENT_ORDERS_LIMIT = 60
 const ORDER_COLUMNS =
-    'id, number, customer_name, customer_phone, fulfillment, address, payment_method, change_for_cents, notes, items, subtotal_cents, delivery_fee_cents, payment_fee_cents, total_cents, status, created_at'
+    'id, number, public_code, tracking_token, payment_status, preparing_at, ready_at, completed_at, canceled_at, customer_name, customer_phone, fulfillment, address, payment_method, change_for_cents, notes, items, subtotal_cents, delivery_fee_cents, payment_fee_cents, total_cents, status, created_at'
 
 export type PanelStore = {
     id: string
@@ -14,6 +14,13 @@ export type PanelStore = {
 type OrderRow = {
     id: string
     number: number
+    public_code: string
+    tracking_token: string
+    payment_status: 'pending' | 'paid'
+    preparing_at: string | null
+    ready_at: string | null
+    completed_at: string | null
+    canceled_at: string | null
     customer_name: string
     customer_phone: string
     fulfillment: PanelOrder['fulfillment']
@@ -34,6 +41,13 @@ function mapOrder(row: OrderRow): PanelOrder {
     const order = {
         id: row.id,
         number: row.number,
+        publicCode: row.public_code,
+        trackingToken: row.tracking_token,
+        paymentStatus: row.payment_status,
+        preparingAt: row.preparing_at,
+        readyAt: row.ready_at,
+        completedAt: row.completed_at,
+        canceledAt: row.canceled_at,
         customerName: row.customer_name,
         customerPhone: row.customer_phone,
         fulfillment: row.fulfillment,

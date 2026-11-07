@@ -5,6 +5,8 @@ import { buildOrderMessage, buildWhatsappUrl, type PlacedOrder } from '@/entitie
 const order: PlacedOrder = {
     id: 'pedido',
     number: 12,
+    publicCode: '012-490361',
+    trackingToken: 'token-de-acompanhamento',
     items: [
         {
             productId: 'x-bacon',
