@@ -7,6 +7,7 @@ import { HOME_PERIOD_OPTIONS, type HomePeriodKey } from '../model/home-period'
 import { useDashboard } from '../model/use-dashboard'
 import { useHiddenValues } from '../model/hidden-values'
 import { InProgressCard } from './InProgressCard'
+import { MonthlyChart } from './MonthlyChart'
 import styles from './panel-home.module.css'
 import { SummaryCards } from './SummaryCards'
 import { TopProducts } from './TopProducts'
@@ -70,6 +71,7 @@ export function PanelHomePage() {
                         <p className={styles.notice}>Ainda sem pedidos neste período</p>
                     ) : null}
                     <SummaryCards dashboard={dashboard} formatMoney={formatMoney} />
+                    <MonthlyChart series={dashboard.monthlyRevenue} formatMoney={formatMoney} />
                     <TopProducts
                         products={dashboard.topProducts}
                         itemsTotal={dashboard.itemsTotal}
