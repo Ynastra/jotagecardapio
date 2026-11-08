@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { HomePage } from '@/pages/home'
 import { OrderTrackingPage } from '@/pages/order-tracking'
 import { AddonsPage } from '@/pages/panel-addons'
+import { HoursPage } from '@/pages/panel-hours'
 import { PanelOrdersPage } from '@/pages/panel-orders'
 import { ProductEditPage } from '@/pages/panel-product-edit'
 import { ProductsPage } from '@/pages/panel-products'
@@ -27,6 +28,7 @@ export function App() {
                     <Route path="produtos/:id" element={<ProductEditPage />} />
                     <Route path="adicionais"element={<AddonsPage />} />
                     <Route path="minha-loja" element={<PanelStorePage />} />
+                    <Route path="horarios" element={<HoursPage />} />
                     <Route path="*" element={<Navigate to="/painel/pedidos" replace />} />
                 </Route>
                 <Route path="/:slug/pedido/:token" element={<OrderTrackingPage />} />
