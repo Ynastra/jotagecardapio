@@ -14,6 +14,10 @@ type SheetProps = {
 
 // Folha que sobe do rodapé no celular e vira janela centralizada no desktop.
 // Usa o <dialog> nativo para ganhar foco preso, Esc e fundo inerte.
+// O primeiro campo só recebe foco com ponteiro preciso: no toque, focar um campo
+// abre o teclado e rola a folha antes de a pessoa pedir.
+const FINE_POINTER_QUERY = '(pointer: fine)'
+
 export function Sheet({ title, onClose, children, footer, hideTitle = false }: SheetProps) {
     const dialogRef = useRef<HTMLDialogElement>(null)
 
@@ -21,7 +25,9 @@ export function Sheet({ title, onClose, children, footer, hideTitle = false }: S
         const dialog = dialogRef.current
         const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
         dialog?.showModal()
-        dialog?.querySelector<HTMLElement>(`.${styles.body} :is(input, select, textarea)`)?.focus()
+        if (window.matchMedia(FINE_POINTER_QUERY).matches) {
+            dialog?.querySelector<HTMLElement>(`.${styles.body} :is(input, select, textarea)`)?.focus()
+        }
         return () => {
             dialog?.close()
             if (opener?.isConnected) {
