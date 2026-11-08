@@ -7,6 +7,9 @@ export const MAX_RADIUS_KM = 50
 
 const CENTS_PER_REAL = 100
 const KM_DECIMALS = 1
+const COORDINATE_DECIMALS = 6
+const MAX_LATITUDE = 90
+const MAX_LONGITUDE = 180
 
 export const DELIVERY_MODE_LABELS: Record<DeliveryMode, string> = {
     fixed: 'Taxa fixa',
@@ -23,9 +26,19 @@ export type DeliveryForm = {
     maxKmText: string
     hasFreeDelivery: boolean
     freeAboveText: string
+    latitudeText: string
+    longitudeText: string
+    locationQuery: string
 }
 
-export type DeliveryFieldName = 'prepTimeText' | 'mode' | 'feeText' | 'maxKmText' | 'freeAboveText'
+export type DeliveryFieldName =
+    | 'prepTimeText'
+    | 'mode'
+    | 'feeText'
+    | 'maxKmText'
+    | 'freeAboveText'
+    | 'latitudeText'
+    | 'longitudeText'
 
 export type DeliveryFormErrors = Partial<Record<DeliveryFieldName, string>>
 
@@ -44,6 +57,20 @@ function formatKmText(km: number | null): string {
     return text
 }
 
+export function formatCoordinateText(coordinate: number | null): string {
+    const text = coordinate === null ? '' : String(coordinate).replace('.', ',')
+    return text
+}
+
+function joinLocationQuery(settings: StoreSettings): string {
+    const parts = [settings.address, settings.city, settings.state]
+    const query = parts
+        .map((part) => (part ?? '').trim())
+        .filter(Boolean)
+        .join(', ')
+    return query
+}
+
 export function formFromSettings(settings: StoreSettings): DeliveryForm {
     const form = {
         prepTimeText: String(settings.prepTimeMinutes),
@@ -52,6 +79,9 @@ export function formFromSettings(settings: StoreSettings): DeliveryForm {
         maxKmText: formatKmText(settings.deliveryMaxKm),
         hasFreeDelivery: settings.freeDeliveryAboveCents !== null,
         freeAboveText: settings.freeDeliveryAboveCents === null ? '' : formatCentsText(settings.freeDeliveryAboveCents),
+        latitudeText: formatCoordinateText(settings.latitude),
+        longitudeText: formatCoordinateText(settings.longitude),
+        locationQuery: joinLocationQuery(settings),
     }
     return form
 }
@@ -79,6 +109,41 @@ function parseKm(text: string): number | null {
     return parsed
 }
 
+function parseCoordinate(text: string, limit: number): number | null {
+    const coordinate = Number(text.trim().replace(',', '.'))
+    const isValid = text.trim() !== '' && Number.isFinite(coordinate) && Math.abs(coordinate) <= limit
+
+    const parsed = isValid ? Number(coordinate.toFixed(COORDINATE_DECIMALS)) : null
+    return parsed
+}
+
+export function readFormCoordinates(form: DeliveryForm): { latitude: number; longitude: number } | null {
+    const latitude = parseCoordinate(form.latitudeText, MAX_LATITUDE)
+    const longitude = parseCoordinate(form.longitudeText, MAX_LONGITUDE)
+
+    const coordinates = latitude === null || longitude === null ? null : { latitude, longitude }
+    return coordinates
+}
+
+function collectLocationErrors(form: DeliveryForm): DeliveryFormErrors {
+    const errors: DeliveryFormErrors = {}
+    const hasLatitude = form.latitudeText.trim() !== ''
+    const hasLongitude = form.longitudeText.trim() !== ''
+
+    if (hasLatitude !== hasLongitude) {
+        const missingField = hasLatitude ? 'longitudeText' : 'latitudeText'
+        errors[missingField] = 'Preencha latitude e longitude juntas.'
+        return errors
+    }
+    if (hasLatitude && parseCoordinate(form.latitudeText, MAX_LATITUDE) === null) {
+        errors.latitudeText = `Informe uma latitude entre -${MAX_LATITUDE} e ${MAX_LATITUDE}.`
+    }
+    if (hasLongitude && parseCoordinate(form.longitudeText, MAX_LONGITUDE) === null) {
+        errors.longitudeText = `Informe uma longitude entre -${MAX_LONGITUDE} e ${MAX_LONGITUDE}.`
+    }
+    return errors
+}
+
 function parseMoney(text: string): number | null {
     const cents = text.trim() === '' ? null : parseReaisToCents(text)
     return cents
@@ -96,6 +161,9 @@ function collectErrors(form: DeliveryForm, activeZoneCount: number): DeliveryFor
     }
     if (form.mode === 'radius' && parseKm(form.maxKmText) === null) {
         errors.maxKmText = `Informe o raio máximo, de mais de 0 até ${MAX_RADIUS_KM} km.`
+    }
+    if (form.mode === 'radius') {
+        Object.assign(errors, collectLocationErrors(form))
     }
     if (form.mode === 'neighborhood' && activeZoneCount === 0) {
         errors.mode = 'Ative pelo menos um bairro para entregar por bairro.'
@@ -118,6 +186,8 @@ function buildPatch(form: DeliveryForm): StoreSettingsPatch {
     }
     if (form.mode === 'radius') {
         patch.deliveryMaxKm = parseKm(form.maxKmText)
+        patch.latitude = parseCoordinate(form.latitudeText, MAX_LATITUDE)
+        patch.longitude = parseCoordinate(form.longitudeText, MAX_LONGITUDE)
     }
     return patch
 }

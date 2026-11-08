@@ -38,6 +38,8 @@ const settings: StoreSettings = {
     freeDeliveryAboveCents: null,
     pixKey: null,
     pixKeyType: null,
+    latitude: null,
+    longitude: null,
 }
 
 const loaded = formFromSettings(settings)

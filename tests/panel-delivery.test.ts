@@ -36,6 +36,8 @@ const settings: StoreSettings = {
     freeDeliveryAboveCents: null,
     pixKey: null,
     pixKeyType: null,
+    latitude: -21.72028,
+    longitude: -51.01889,
 }
 
 const loaded = formFromSettings(settings)
@@ -75,7 +77,33 @@ describe('validateDeliveryForm', () => {
             freeDeliveryAboveCents: null,
             deliveryFeeCents: 800,
             deliveryMaxKm: 6,
+            latitude: -21.72028,
+            longitude: -51.01889,
         })
+    })
+
+    it('aceita a loja sem localização e grava as duas coordenadas vazias', () => {
+        const result = validateDeliveryForm(withChange({ latitudeText: '', longitudeText: '' }), 0)
+
+        expect(result.errors).toEqual({})
+        expect(result.value).toMatchObject({ latitude: null, longitude: null })
+    })
+
+    it('exige latitude e longitude juntas', () => {
+        expect(validateDeliveryForm(withChange({ longitudeText: '' }), 0).errors.longitudeText).toBeDefined()
+        expect(validateDeliveryForm(withChange({ latitudeText: '' }), 0).errors.latitudeText).toBeDefined()
+    })
+
+    it('recusa coordenada fora da faixa ou que não é número', () => {
+        expect(validateDeliveryForm(withChange({ latitudeText: '91' }), 0).errors.latitudeText).toBeDefined()
+        expect(validateDeliveryForm(withChange({ longitudeText: '-181' }), 0).errors.longitudeText).toBeDefined()
+        expect(validateDeliveryForm(withChange({ latitudeText: 'abc' }), 0).errors.latitudeText).toBeDefined()
+    })
+
+    it('aceita coordenada com vírgula decimal', () => {
+        const result = validateDeliveryForm(withChange({ latitudeText: '-21,72028', longitudeText: '-51,01889' }), 0)
+
+        expect(result.value).toMatchObject({ latitude: -21.72028, longitude: -51.01889 })
     })
 
     it.each(['', '0', '241', '12,5', 'abc'])('recusa preparo "%s"', (prepTimeText) => {
