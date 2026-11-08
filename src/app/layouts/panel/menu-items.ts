@@ -14,7 +14,7 @@ export const MENU_ITEMS: readonly MenuItem[] = [
     { path: 'adicionais', label: 'Adicionais', isReady: true },
     { path: 'whatsapp', label: 'WhatsApp', isReady: false },
     { path: 'minha-loja', label: 'Minha loja', isReady: true },
-    { path: 'pagamento', label: 'Pagamento', isReady: false },
+    { path: 'pagamento', label: 'Pagamento', isReady: true },
     { path: 'horarios', label: 'Horários', isReady: true },
     { path: 'entrega', label: 'Entrega', isReady: true },
 ]
