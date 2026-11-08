@@ -48,7 +48,7 @@ function getFirstName(fullName: string): string {
     return firstName
 }
 
-function fillPlaceholders(template: string, values: Record<string, string>): string {
+export function fillPlaceholders(template: string, values: Record<string, string>): string {
     const filled = template.replace(/\{(\w+)\}/g, (placeholder, key: string) => values[key] ?? placeholder)
     return filled
 }

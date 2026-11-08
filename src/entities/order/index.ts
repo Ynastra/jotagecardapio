@@ -17,6 +17,7 @@ export { mapStoredAddress, mapStoredLines } from './model/mapping'
 export {
     buildStatusMessage,
     DEFAULT_STATUS_MESSAGES,
+    fillPlaceholders,
     getStatusMessageType,
     type StatusMessageContext,
     type StatusMessageType,
