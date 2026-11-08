@@ -1,0 +1,223 @@
+.page {
+    min-block-size: 100dvh;
+    padding: var(--space-4);
+}
+
+.login {
+    display: grid;
+    gap: var(--space-4);
+    max-inline-size: 380px;
+    margin: var(--space-12) auto;
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
+}
+
+.loginTitle {
+    font-size: var(--font-size-2xl);
+}
+
+.field {
+    display: grid;
+    gap: var(--space-1);
+    font-size: var(--font-size-sm);
+}
+
+.error {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background-color: var(--color-danger-soft);
+    color: var(--color-danger);
+    font-weight: 600;
+}
+
+.muted {
+    padding: var(--space-8);
+    color: var(--color-text-secondary);
+    text-align: center;
+}
+
+.shell {
+    display: grid;
+    grid-template-columns: var(--panel-menu-width) minmax(0, 1fr);
+    min-block-size: 100dvh;
+}
+
+.menu {
+    position: sticky;
+    inset-block-start: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    block-size: 100dvh;
+    padding: var(--space-5) var(--space-4);
+    background-color: var(--color-jg-primary);
+    color: var(--color-on-jg);
+}
+
+.logo {
+    inline-size: 150px;
+    block-size: auto;
+}
+
+.storeName {
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+}
+
+.menuList,
+.menuFooter {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.menuList {
+    flex: 1;
+    align-content: start;
+    overflow-y: auto;
+}
+
+.menuItem {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    justify-content: space-between;
+    min-block-size: var(--touch-target);
+    padding: 0 var(--space-3);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    text-align: start;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.menuItem:hover {
+    background-color: var(--color-jg-hover);
+}
+
+.menuItemActive {
+    background-color: var(--color-jg-accent);
+}
+
+.menuItemActive:hover {
+    background-color: var(--color-jg-accent);
+}
+
+.menuItemDisabled {
+    color: var(--color-on-jg-muted);
+    cursor: default;
+}
+
+.menuItemDisabled:hover {
+    background: none;
+}
+
+.soon {
+    font-size: var(--font-size-xs);
+    font-weight: 400;
+}
+
+.contentColumn {
+    min-inline-size: 0;
+}
+
+.content {
+    min-inline-size: 0;
+    padding: var(--space-4);
+}
+
+.menuToggle,
+.menuClose {
+    display: none;
+}
+
+.menuBackdrop {
+    display: none;
+}
+
+@media (width <= 860px) {
+    .shell {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .menu {
+        position: fixed;
+        inset-block: 0;
+        inset-inline-start: 0;
+        z-index: var(--z-panel-menu);
+        inline-size: var(--panel-menu-width);
+        transform: translateX(-100%);
+        visibility: hidden;
+    }
+
+    .menuOpen {
+        transform: none;
+        visibility: visible;
+        box-shadow: var(--shadow-raised);
+    }
+
+    .menuClose {
+        display: inline-flex;
+        align-items: center;
+        align-self: flex-end;
+        min-block-size: var(--touch-target);
+        padding: 0 var(--space-3);
+        border: 0;
+        border-radius: var(--radius-sm);
+        background-color: var(--color-jg-hover);
+        color: inherit;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .menuBackdrop {
+        position: fixed;
+        inset: 0;
+        z-index: calc(var(--z-panel-menu) - 1);
+        display: block;
+        border: 0;
+        background-color: var(--color-overlay);
+    }
+
+    .topBar {
+        position: sticky;
+        inset-block-start: 0;
+        z-index: var(--z-sticky);
+        display: flex;
+        gap: var(--space-3);
+        align-items: center;
+        padding: var(--space-2) var(--space-4);
+        background-color: var(--color-jg-primary);
+        color: var(--color-on-jg);
+    }
+
+    .menuToggle {
+        display: inline-flex;
+        align-items: center;
+        min-block-size: var(--touch-target);
+        padding: 0 var(--space-3);
+        border: 0;
+        border-radius: var(--radius-sm);
+        background-color: var(--color-jg-hover);
+        color: inherit;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+    }
+}
+
+@media (width > 860px) {
+    .topBar {
+        display: none;
+    }
+}

@@ -16,7 +16,8 @@
     "test:db": "supabase test db",
     "lint:css": "stylelint \"src/**/*.css\"",
     "check:fsd": "steiger ./src --fail-on-warnings",
-    "check:fast": "npm run lint:css && npm run typecheck:fast && npm run check:fsd",
+    "check:fsd:fast": "steiger ./src --fail-on-warnings",
+    "check:fast": "npm run lint:css && npm run typecheck:fast && npm run check:fsd:fast",
     "check": "npm run lint:css && npm run typecheck && npm run check:fsd && npm run test && npm run build"
   },
   "dependencies": {

@@ -30,6 +30,21 @@ export function getNextStep(status: OrderStatus, fulfillment: Fulfillment): Stat
     }
 }
 
+// Etapa anterior do fluxo; o pedido novo e o cancelado não voltam.
+export function getPreviousStatus(status: OrderStatus): OrderStatus | null {
+    switch (status) {
+        case 'preparing':
+            return 'received'
+        case 'ready':
+            return 'preparing'
+        case 'completed':
+            return 'ready'
+        case 'received':
+        case 'canceled':
+            return null
+    }
+}
+
 export function isActiveOrder(order: PanelOrder): boolean {
     const isActive = ACTIVE_STATUSES.includes(order.status)
     return isActive

@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from 'react'
 
 import { supabase } from '@/shared/api'
+import { unlockChime } from '@/shared/lib'
 import { Button } from '@/shared/ui'
 
-import { unlockChime } from '../model/chime'
-import styles from './panel.module.css'
+import styles from './panel-layout.module.css'
 
 export function LoginForm() {
     const [email, setEmail] = useState('')
