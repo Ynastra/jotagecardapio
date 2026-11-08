@@ -1,8 +1,6 @@
-import { ThemeImage } from '@/shared/ui'
+import { ActionMenu, ActiveSwitch, ThemeImage } from '@/shared/ui'
 
 import type { AddonOption } from '../model/addon-group'
-import { ActionMenu } from './ActionMenu'
-import { ActiveSwitch } from './ActiveSwitch'
 import { InlinePriceField } from './InlinePriceField'
 import styles from './addons.module.css'
 

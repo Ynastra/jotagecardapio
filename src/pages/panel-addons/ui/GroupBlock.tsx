@@ -1,9 +1,7 @@
-import { Button } from '@/shared/ui'
+import { ActionMenu, ActiveSwitch, Button } from '@/shared/ui'
 
 import { describeUsage, type AddonGroup, type AddonOption } from '../model/addon-group'
 import type { MoveDirection } from '../model/ordering'
-import { ActionMenu } from './ActionMenu'
-import { ActiveSwitch } from './ActiveSwitch'
 import { OptionRow } from './OptionRow'
 import styles from './addons.module.css'
 

@@ -3,14 +3,13 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { ProductCard } from '@/entities/product'
 import { useCurrentStore } from '@/entities/store'
-import { Button, StatusMessage } from '@/shared/ui'
+import { Button, ConfirmSheet, StatusMessage } from '@/shared/ui'
 
 import { buildPreviewProduct } from '../model/product-form'
 import { useProductEditor } from '../model/use-product-editor'
 import { AddonLinksSection } from './AddonLinksSection'
 import { BasicSection } from './BasicSection'
 import { CategorySheet } from './CategorySheet'
-import { ConfirmSheet } from './ConfirmSheet'
 import { DetailsSection } from './DetailsSection'
 import styles from './product-edit.module.css'
 

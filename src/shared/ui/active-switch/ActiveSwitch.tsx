@@ -1,4 +1,4 @@
-import styles from './addons.module.css'
+import styles from './active-switch.module.css'
 
 type ActiveSwitchProps = {
     label: string

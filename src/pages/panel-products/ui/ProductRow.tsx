@@ -1,12 +1,10 @@
 import { useState } from 'react'
 
 import { getProductAvailability, type ManagedProduct, type ProductAvailability } from '@/entities/product'
-import { ThemeImage } from '@/shared/ui'
+import { ActionMenu, ActiveSwitch, ThemeImage } from '@/shared/ui'
 
 import { describeServes } from '../model/catalog'
 import type { MoveDirection } from '../model/ordering'
-import { ActionMenu } from './ActionMenu'
-import { ActiveSwitch } from './ActiveSwitch'
 import { InlinePriceField } from './InlinePriceField'
 import styles from './products.module.css'
 

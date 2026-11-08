@@ -1,4 +1,7 @@
+export { ActionMenu, type MenuAction } from './action-menu'
+export { ActiveSwitch } from './active-switch'
 export { Button } from './button'
+export { ConfirmSheet } from './confirm-sheet'
 export { PixPayment, type PixKeyKind } from './pix-payment'
 export { QuantityStepper } from './quantity-stepper'
 export { Sheet } from './sheet'
