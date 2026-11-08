@@ -15,25 +15,25 @@ type CategoryNavProps = {
     onSelect: (sectionId: string) => void
 }
 
-function revealActiveChip(chipRow: HTMLElement) {
-    const activeChip = chipRow.querySelector<HTMLElement>('[aria-current="true"]')
+function revealActiveTab(tabRow: HTMLElement) {
+    const activeTab = tabRow.querySelector<HTMLElement>('[aria-current="true"]')
 
-    if (!activeChip) {
+    if (!activeTab) {
         return
     }
 
-    const rowBox = chipRow.getBoundingClientRect()
-    const chipBox = activeChip.getBoundingClientRect()
-    const centeredOffset = (rowBox.width - chipBox.width) / 2
-    const left = chipRow.scrollLeft + chipBox.left - rowBox.left - centeredOffset
+    const rowBox = tabRow.getBoundingClientRect()
+    const tabBox = activeTab.getBoundingClientRect()
+    const centeredOffset = (rowBox.width - tabBox.width) / 2
+    const left = tabRow.scrollLeft + tabBox.left - rowBox.left - centeredOffset
 
-    chipRow.scrollTo({ left, behavior: getScrollBehavior() })
+    tabRow.scrollTo({ left, behavior: getScrollBehavior() })
 }
 
 export function CategoryNav({ categories, query, onQueryChange, activeId, onSelect }: CategoryNavProps) {
     const [isSearchOpen, setSearchOpen] = useState(false)
     const searchInputRef = useRef<HTMLInputElement>(null)
-    const chipRowRef = useRef<HTMLUListElement>(null)
+    const tabRowRef = useRef<HTMLUListElement>(null)
 
     useEffect(() => {
         if (isSearchOpen) {
@@ -42,8 +42,8 @@ export function CategoryNav({ categories, query, onQueryChange, activeId, onSele
     }, [isSearchOpen])
 
     useEffect(() => {
-        if (chipRowRef.current) {
-            revealActiveChip(chipRowRef.current)
+        if (tabRowRef.current) {
+            revealActiveTab(tabRowRef.current)
         }
     }, [activeId, isSearchOpen])
 
@@ -52,8 +52,8 @@ export function CategoryNav({ categories, query, onQueryChange, activeId, onSele
         setSearchOpen(false)
     }
 
-    function getChipClassName(sectionId: string): string {
-        const className = sectionId === activeId ? `${styles.chip} ${styles.chipActive}` : styles.chip
+    function getTabClassName(sectionId: string): string {
+        const className = sectionId === activeId ? `${styles.tab} ${styles.tabActive}` : styles.tab
         return className
     }
 
@@ -77,20 +77,12 @@ export function CategoryNav({ categories, query, onQueryChange, activeId, onSele
                     </label>
                 ) : (
                     <>
-                        <button
-                            type="button"
-                            className={styles.iconButton}
-                            aria-label="Buscar no cardápio"
-                            onClick={() => setSearchOpen(true)}
-                        >
-                            <ThemeIcon name="busca" size={20} />
-                        </button>
-                        <ul ref={chipRowRef} className={styles.chips}>
+                        <ul ref={tabRowRef} className={styles.tabs}>
                             {categories.map((category) => (
                                 <li key={category.id}>
                                     <button
                                         type="button"
-                                        className={getChipClassName(category.id)}
+                                        className={getTabClassName(category.id)}
                                         aria-current={activeId === category.id}
                                         onClick={() => onSelect(category.id)}
                                     >
@@ -100,6 +92,14 @@ export function CategoryNav({ categories, query, onQueryChange, activeId, onSele
                                 </li>
                             ))}
                         </ul>
+                        <button
+                            type="button"
+                            className={styles.iconButton}
+                            aria-label="Buscar no cardápio"
+                            onClick={() => setSearchOpen(true)}
+                        >
+                            <ThemeIcon name="busca" size={20} />
+                        </button>
                     </>
                 )}
             </div>

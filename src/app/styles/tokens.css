@@ -92,7 +92,7 @@
     --status-dot-size: 10px;
     --product-photo-size: 104px;
     --divider-width: 1px;
-    --category-bar-height: 56px;
+    --category-bar-height: 48px;
     --section-scroll-offset: calc(var(--category-bar-height) + var(--space-3));
     --chevron-size: 8px;
     --sheet-max: 560px;
@@ -141,11 +141,14 @@
     --menu-font-size-kicker: 0.6875rem;
     --menu-tracking-hero: -0.08em;
     --menu-tracking-kicker: 0.15em;
+    --menu-tab-gap: 13px;
+    --menu-tab-underline: 3px;
 }
 
 @media (min-width: 681px) {
     :root {
         --menu-gutter: 20px;
+        --menu-tab-gap: 20px;
         --menu-hero-min-height: 276px;
         --menu-hero-text-width: 57%;
         --menu-hero-photo-width: 53%;
