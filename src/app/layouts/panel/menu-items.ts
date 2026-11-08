@@ -16,5 +16,5 @@ export const MENU_ITEMS: readonly MenuItem[] = [
     { path: 'minha-loja', label: 'Minha loja', isReady: true },
     { path: 'pagamento', label: 'Pagamento', isReady: false },
     { path: 'horarios', label: 'Horários', isReady: true },
-    { path: 'entrega', label: 'Entrega', isReady: false },
+    { path: 'entrega', label: 'Entrega', isReady: true },
 ]
