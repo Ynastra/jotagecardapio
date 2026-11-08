@@ -36,6 +36,15 @@ export function countActiveZones(zones: readonly DeliveryZone[]): number {
     return count
 }
 
+export const LAST_ACTIVE_ZONE_MESSAGE =
+    'É o último bairro ativo. Com entrega Por bairro, a loja ficaria sem bairro para entregar. Mude a modalidade e salve antes.'
+
+export function isLastActiveZone(zones: readonly DeliveryZone[], zoneId: string): boolean {
+    const activeZones = zones.filter((zone) => zone.active)
+    const isLast = activeZones.length === 1 && activeZones[0].id === zoneId
+    return isLast
+}
+
 function validateNeighborhood(name: string, others: readonly DeliveryZone[]): string | undefined {
     const trimmed = name.trim()
     if (trimmed === '') {

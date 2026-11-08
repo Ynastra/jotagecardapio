@@ -95,6 +95,7 @@ export function useDeliverySettings(storeId: string) {
 
     return {
         status,
+        savedMode: initial?.mode ?? null,
         form,
         errors,
         isDirty: initial !== null && form !== null && isDeliveryFormDirty(initial, form),

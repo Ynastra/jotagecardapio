@@ -65,7 +65,9 @@ export function DeliveryPage() {
             ) : null}
 
             <DeliveryFormSection form={form} errors={errors} onChange={settings.update} />
-            {form.mode === 'neighborhood' ? <ZonesSection zonesState={zonesState} /> : null}
+            {form.mode === 'neighborhood' ? (
+                <ZonesSection zonesState={zonesState} isNeighborhoodModeSaved={settings.savedMode === 'neighborhood'} />
+            ) : null}
 
             {settings.isDirty ? (
                 <div className={styles.saveBar} role="region" aria-label="Alterações não salvas">

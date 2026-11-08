@@ -7,7 +7,7 @@ import {
     validateDeliveryForm,
     type DeliveryForm,
 } from '@/pages/panel-delivery/model/delivery-form'
-import { countActiveZones, validateZoneDraft, type DeliveryZone } from '@/pages/panel-delivery/model/zones'
+import { countActiveZones, isLastActiveZone, validateZoneDraft, type DeliveryZone } from '@/pages/panel-delivery/model/zones'
 
 const settings: StoreSettings = {
     id: 'loja',
@@ -193,5 +193,23 @@ describe('countActiveZones', () => {
                 { id: 'b', neighborhood: 'Vila Nova', feeCents: 500, active: false },
             ]),
         ).toBe(1)
+    })
+})
+
+describe('isLastActiveZone', () => {
+    const centro = { id: 'a', neighborhood: 'Centro', feeCents: 300, active: true }
+    const vila = { id: 'b', neighborhood: 'Vila Nova', feeCents: 500, active: true }
+    const inactive = { id: 'c', neighborhood: 'Jardim', feeCents: 400, active: false }
+
+    it('reconhece o único bairro ativo', () => {
+        expect(isLastActiveZone([centro, inactive], 'a')).toBe(true)
+    })
+
+    it('não protege quando há outro bairro ativo', () => {
+        expect(isLastActiveZone([centro, vila], 'a')).toBe(false)
+    })
+
+    it('não protege um bairro já inativo', () => {
+        expect(isLastActiveZone([centro, inactive], 'c')).toBe(false)
     })
 })

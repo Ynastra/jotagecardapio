@@ -4,7 +4,7 @@ import { formatCents } from '@/shared/lib'
 import { ActionMenu, ActiveSwitch, Button, ConfirmSheet } from '@/shared/ui'
 
 import type { useZones } from '../model/use-zones'
-import type { DeliveryZone } from '../model/zones'
+import { isLastActiveZone, LAST_ACTIVE_ZONE_MESSAGE, type DeliveryZone } from '../model/zones'
 import styles from './delivery.module.css'
 import { ZoneSheet } from './ZoneSheet'
 
@@ -12,15 +12,42 @@ type SheetState = { kind: 'edit'; zone: DeliveryZone | null } | { kind: 'delete'
 
 type ZonesSectionProps = {
     zonesState: ReturnType<typeof useZones>
+    isNeighborhoodModeSaved: boolean
 }
 
-export function ZonesSection({ zonesState }: ZonesSectionProps) {
+export function ZonesSection({ zonesState, isNeighborhoodModeSaved }: ZonesSectionProps) {
     const { zones } = zonesState
     const [sheet, setSheet] = useState<SheetState | null>(null)
     const [isDeleting, setDeleting] = useState(false)
+    const [blockedZoneId, setBlockedZoneId] = useState<string | null>(null)
 
     function closeSheet() {
         setSheet(null)
+    }
+
+    function isProtectedZone(zone: DeliveryZone): boolean {
+        const isProtected = isNeighborhoodModeSaved && zone.active && isLastActiveZone(zones, zone.id)
+        return isProtected
+    }
+
+    function requestToggle(zone: DeliveryZone, checked: boolean) {
+        if (!checked && isProtectedZone(zone)) {
+            setBlockedZoneId(zone.id)
+            return
+        }
+
+        setBlockedZoneId(null)
+        void zonesState.toggleZone(zone.id, checked)
+    }
+
+    function requestDelete(zone: DeliveryZone) {
+        if (isProtectedZone(zone)) {
+            setBlockedZoneId(zone.id)
+            return
+        }
+
+        setBlockedZoneId(null)
+        setSheet({ kind: 'delete', zone })
     }
 
     async function confirmDelete() {
@@ -95,7 +122,7 @@ export function ZonesSection({ zonesState }: ZonesSectionProps) {
                             <ActiveSwitch
                                 label={`${zone.neighborhood} ativo`}
                                 checked={zone.active}
-                                onChange={(checked) => zonesState.toggleZone(zone.id, checked)}
+                                onChange={(checked) => requestToggle(zone, checked)}
                             />
                             <ActionMenu
                                 label={`Ações de ${zone.neighborhood}`}
@@ -103,12 +130,17 @@ export function ZonesSection({ zonesState }: ZonesSectionProps) {
                                     { label: 'Editar', onSelect: () => setSheet({ kind: 'edit', zone }) },
                                     {
                                         label: 'Excluir',
-                                        onSelect: () => setSheet({ kind: 'delete', zone }),
+                                        onSelect: () => requestDelete(zone),
                                         isDanger: true,
                                     },
                                 ]}
                             />
                         </div>
+                        {blockedZoneId === zone.id ? (
+                            <p className={styles.zoneBlocked} role="alert">
+                                {LAST_ACTIVE_ZONE_MESSAGE}
+                            </p>
+                        ) : null}
                     </li>
                 ))}
             </ul>
