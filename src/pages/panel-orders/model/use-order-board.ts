@@ -8,6 +8,7 @@ import { buildCustomerWhatsappUrl, buildTrackingUrl } from './customer-contact'
 import { filterOrders, isVisibleInPeriod, type ChannelFilter } from './filters'
 import { isActiveOrder } from './order-flow'
 import type { PeriodKey } from './period'
+import { useAutoNotify } from './use-auto-notify'
 import { usePanelOrders } from './use-panel-orders'
 import { usePeriodStart } from './use-period-start'
 import { useStatusMessages } from './use-status-messages'
@@ -27,6 +28,7 @@ export type OrderBoardState = {
     isLoading: boolean
     isTruncated: boolean
     errorMessage: string | null
+    autoNotice: string | null
     changeStatus: (orderId: string, status: OrderStatus) => Promise<void>
     changePaymentStatus: (orderId: string, paymentStatus: OrderPaymentStatus) => Promise<void>
     isPending: (orderId: string) => boolean
@@ -45,9 +47,28 @@ export function useOrderBoard(store: Store, pinnedOrderId: string | null): Order
     const [seenIds, setSeenIds] = useState<ReadonlySet<string>>(new Set())
 
     const periodStart = usePeriodStart(period, store.timezone)
-    const { orders, isLoading, isTruncated, errorMessage, pendingOrderIds, changeStatus, changePaymentStatus, adoptOrder } =
-        usePanelOrders(store.id, periodStart, pinnedOrderId)
     const statusMessages = useStatusMessages(store.id)
+
+    const getTrackingUrl = useCallback(
+        (order: PanelOrder) => {
+            const url = buildTrackingUrl(window.location.origin, store.slug, order)
+            return url
+        },
+        [store.slug],
+    )
+
+    const buildMessage = useCallback(
+        (order: PanelOrder) => {
+            const trackingUrl = getTrackingUrl(order)
+            const message = buildStatusMessage(order, { storeName: store.name, trackingUrl, stored: statusMessages })
+            return message
+        },
+        [store.name, statusMessages, getTrackingUrl],
+    )
+
+    const { notice: autoNotice, notifyCustomer } = useAutoNotify(store.id, buildMessage)
+    const { orders, isLoading, isTruncated, errorMessage, pendingOrderIds, changeStatus, changePaymentStatus, adoptOrder } =
+        usePanelOrders(store.id, periodStart, pinnedOrderId, notifyCustomer)
 
     const visibleOrders = useMemo(
         () => filterOrders(orders, { channel, search, periodStart }),
@@ -77,22 +98,13 @@ export function useOrderBoard(store: Store, pinnedOrderId: string | null): Order
         setSeenIds((current) => new Set(current).add(orderId))
     }, [])
 
-    const getTrackingUrl = useCallback(
-        (order: PanelOrder) => {
-            const url = buildTrackingUrl(window.location.origin, store.slug, order)
-            return url
-        },
-        [store.slug],
-    )
-
     const getNotifyUrl = useCallback(
         (order: PanelOrder) => {
-            const trackingUrl = getTrackingUrl(order)
-            const message = buildStatusMessage(order, { storeName: store.name, trackingUrl, stored: statusMessages })
+            const message = buildMessage(order)
             const url = message ? buildCustomerWhatsappUrl(order, message) : null
             return url
         },
-        [store.name, statusMessages, getTrackingUrl],
+        [buildMessage],
     )
 
     return {
@@ -110,6 +122,7 @@ export function useOrderBoard(store: Store, pinnedOrderId: string | null): Order
         isLoading,
         isTruncated,
         errorMessage,
+        autoNotice,
         changeStatus,
         changePaymentStatus,
         isPending,

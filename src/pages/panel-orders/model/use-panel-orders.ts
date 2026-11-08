@@ -27,6 +27,7 @@ export function usePanelOrders(
     storeId: string,
     periodStart: Date,
     pinnedOrderId: string | null,
+    onStatusSaved?: (order: PanelOrder) => void,
 ): PanelOrdersState {
     const [orders, setOrders] = useState<PanelOrder[]>([])
     const [isLoading, setLoading] = useState(true)
@@ -37,6 +38,7 @@ export function usePanelOrders(
     const ordersRef = useRef<PanelOrder[]>([])
     const periodStartRef = useRef(periodStart)
     const pinnedOrderIdRef = useRef(pinnedOrderId)
+    const onStatusSavedRef = useRef(onStatusSaved)
     const fetchSequenceRef = useRef(0)
     const isFetchingRef = useRef(false)
     const arrivedDuringFetchRef = useRef(new Map<string, PanelOrder>())
@@ -47,6 +49,7 @@ export function usePanelOrders(
     ordersRef.current = orders
     periodStartRef.current = periodStart
     pinnedOrderIdRef.current = pinnedOrderId
+    onStatusSavedRef.current = onStatusSaved
 
     const loadOrders = useCallback(async () => {
         const sequence = ++fetchSequenceRef.current
@@ -139,7 +142,12 @@ export function usePanelOrders(
     }, [loadOrders])
 
     const runOrderWrite = useCallback(
-        async (orderId: string, save: (current: PanelOrder) => Promise<PanelOrder | null>, failureMessage: string) => {
+        async (
+            orderId: string,
+            save: (current: PanelOrder) => Promise<PanelOrder | null>,
+            failureMessage: string,
+            onSaved?: (saved: PanelOrder) => void,
+        ) => {
             const current = ordersRef.current.find((order) => order.id === orderId)
             if (!current || pendingRef.current.has(orderId)) {
                 return
@@ -153,6 +161,7 @@ export function usePanelOrders(
                 if (resolution.kind === 'saved') {
                     setOrders((existing) => upsertOrder(existing, resolution.order))
                     setErrorMessage(null)
+                    onSaved?.(resolution.order)
                 } else {
                     setErrorMessage(resolution.message)
                     const fresh = await fetchOrderById(storeId, orderId)
@@ -177,6 +186,7 @@ export function usePanelOrders(
                 orderId,
                 (current) => saveOrderStatus(orderId, current.status, status),
                 'Não deu para mudar o status. Confira a internet e tente de novo.',
+                (saved) => onStatusSavedRef.current?.(saved),
             )
             return result
         },
