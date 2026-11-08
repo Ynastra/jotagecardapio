@@ -12,7 +12,7 @@ export const MENU_ITEMS: readonly MenuItem[] = [
     { path: 'pedidos', label: 'Pedidos', isReady: true },
     { path: 'produtos', label: 'Produtos', isReady: true },
     { path: 'adicionais', label: 'Adicionais', isReady: true },
-    { path: 'whatsapp', label: 'WhatsApp', isReady: false },
+    { path: 'whatsapp', label: 'WhatsApp', isReady: true },
     { path: 'minha-loja', label: 'Minha loja', isReady: true },
     { path: 'pagamento', label: 'Pagamento', isReady: true },
     { path: 'horarios', label: 'Horários', isReady: true },
