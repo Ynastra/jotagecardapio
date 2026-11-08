@@ -5,7 +5,7 @@ import { supabase } from './supabase'
 const STORE_MEDIA_BUCKET = 'store-media'
 const CACHE_CONTROL_SECONDS = '31536000'
 
-export type StoreImageFolder = 'produtos' | 'adicionais'
+export type StoreImageFolder = 'produtos' | 'adicionais' | 'loja'
 type StoreImageExtension = ReturnType<typeof resolveImageFormat>['extension']
 
 // O primeiro segmento do caminho é o id da loja: a política do bucket libera

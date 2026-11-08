@@ -6,6 +6,7 @@ import { AddonsPage } from '@/pages/panel-addons'
 import { PanelOrdersPage } from '@/pages/panel-orders'
 import { ProductEditPage } from '@/pages/panel-product-edit'
 import { ProductsPage } from '@/pages/panel-products'
+import { PanelStorePage } from '@/pages/panel-store'
 import { StoreMenuPage } from '@/pages/store-menu'
 
 import { PanelLayout } from './layouts/panel'
@@ -25,6 +26,7 @@ export function App() {
                     <Route path="produtos/novo" element={<ProductEditPage />} />
                     <Route path="produtos/:id" element={<ProductEditPage />} />
                     <Route path="adicionais"element={<AddonsPage />} />
+                    <Route path="minha-loja" element={<PanelStorePage />} />
                     <Route path="*" element={<Navigate to="/painel/pedidos" replace />} />
                 </Route>
                 <Route path="/:slug/pedido/:token" element={<OrderTrackingPage />} />
