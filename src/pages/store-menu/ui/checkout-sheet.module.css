@@ -78,6 +78,12 @@
     accent-color: var(--color-on-brand);
 }
 
+/* Sobre o fundo da marca, o contorno de foco padrão pode sumir; a cor de texto
+   da marca tem contraste garantido com ele. */
+.choice:has(input:checked) input:focus-visible {
+    outline-color: var(--color-on-brand);
+}
+
 .fields {
     display: grid;
     gap: var(--space-3);

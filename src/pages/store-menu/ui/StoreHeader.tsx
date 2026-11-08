@@ -39,6 +39,11 @@ function describeLocality(store: Store): string | null {
     return locality
 }
 
+function describeItemCount(itemCount: number): string {
+    const description = itemCount === 1 ? '1 item' : `${itemCount} itens`
+    return description
+}
+
 export function StoreHeader({ store, itemCount, onOpenCart }: StoreHeaderProps) {
     const [showDetails, setShowDetails] = useState(false)
     const clock = getLocalClock(new Date(), store.timezone)
@@ -64,7 +69,7 @@ export function StoreHeader({ store, itemCount, onOpenCart }: StoreHeaderProps) 
                     {locality ? <p className={styles.subtitle}>{locality}</p> : null}
                 </div>
 
-                <button type="button" className={styles.bag} aria-label="Abrir sacola" onClick={onOpenCart}>
+                <button type="button" className={styles.bag} aria-label={`Abrir sacola, ${describeItemCount(itemCount)}`} onClick={onOpenCart}>
                     <ThemeIcon name="sacola" size={19} />
                     <span aria-hidden="true">{itemCount}</span>
                 </button>

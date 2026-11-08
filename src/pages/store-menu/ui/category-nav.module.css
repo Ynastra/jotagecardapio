@@ -95,6 +95,12 @@
     color: var(--color-text);
 }
 
+/* A fileira rola na horizontal e corta o que passa da borda; o contorno do
+   foco fica por dentro da aba para continuar inteiro. */
+.tab:focus-visible {
+    outline-offset: calc(var(--menu-tab-underline) * -1);
+}
+
 .tabActive {
     border-color: var(--menu-rust);
     color: var(--color-text);
