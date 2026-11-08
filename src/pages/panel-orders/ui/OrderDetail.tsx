@@ -43,6 +43,12 @@ function describeFullAddress(address: OrderAddress): string[] {
     return lines
 }
 
+function describeDistance(distanceKm: number): string {
+    const formattedKm = distanceKm.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+    const description = `Distância: ${formattedKm} km`
+    return description
+}
+
 function describeOrderCount(count: number | null): string | null {
     if (count === null) {
         return null
@@ -192,6 +198,8 @@ export function OrderDetail({ order, store, trackingUrl, notifyUrl, isPending, o
                     {describeFullAddress(order.address).map((line) => (
                         <span key={line}>{line}</span>
                     ))}
+                    {order.distanceUnverified ? <p className={styles.warning}>Distância não conferida</p> : null}
+                    {order.deliveryDistanceKm != null ? <span>{describeDistance(order.deliveryDistanceKm)}</span> : null}
                 </section>
             ) : null}
         </>

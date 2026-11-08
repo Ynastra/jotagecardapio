@@ -25,6 +25,8 @@ export function buildPanelOrder(overrides: Partial<PanelOrder> = {}): PanelOrder
         readyAt: null,
         completedAt: null,
         canceledAt: null,
+        deliveryDistanceKm: null,
+        distanceUnverified: false,
         ...overrides,
     }
     return order

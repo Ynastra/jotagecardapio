@@ -10,7 +10,7 @@ import { createLocalId } from '@/shared/lib'
 
 const ACTIVE_STATUSES: OrderStatus[] = ['received', 'preparing', 'ready']
 const ORDER_COLUMNS =
-    'id, number, public_code, tracking_token, payment_status, preparing_at, ready_at, completed_at, canceled_at, customer_name, customer_phone, fulfillment, address, payment_method, change_for_cents, notes, items, subtotal_cents, delivery_fee_cents, payment_fee_cents, total_cents, status, created_at'
+    'id, number, public_code, tracking_token, payment_status, preparing_at, ready_at, completed_at, canceled_at, customer_name, customer_phone, fulfillment, address, payment_method, change_for_cents, notes, items, subtotal_cents, delivery_fee_cents, payment_fee_cents, total_cents, status, created_at, delivery_distance_km, distance_unverified'
 
 type OrderRow = {
     id: string
@@ -36,6 +36,8 @@ type OrderRow = {
     total_cents: number
     status: OrderStatus
     created_at: string
+    delivery_distance_km: number | null
+    distance_unverified: boolean
 }
 
 function mapOrder(row: OrderRow): PanelOrder {
@@ -63,6 +65,8 @@ function mapOrder(row: OrderRow): PanelOrder {
         totalCents: row.total_cents,
         status: row.status,
         createdAt: row.created_at,
+        deliveryDistanceKm: row.delivery_distance_km,
+        distanceUnverified: row.distance_unverified,
     }
     return order
 }
