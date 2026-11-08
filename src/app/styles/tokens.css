@@ -86,5 +86,10 @@
     --seal-height: 20px;
     --logo-home-width: 280px;
     --content-max: 760px;
+    --menu-max: 1040px;
+    --store-logo-size: 96px;
+    --store-logo-overlap: calc(var(--store-logo-size) / -2 - var(--space-5));
+    --status-dot-size: 10px;
+    --chevron-size: 8px;
     --sheet-max: 560px;
 }
