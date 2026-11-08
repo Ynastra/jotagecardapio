@@ -8,6 +8,7 @@
     display: block;
     inline-size: 100%;
     aspect-ratio: 16 / 10;
+    max-block-size: var(--menu-sheet-cover-max);
     object-fit: cover;
 }
 
@@ -61,9 +62,12 @@
     text-align: center;
 }
 
-.addButton {
+.footer .addButton {
+    --brand-edge: color-mix(in srgb, var(--color-brand), var(--menu-ink) var(--menu-brand-edge-ink));
+
     flex: 1;
     justify-content: space-between;
+    border-color: var(--brand-edge);
 }
 
 .addButton[aria-disabled='true'] {

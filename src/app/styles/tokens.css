@@ -147,6 +147,14 @@
     --menu-plus-size: 24px;
     --menu-font-size-section: clamp(1.8rem, 4vw, 2.7rem);
     --menu-row-min-height: 82px;
+    --menu-brand-edge-ink: 55%;
+    --menu-sheet-cover-max: 28dvh;
+}
+
+@media (min-width: 640px) {
+    :root {
+        --menu-sheet-cover-max: 45dvh;
+    }
 }
 
 @media (min-width: 900px) {
