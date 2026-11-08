@@ -1,0 +1,18 @@
+services:
+    waha:
+        image: devlikeapro/waha:gows-2026.10.1
+        container_name: jgcardapio-waha
+        restart: unless-stopped
+        ports:
+            - "3000:3000"
+        environment:
+            WAHA_API_KEY: ${WAHA_API_KEY:?defina WAHA_API_KEY em infra/whatsapp/.env}
+            WAHA_DASHBOARD_ENABLED: "false"
+            WHATSAPP_SWAGGER_ENABLED: "false"
+            WHATSAPP_RESTART_ALL_SESSIONS: "true"
+            WHATSAPP_START_SESSION: ""
+        volumes:
+            - waha_sessions:/app/.sessions
+
+volumes:
+    waha_sessions:
