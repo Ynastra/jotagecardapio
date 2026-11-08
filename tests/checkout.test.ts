@@ -192,6 +192,22 @@ describe('buildPlaceOrderPayload', () => {
         expect(payload.address).toBeNull()
         expect(payload.change_for_cents).toBeNull()
     })
+
+    it('manda a coordenada dentro do endereço só na entrega', () => {
+        const location = { latitude: -21.72028, longitude: -51.01889 }
+        const delivery = buildPlaceOrderPayload(store, filledForm, [], location)
+        const pickup = buildPlaceOrderPayload(store, { ...filledForm, fulfillment: 'pickup' }, [], location)
+
+        expect(delivery.address).toMatchObject(location)
+        expect(pickup.address).toBeNull()
+    })
+
+    it('não manda coordenada quando a localização não foi achada', () => {
+        const payload = buildPlaceOrderPayload(store, filledForm, [], null)
+
+        expect(payload.address).not.toHaveProperty('latitude')
+        expect(payload.address).not.toHaveProperty('longitude')
+    })
 })
 
 describe('CEP na entrega', () => {

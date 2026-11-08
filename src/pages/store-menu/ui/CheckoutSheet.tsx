@@ -1,6 +1,7 @@
 import { useRef, useState, type FormEvent } from 'react'
 
 import { FULFILLMENT_LABELS, PAYMENT_LABELS, type DraftLine, type PlacedOrder, type OrderMessageContext } from '@/entities/order'
+import { locateAddress } from '@/shared/api'
 import {
     formatBrazilianPhone,
     formatCents,
@@ -153,7 +154,9 @@ export function CheckoutSheet({
 
         setErrorMessage(null)
         setSubmitting(true)
-        const payload = buildPlaceOrderPayload(store, form, lines)
+        const needsLocation = form.fulfillment === 'delivery' && store.deliveryMode === 'radius'
+        const location = needsLocation ? await locateAddress(form) : null
+        const payload = buildPlaceOrderPayload(store, form, lines, location)
 
         try {
             const order = await placeOrder(payload)
