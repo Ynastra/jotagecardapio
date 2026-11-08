@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+    buildAddressQuery,
     buildPlaceOrderPayload,
     calculateOrderTotals,
     describeOrderError,
@@ -236,6 +237,23 @@ describe('CEP na entrega', () => {
         const payload = buildPlaceOrderPayload(store, form, [])
 
         expect(payload.address).toMatchObject({ cep: '', city: '', state: '' })
+    })
+})
+
+describe('buildAddressQuery', () => {
+    const requiringCep = { ...store, requireCep: true }
+    const remembered = { ...filledForm, cep: '17780-000', city: 'Lucélia', state: 'SP' }
+
+    it('inclui CEP, cidade e UF quando a loja pede CEP', () => {
+        expect(buildAddressQuery(requiringCep, remembered)).toMatchObject({
+            cep: '17780-000',
+            city: 'Lucélia',
+            state: 'SP',
+        })
+    })
+
+    it('ignora CEP, cidade e UF lembrados quando a loja não pede CEP', () => {
+        expect(buildAddressQuery(store, remembered)).toMatchObject({ cep: '', city: '', state: '' })
     })
 })
 

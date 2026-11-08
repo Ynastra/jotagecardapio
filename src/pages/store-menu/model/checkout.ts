@@ -1,5 +1,5 @@
 import type { DraftLine, Fulfillment, PaymentMethod } from '@/entities/order'
-import type { Coordinates } from '@/shared/api'
+import type { AddressQuery, Coordinates } from '@/shared/api'
 import { formatCents, isValidBrazilianPhone, isValidCep, keepDigits, parseReaisToCents } from '@/shared/lib'
 
 import type { Store, StorePaymentMethod } from './types'
@@ -210,6 +210,20 @@ export function validateCheckout(form: CheckoutForm, store: Store, subtotalCents
 
     const firstError = validateDelivery(form, store) ?? validatePayment(form, store, totalCents)
     return firstError
+}
+
+// CEP, cidade e UF lembrados de outra loja não entram na busca de quem não pede CEP.
+export function buildAddressQuery(store: Pick<Store, 'requireCep'>, form: CheckoutForm): AddressQuery {
+    const sendsCep = store.requireCep
+
+    const query = {
+        cep: sendsCep ? form.cep : '',
+        city: sendsCep ? form.city : '',
+        state: sendsCep ? form.state : '',
+        street: form.street,
+        number: form.number,
+    }
+    return query
 }
 
 export function buildPlaceOrderPayload(

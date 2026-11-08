@@ -16,6 +16,7 @@ import { Button, Sheet, StatusMessage, ThemeIcon, type IconName } from '@/shared
 import { lookupCep } from '../api/lookup-cep'
 import { placeOrder, PlaceOrderError } from '../api/place-order'
 import {
+    buildAddressQuery,
     buildPlaceOrderPayload,
     calculateOrderTotals,
     chargesByNeighborhood,
@@ -155,7 +156,7 @@ export function CheckoutSheet({
         setErrorMessage(null)
         setSubmitting(true)
         const needsLocation = form.fulfillment === 'delivery' && store.deliveryMode === 'radius'
-        const location = needsLocation ? await locateAddress(form) : null
+        const location = needsLocation ? await locateAddress(buildAddressQuery(store, form)) : null
         const payload = buildPlaceOrderPayload(store, form, lines, location)
 
         try {
