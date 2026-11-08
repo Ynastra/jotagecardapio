@@ -10,8 +10,8 @@ export type MenuItem = {
 export const MENU_ITEMS: readonly MenuItem[] = [
     { path: 'inicio', label: 'Início', isReady: false },
     { path: 'pedidos', label: 'Pedidos', isReady: true },
-    { path: 'produtos', label: 'Produtos', isReady: false },
-    { path: 'adicionais', label: 'Adicionais', isReady: false },
+    { path: 'produtos', label: 'Produtos', isReady: true },
+    { path: 'adicionais', label: 'Adicionais', isReady: true },
     { path: 'whatsapp', label: 'WhatsApp', isReady: false },
     { path: 'minha-loja', label: 'Minha loja', isReady: false },
     { path: 'pagamento', label: 'Pagamento', isReady: false },
