@@ -167,7 +167,7 @@ export function useProductEditor(storeId: string, productId: string | null, defa
         async function saveExisting(existing: ManagedProduct, all: readonly ManagedProduct[]) {
             const position =
                 existing.categoryId === values.categoryId ? existing.position : nextPositionIn(all, values.categoryId)
-            await updateProduct(storeId, existing.id, values, position, links)
+            await updateProduct(storeId, existing, values, position, links)
             await load()
             return existing.id
         }

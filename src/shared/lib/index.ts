@@ -6,5 +6,10 @@ export { readStoredJson, writeStoredJson } from './storage'
 export { pickReadableTextColor } from './color'
 export { ThemeProvider, useThemeAsset } from './theme/theme-context'
 export { createLocalId } from './local-id'
-export { computeOutputSize, reduceImageToWebp, validateImageFile } from './image-upload'
+export {
+    computeOutputSize,
+    reduceImage,
+    resolveImageFormat,
+    validateImageFile,
+} from './image-upload'
 export { playNewOrderChime, unlockChime } from './chime'

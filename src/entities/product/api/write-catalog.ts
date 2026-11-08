@@ -1,6 +1,8 @@
 import { supabase } from '@/shared/api'
 
-import type { ProductOptionLink, ProductValues } from '../model/types'
+import { diffOptionLinks } from '../model/option-link-diff'
+import { buildProductColumns, buildProductUpdateColumns } from '../model/product-columns'
+import type { ManagedProduct, ProductOptionLink, ProductValues } from '../model/types'
 
 export type PositionedTable = 'categories' | 'products'
 
@@ -19,34 +21,7 @@ export function isFeaturedLimitError(error: unknown): boolean {
     return isLimit
 }
 
-function buildProductColumns(values: ProductValues) {
-    const columns = {
-        category_id: values.categoryId,
-        name: values.name,
-        description: values.description,
-        price_cents: values.priceCents,
-        promo_price_cents: values.promoPriceCents,
-        serves: values.serves,
-        portion_amount: values.portionAmount,
-        portion_unit: values.portionUnit,
-        image_url: values.imageUrl,
-        highlight_tag: values.highlightTag,
-        info_tags: values.infoTags,
-        allergen_tags: values.allergenTags,
-        stock: values.stock,
-        sell_delivery_pickup: values.sellsDeliveryPickup,
-        sell_table: values.sellsTable,
-        featured: values.featured,
-        active: values.active,
-    }
-    return columns
-}
-
-async function insertOptionLinks(storeId: string, productId: string, links: readonly ProductOptionLink[]) {
-    if (links.length === 0) {
-        return
-    }
-
+function buildOptionLinkRows(storeId: string, productId: string, links: readonly ProductOptionLink[]) {
     const rows = links.map((link) => ({
         store_id: storeId,
         product_id: productId,
@@ -55,8 +30,43 @@ async function insertOptionLinks(storeId: string, productId: string, links: read
         min_choices: link.minChoices,
         max_choices: link.maxChoices,
     }))
+    return rows
+}
+
+async function insertOptionLinks(storeId: string, productId: string, links: readonly ProductOptionLink[]) {
+    if (links.length === 0) {
+        return
+    }
+
+    const rows = buildOptionLinkRows(storeId, productId, links)
     const { error } = await supabase.from('product_option_groups').insert(rows)
     throwOnError(error)
+}
+
+// Primeiro grava o que fica ou muda e só depois remove o que saiu: uma falha no
+// meio nunca deixa o produto sem adicionais.
+async function syncOptionLinks(
+    storeId: string,
+    productId: string,
+    current: readonly ProductOptionLink[],
+    desired: readonly ProductOptionLink[],
+) {
+    const { upserts, removedGroupIds } = diffOptionLinks(current, desired)
+
+    if (upserts.length > 0) {
+        const rows = buildOptionLinkRows(storeId, productId, upserts)
+        const { error } = await supabase.from('product_option_groups').upsert(rows, { onConflict: 'product_id,group_id' })
+        throwOnError(error)
+    }
+
+    if (removedGroupIds.length > 0) {
+        const { error } = await supabase
+            .from('product_option_groups')
+            .delete()
+            .eq('product_id', productId)
+            .in('group_id', removedGroupIds)
+        throwOnError(error)
+    }
 }
 
 // Devolve o id do produto criado.
@@ -85,20 +95,16 @@ export async function createProduct(
 
 export async function updateProduct(
     storeId: string,
-    productId: string,
+    loaded: ManagedProduct,
     values: ProductValues,
     position: number,
     links: readonly ProductOptionLink[],
 ): Promise<void> {
-    const { error } = await supabase
-        .from('products')
-        .update({ position, ...buildProductColumns(values) })
-        .eq('id', productId)
+    const columns = buildProductUpdateColumns(values, position, loaded.stock)
+    const { error } = await supabase.from('products').update(columns).eq('id', loaded.id)
     throwOnError(error)
 
-    const { error: clearError } = await supabase.from('product_option_groups').delete().eq('product_id', productId)
-    throwOnError(clearError)
-    await insertOptionLinks(storeId, productId, links)
+    await syncOptionLinks(storeId, loaded.id, loaded.optionLinks, links)
 }
 
 export async function setProductPrice(productId: string, priceCents: number): Promise<void> {

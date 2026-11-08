@@ -3,6 +3,7 @@ export const MAX_IMAGE_BYTES = 10 * 1024 * 1024
 export const MAX_IMAGE_SIDE = 1200
 
 const OUTPUT_TYPE = 'image/webp'
+const FALLBACK_TYPE = 'image/jpeg'
 const OUTPUT_QUALITY = 0.85
 
 type ImageFileInfo = { type: string; size: number }
@@ -36,17 +37,30 @@ export function computeOutputSize(width: number, height: number): ImageSize {
     return outputSize
 }
 
-function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+export type ImageFormat = { extension: 'webp' | 'jpg'; contentType: 'image/webp' | 'image/jpeg' }
+
+// O conteúdo manda no formato: navegadores sem encoder WebP devolvem outro tipo
+// sem erro, e o nome do arquivo precisa dizer o que ele realmente contém.
+export function resolveImageFormat(blobType: string): ImageFormat {
+    if (blobType === OUTPUT_TYPE) {
+        return { extension: 'webp', contentType: 'image/webp' }
+    }
+
+    return { extension: 'jpg', contentType: 'image/jpeg' }
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, type: string): Promise<Blob> {
     return new Promise((resolve, reject) => {
         canvas.toBlob(
             (blob) => (blob ? resolve(blob) : reject(new Error('Não foi possível converter a imagem'))),
-            OUTPUT_TYPE,
+            type,
             OUTPUT_QUALITY,
         )
     })
 }
 
-export async function reduceImageToWebp(file: File): Promise<Blob> {
+// Prefere WebP e cai para JPEG quando o navegador não sabe gerar WebP.
+export async function reduceImage(file: File): Promise<Blob> {
     const bitmap = await createImageBitmap(file)
     const { width, height } = computeOutputSize(bitmap.width, bitmap.height)
 
@@ -63,6 +77,11 @@ export async function reduceImageToWebp(file: File): Promise<Blob> {
     context.drawImage(bitmap, 0, 0, width, height)
     bitmap.close()
 
-    const blob = await canvasToBlob(canvas)
-    return blob
+    const webpBlob = await canvasToBlob(canvas, OUTPUT_TYPE)
+    if (webpBlob.type === OUTPUT_TYPE) {
+        return webpBlob
+    }
+
+    const jpegBlob = await canvasToBlob(canvas, FALLBACK_TYPE)
+    return jpegBlob
 }

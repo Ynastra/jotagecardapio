@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { buildStoreImagePath } from '@/shared/api/upload-store-image'
-import { computeOutputSize, validateImageFile } from '@/shared/lib'
+import { computeOutputSize, resolveImageFormat, validateImageFile } from '@/shared/lib'
 
 const TEN_MEGABYTES = 10 * 1024 * 1024
 
@@ -40,8 +40,18 @@ describe('computeOutputSize', () => {
 })
 
 describe('buildStoreImagePath', () => {
-    it('começa pelo id da loja e termina em webp', () => {
-        expect(buildStoreImagePath('loja-1', 'produtos', 'abc')).toBe('loja-1/produtos/abc.webp')
-        expect(buildStoreImagePath('loja-1', 'adicionais', 'abc')).toBe('loja-1/adicionais/abc.webp')
+    it('começa pelo id da loja e termina na extensão informada', () => {
+        expect(buildStoreImagePath('loja-1', 'produtos', 'abc', 'webp')).toBe('loja-1/produtos/abc.webp')
+        expect(buildStoreImagePath('loja-1', 'adicionais', 'abc', 'jpg')).toBe('loja-1/adicionais/abc.jpg')
+    })
+})
+
+describe('resolveImageFormat', () => {
+    it('mantém WebP quando o blob veio em WebP', () => {
+        expect(resolveImageFormat('image/webp')).toEqual({ extension: 'webp', contentType: 'image/webp' })
+    })
+
+    it.each(['image/png', 'image/jpeg', ''])('cai para JPEG quando o blob veio como %s', (blobType) => {
+        expect(resolveImageFormat(blobType)).toEqual({ extension: 'jpg', contentType: 'image/jpeg' })
     })
 })
