@@ -1,11 +1,25 @@
 import { supabase } from '@/shared/api'
 
-import type { ConnectionState, StoredSession } from '../model/connection'
+import type { ConnectionState, GatewaySnapshot, StoredSession } from '../model/connection'
+
+type SessionAction = 'status' | 'connect' | 'disconnect'
 
 type SessionDbRow = {
     state: ConnectionState
     phone: string | null
     updated_at: string
+}
+
+export async function runSessionAction(action: SessionAction, storeId: string): Promise<GatewaySnapshot> {
+    const { data, error } = await supabase.functions.invoke<GatewaySnapshot>('whatsapp', {
+        body: { action, store_id: storeId },
+    })
+
+    if (error || !data) {
+        throw error ?? new Error('Resposta vazia da função whatsapp')
+    }
+
+    return data
 }
 
 export async function fetchSession(storeId: string): Promise<StoredSession | null> {

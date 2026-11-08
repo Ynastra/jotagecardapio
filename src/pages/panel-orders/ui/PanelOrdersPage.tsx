@@ -128,6 +128,11 @@ export function PanelOrdersPage() {
                     </button>
                 </div>
             ) : null}
+            {board.autoNotice ? (
+                <p className={styles.notice} role="status">
+                    {board.autoNotice}
+                </p>
+            ) : null}
             {board.isTruncated ? <p className={styles.notice}>Mostrando os {ORDERS_QUERY_LIMIT} mais recentes</p> : null}
             {board.isLoading ? <p className={styles.muted}>Carregando pedidos</p> : null}
             {board.hasNoOrders ? (
