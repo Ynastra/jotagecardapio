@@ -23,6 +23,23 @@ function readBarHeight(): number {
     return height
 }
 
+/**
+ * No alto da página o topo da loja ocupa a faixa observada e nenhuma seção
+ * cruza com ela; sem isso o destaque ficaria preso na última seção vista.
+ */
+function firstIdWhenAboveSections(ids: readonly string[]): string | undefined {
+    const firstId = ids[0]
+
+    if (!firstId) {
+        return undefined
+    }
+
+    const firstElement = document.getElementById(toSectionElementId(firstId))
+    const isAboveSections = firstElement !== null && firstElement.getBoundingClientRect().top > readBarHeight()
+    const id = isAboveSections ? firstId : undefined
+    return id
+}
+
 type ActiveSection = {
     activeId: string
     selectSection: (sectionId: string) => void
@@ -73,7 +90,7 @@ export function useActiveSection(sectionIds: readonly string[]): ActiveSection {
                     }
                 }
 
-                const topmostId = ids.find((sectionId) => visibleIds.has(sectionId))
+                const topmostId = ids.find((sectionId) => visibleIds.has(sectionId)) ?? firstIdWhenAboveSections(ids)
 
                 if (topmostId && !isScrollLocked.current) {
                     setTrackedId(topmostId)
