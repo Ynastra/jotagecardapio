@@ -19,8 +19,15 @@ export function Sheet({ title, onClose, children, footer, hideTitle = false }: S
 
     useEffect(() => {
         const dialog = dialogRef.current
+        const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
         dialog?.showModal()
-        return () => dialog?.close()
+        dialog?.querySelector<HTMLElement>(`.${styles.body} :is(input, select, textarea)`)?.focus()
+        return () => {
+            dialog?.close()
+            if (opener?.isConnected) {
+                opener.focus()
+            }
+        }
     }, [])
 
     function handleBackdropClick(event: MouseEvent<HTMLDialogElement>) {

@@ -17,7 +17,12 @@ function throwOnError(error: Error | null) {
 }
 
 export function isFeaturedLimitError(error: unknown): boolean {
-    const isLimit = error instanceof Error && error.message.includes(FEATURED_LIMIT_CODE)
+    if (typeof error !== 'object' || error === null || !('message' in error)) {
+        return false
+    }
+
+    const { message } = error
+    const isLimit = typeof message === 'string' && message.includes(FEATURED_LIMIT_CODE)
     return isLimit
 }
 

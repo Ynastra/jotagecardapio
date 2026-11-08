@@ -16,8 +16,10 @@ type ActionMenuProps = {
 
 export function ActionMenu({ label, actions }: ActionMenuProps) {
     const detailsRef = useRef<HTMLDetailsElement>(null)
+    const toggleRef = useRef<HTMLElement>(null)
 
     function select(action: MenuAction) {
+        toggleRef.current?.focus()
         if (detailsRef.current) {
             detailsRef.current.open = false
         }
@@ -26,7 +28,7 @@ export function ActionMenu({ label, actions }: ActionMenuProps) {
 
     return (
         <details ref={detailsRef} className={styles.menu}>
-            <summary className={styles.menuToggle} aria-label={label}>
+            <summary ref={toggleRef} className={styles.menuToggle} aria-label={label}>
                 Mais
             </summary>
             <div className={styles.menuList}>
