@@ -1,0 +1,331 @@
+.page {
+    display: grid;
+    gap: var(--space-4);
+    min-inline-size: 0;
+}
+
+.header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+    justify-content: space-between;
+}
+
+.title {
+    font-size: var(--font-size-2xl);
+}
+
+.toolbar {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.search {
+    min-block-size: var(--touch-target);
+}
+
+.tabs {
+    display: flex;
+    gap: var(--space-1);
+    padding: var(--space-1);
+    overflow-x: auto;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface-muted);
+}
+
+.tab {
+    flex: none;
+    min-block-size: var(--touch-target);
+    padding: 0 var(--space-4);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: none;
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.tab:hover {
+    background-color: var(--color-surface);
+}
+
+.error {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background-color: var(--color-danger-soft);
+    color: var(--color-danger);
+    font-weight: 600;
+}
+
+.muted {
+    padding: var(--space-8);
+    color: var(--color-text-secondary);
+    text-align: center;
+}
+
+.groups {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.group {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
+    scroll-margin-block-start: var(--space-4);
+}
+
+.groupHead {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+    justify-content: space-between;
+}
+
+.groupText {
+    display: grid;
+    flex: 1;
+    gap: var(--space-1);
+    min-inline-size: 200px;
+}
+
+.groupTitle {
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+}
+
+.groupDescription {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.usage {
+    color: var(--color-jg-accent);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+.groupActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.switch {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+    min-block-size: var(--touch-target);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.switch input {
+    inline-size: 20px;
+    block-size: 20px;
+    accent-color: var(--color-jg-accent);
+}
+
+.menu {
+    position: relative;
+}
+
+.menuToggle {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--touch-target);
+    padding: 0 var(--space-4);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+}
+
+.menuToggle::-webkit-details-marker {
+    display: none;
+}
+
+.menuList {
+    position: absolute;
+    inset-inline-end: 0;
+    z-index: var(--z-sticky);
+    display: grid;
+    min-inline-size: 160px;
+    padding: var(--space-1);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-raised);
+}
+
+.menuItem {
+    min-block-size: var(--touch-target);
+    padding: 0 var(--space-3);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--color-text);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+}
+
+.menuItem:hover:not(:disabled) {
+    background-color: var(--color-surface-muted);
+}
+
+.menuItem:disabled {
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+}
+
+.menuDanger {
+    color: var(--color-danger);
+}
+
+.options {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.option {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    gap: var(--space-3);
+    align-items: center;
+    padding: var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+}
+
+.optionInactive {
+    background-color: var(--color-surface-muted);
+}
+
+.optionPhoto {
+    inline-size: 56px;
+    block-size: 56px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+}
+
+.optionText {
+    display: grid;
+    gap: var(--space-1);
+    min-inline-size: 0;
+}
+
+.optionName {
+    font-weight: 700;
+}
+
+.optionDescription {
+    overflow: hidden;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.optionControls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.priceBox {
+    display: grid;
+    gap: var(--space-1);
+    justify-items: end;
+}
+
+.priceInput {
+    inline-size: 110px;
+    min-block-size: var(--touch-target);
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-align: end;
+}
+
+.fieldError {
+    color: var(--color-danger);
+    font-size: var(--font-size-sm);
+}
+
+.form {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+}
+
+.field {
+    display: grid;
+    gap: var(--space-1);
+    font-weight: 600;
+}
+
+.field input,
+.field select,
+.field textarea {
+    min-block-size: var(--touch-target);
+    font-weight: 400;
+}
+
+.hint {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: 400;
+}
+
+.imageRow {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+}
+
+.imagePreview {
+    inline-size: 72px;
+    block-size: 72px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+}
+
+.sheetFooter {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+}
+
+.confirmText {
+    padding: var(--space-4) var(--space-5);
+}
+
+@media (width <= 560px) {
+    .option {
+        grid-template-columns: 56px minmax(0, 1fr);
+    }
+
+    .optionControls {
+        grid-column: 1 / -1;
+        justify-content: space-between;
+    }
+}
