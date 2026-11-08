@@ -4,13 +4,15 @@ import type { PanelOrder } from '@/entities/order'
 
 import { fetchOrderById } from '../api/panel-orders'
 
+export type LinkedOrderFailure = 'not-found' | 'failed'
+
 type LinkedOrderOptions = {
     storeId: string
     orderId: string | null
     isListed: boolean
     isBoardLoading: boolean
     onFound: (order: PanelOrder) => void
-    onMissing: () => void
+    onMissing: (failure: LinkedOrderFailure) => void
 }
 
 // Um endereço com `?pedido=` pode apontar para um pedido que a lista carregada
@@ -42,13 +44,13 @@ export function useLinkedOrder({
                 if (order) {
                     handlersRef.current.onFound(order)
                 } else {
-                    handlersRef.current.onMissing()
+                    handlersRef.current.onMissing('not-found')
                 }
             })
             .catch((error: unknown) => {
                 console.error('Falha ao buscar o pedido do endereço', error)
                 if (isCurrent) {
-                    handlersRef.current.onMissing()
+                    handlersRef.current.onMissing('failed')
                 }
             })
 

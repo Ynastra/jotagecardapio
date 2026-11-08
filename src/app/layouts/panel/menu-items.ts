@@ -1,3 +1,5 @@
+export const PANEL_MENU_ID = 'menu-do-painel'
+
 export type MenuItem = {
     path: string
     label: string

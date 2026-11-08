@@ -6,7 +6,7 @@ import { playNewOrderChime } from '@/shared/lib'
 import { fetchOrderById, fetchOrders, saveOrderStatus, savePaymentStatus, subscribeToOrders } from '../api/panel-orders'
 import { hasReachedQueryLimit, ORDERS_QUERY_LIMIT } from './board'
 import { isVisibleInPeriod } from './filters'
-import { mergeFetchedWithRealtime } from './merge-orders'
+import { keepPinnedOrder, mergeFetchedWithRealtime } from './merge-orders'
 import { upsertOrder } from './order-flow'
 import { resolveOrderWrite } from './order-write'
 
@@ -21,7 +21,13 @@ export type PanelOrdersState = {
     adoptOrder: (order: PanelOrder) => void
 }
 
-export function usePanelOrders(storeId: string, periodStart: Date): PanelOrdersState {
+// `pinnedOrderId` é o pedido aberto na gaveta: ele não sai da lista por
+// remoção nem por junção enquanto estiver aberto.
+export function usePanelOrders(
+    storeId: string,
+    periodStart: Date,
+    pinnedOrderId: string | null,
+): PanelOrdersState {
     const [orders, setOrders] = useState<PanelOrder[]>([])
     const [isLoading, setLoading] = useState(true)
     const [isTruncated, setTruncated] = useState(false)
@@ -30,19 +36,23 @@ export function usePanelOrders(storeId: string, periodStart: Date): PanelOrdersS
     const pendingRef = useRef(new Set<string>())
     const ordersRef = useRef<PanelOrder[]>([])
     const periodStartRef = useRef(periodStart)
+    const pinnedOrderIdRef = useRef(pinnedOrderId)
     const fetchSequenceRef = useRef(0)
     const isFetchingRef = useRef(false)
     const arrivedDuringFetchRef = useRef(new Map<string, PanelOrder>())
+    const removedDuringFetchRef = useRef(new Set<string>())
     const isChannelSettledRef = useRef(false)
     const periodStartMs = periodStart.getTime()
 
     ordersRef.current = orders
     periodStartRef.current = periodStart
+    pinnedOrderIdRef.current = pinnedOrderId
 
     const loadOrders = useCallback(async () => {
         const sequence = ++fetchSequenceRef.current
         isFetchingRef.current = true
         arrivedDuringFetchRef.current.clear()
+        removedDuringFetchRef.current.clear()
         setLoading(true)
 
         try {
@@ -52,8 +62,9 @@ export function usePanelOrders(storeId: string, periodStart: Date): PanelOrdersS
             }
 
             const arrived = Array.from(arrivedDuringFetchRef.current.values())
-            setOrders(mergeFetchedWithRealtime(fetched, arrived))
-            setTruncated(hasReachedQueryLimit(fetched.length))
+            const merged = mergeFetchedWithRealtime(fetched.orders, arrived, removedDuringFetchRef.current)
+            setOrders(keepPinnedOrder(merged, ordersRef.current, pinnedOrderIdRef.current))
+            setTruncated(hasReachedQueryLimit(fetched.periodOrderCount))
             setErrorMessage(null)
         } catch (error) {
             console.error('Falha ao carregar pedidos', error)
@@ -64,6 +75,7 @@ export function usePanelOrders(storeId: string, periodStart: Date): PanelOrdersS
             if (sequence === fetchSequenceRef.current) {
                 isFetchingRef.current = false
                 arrivedDuringFetchRef.current.clear()
+                removedDuringFetchRef.current.clear()
                 setLoading(false)
             }
         }
@@ -80,17 +92,31 @@ export function usePanelOrders(storeId: string, periodStart: Date): PanelOrdersS
             void loadOrdersRef.current()
         }
 
+        function removeFromList(orderId: string) {
+            if (isFetchingRef.current) {
+                arrivedDuringFetchRef.current.delete(orderId)
+                removedDuringFetchRef.current.add(orderId)
+            }
+            setOrders((current) => current.filter((existing) => existing.id !== orderId))
+        }
+
+        function addToList(order: PanelOrder) {
+            if (isFetchingRef.current) {
+                removedDuringFetchRef.current.delete(order.id)
+                arrivedDuringFetchRef.current.set(order.id, order)
+            }
+            setOrders((current) => upsertOrder(current, order))
+        }
+
         const unsubscribe = subscribeToOrders(storeId, {
             onOrder: (order, isNew) => {
-                if (!isVisibleInPeriod(order, periodStartRef.current)) {
-                    setOrders((current) => current.filter((existing) => existing.id !== order.id))
-                    return
+                const isPinned = order.id === pinnedOrderIdRef.current
+                if (isVisibleInPeriod(order, periodStartRef.current) || isPinned) {
+                    addToList(order)
+                } else {
+                    removeFromList(order.id)
                 }
 
-                if (isFetchingRef.current) {
-                    arrivedDuringFetchRef.current.set(order.id, order)
-                }
-                setOrders((current) => upsertOrder(current, order))
                 if (isNew) {
                     playNewOrderChime()
                 }

@@ -7,7 +7,7 @@ import { formatCents, unlockChime } from '@/shared/lib'
 import { StatusMessage } from '@/shared/ui'
 
 import { ORDERS_QUERY_LIMIT } from '../model/board'
-import { useLinkedOrder } from '../model/use-linked-order'
+import { useLinkedOrder, type LinkedOrderFailure } from '../model/use-linked-order'
 import { useOrderBoard } from '../model/use-order-board'
 import { BoardCard } from './BoardCard'
 import { BoardColumn, type ColumnTone } from './BoardColumn'
@@ -23,6 +23,12 @@ const COLUMN_DEFINITIONS = [
 ] as const satisfies readonly { key: string; id: string; title: string; tone: ColumnTone }[]
 
 const OPEN_ORDER_PARAM = 'pedido'
+const LINK_NOTICE_MS = 6000
+
+const LINK_NOTICE_MESSAGES: Record<LinkedOrderFailure, string> = {
+    'not-found': 'Pedido não encontrado',
+    failed: 'Não deu para carregar o pedido. Confira a internet.',
+}
 
 function jumpToColumn(columnId: string) {
     document.getElementById(columnId)?.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' })
@@ -30,15 +36,15 @@ function jumpToColumn(columnId: string) {
 
 export function PanelOrdersPage() {
     const store = useCurrentStore()
-    const board = useOrderBoard(store)
     const [searchParams, setSearchParams] = useSearchParams()
-    const [isOrderMissing, setOrderMissing] = useState(false)
+    const [linkNotice, setLinkNotice] = useState<LinkedOrderFailure | null>(null)
     const openOrderId = searchParams.get(OPEN_ORDER_PARAM)
+    const board = useOrderBoard(store, openOrderId)
     const openOrder = openOrderId ? board.findOrder(openOrderId) : null
 
     function openDrawer(orderId: string) {
         board.markSeen(orderId)
-        setOrderMissing(false)
+        setLinkNotice(null)
         setSearchParams({ [OPEN_ORDER_PARAM]: orderId })
     }
 
@@ -46,8 +52,8 @@ export function PanelOrdersPage() {
         setSearchParams({})
     }
 
-    function reportMissingOrder() {
-        setOrderMissing(true)
+    function reportLinkedOrderFailure(failure: LinkedOrderFailure) {
+        setLinkNotice(failure)
         setSearchParams({})
     }
 
@@ -57,8 +63,17 @@ export function PanelOrdersPage() {
         isListed: openOrder !== null,
         isBoardLoading: board.isLoading,
         onFound: board.adoptOrder,
-        onMissing: reportMissingOrder,
+        onMissing: reportLinkedOrderFailure,
     })
+
+    useEffect(() => {
+        if (!linkNotice) {
+            return
+        }
+
+        const timer = window.setTimeout(() => setLinkNotice(null), LINK_NOTICE_MS)
+        return () => window.clearTimeout(timer)
+    }, [linkNotice])
 
     useEffect(() => {
         if (openOrderId) {
@@ -105,10 +120,13 @@ export function PanelOrdersPage() {
                     {board.errorMessage}
                 </p>
             ) : null}
-            {isOrderMissing ? (
-                <p className={styles.error} role="alert">
-                    Pedido não encontrado
-                </p>
+            {linkNotice ? (
+                <div className={`${styles.error} ${styles.dismissible}`} role="alert">
+                    <p>{LINK_NOTICE_MESSAGES[linkNotice]}</p>
+                    <button type="button" className={styles.dismiss} onClick={() => setLinkNotice(null)}>
+                        Fechar
+                    </button>
+                </div>
             ) : null}
             {board.isTruncated ? <p className={styles.notice}>Mostrando os {ORDERS_QUERY_LIMIT} mais recentes</p> : null}
             {board.isLoading ? <p className={styles.muted}>Carregando pedidos</p> : null}

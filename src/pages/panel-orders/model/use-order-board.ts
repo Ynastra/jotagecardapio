@@ -38,7 +38,7 @@ export type OrderBoardState = {
     getTrackingUrl: (order: PanelOrder) => string
 }
 
-export function useOrderBoard(store: Store): OrderBoardState {
+export function useOrderBoard(store: Store, pinnedOrderId: string | null): OrderBoardState {
     const [channel, setChannel] = useState<ChannelFilter>('all')
     const [search, setSearch] = useState('')
     const [period, setPeriod] = useState<PeriodKey>('today')
@@ -46,7 +46,7 @@ export function useOrderBoard(store: Store): OrderBoardState {
 
     const periodStart = usePeriodStart(period, store.timezone)
     const { orders, isLoading, isTruncated, errorMessage, pendingOrderIds, changeStatus, changePaymentStatus, adoptOrder } =
-        usePanelOrders(store.id, periodStart)
+        usePanelOrders(store.id, periodStart, pinnedOrderId)
     const statusMessages = useStatusMessages(store.id)
 
     const visibleOrders = useMemo(

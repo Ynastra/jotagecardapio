@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { mergeFetchedWithRealtime } from '@/pages/panel-orders/model/merge-orders'
+import { keepPinnedOrder, mergeFetchedWithRealtime } from '@/pages/panel-orders/model/merge-orders'
 
 import { buildPanelOrder } from './fixtures/panel-order'
 
@@ -30,5 +30,36 @@ describe('mergeFetchedWithRealtime', () => {
         const merged = mergeFetchedWithRealtime([older, newer], [])
 
         expect(merged.map((order) => order.id)).toEqual(['b', 'a'])
+    })
+
+    it('tira da busca o pedido removido pelo tempo real durante a busca', () => {
+        const staying = buildPanelOrder({ id: 'a', number: 1 })
+        const removed = buildPanelOrder({ id: 'b', number: 2, status: 'preparing' })
+
+        const merged = mergeFetchedWithRealtime([staying, removed], [], new Set(['b']))
+
+        expect(merged.map((order) => order.id)).toEqual(['a'])
+    })
+})
+
+describe('keepPinnedOrder', () => {
+    const pinned = buildPanelOrder({ id: 'p', number: 5 })
+    const other = buildPanelOrder({ id: 'o', number: 9 })
+
+    it('devolve o pedido aberto à lista quando a junção o deixou de fora', () => {
+        const kept = keepPinnedOrder([other], [pinned, other], 'p')
+
+        expect(kept.map((order) => order.id)).toEqual(['o', 'p'])
+    })
+
+    it('não duplica o pedido aberto que já está na lista', () => {
+        const kept = keepPinnedOrder([other, pinned], [pinned], 'p')
+
+        expect(kept).toHaveLength(2)
+    })
+
+    it('não inventa pedido sem gaveta aberta ou que não estava na lista anterior', () => {
+        expect(keepPinnedOrder([other], [pinned, other], null)).toEqual([other])
+        expect(keepPinnedOrder([other], [other], 'p')).toEqual([other])
     })
 })

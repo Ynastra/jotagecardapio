@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 
 import { CurrentStoreProvider, fetchMyStores, type Store } from '@/entities/store'
@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/shared/lib'
 import { Button, StatusMessage } from '@/shared/ui'
 
 import { LoginForm } from './LoginForm'
+import { PANEL_MENU_ID } from './menu-items'
 import { PanelMenu } from './PanelMenu'
 import styles from './panel-layout.module.css'
 import { useSession } from './use-session'
@@ -15,21 +16,29 @@ function StoreShell({ store }: { store: Store }) {
     const [isMenuOpen, setMenuOpen] = useState(false)
     const menuToggleRef = useRef<HTMLButtonElement>(null)
 
+    // Esc, o botão Fechar e o fundo fecham o menu pelo mesmo caminho e devolvem
+    // o foco ao botão que o abriu.
+    const closeMenu = useCallback(() => {
+        setMenuOpen(false)
+        menuToggleRef.current?.focus()
+    }, [])
+
     useEffect(() => {
         if (!isMenuOpen) {
             return
         }
 
+        document.getElementById(PANEL_MENU_ID)?.focus()
+
         function closeOnEscape(event: KeyboardEvent) {
             if (event.key === 'Escape') {
-                setMenuOpen(false)
-                menuToggleRef.current?.focus()
+                closeMenu()
             }
         }
 
         document.addEventListener('keydown', closeOnEscape)
         return () => document.removeEventListener('keydown', closeOnEscape)
-    }, [isMenuOpen])
+    }, [isMenuOpen, closeMenu])
 
     return (
         <CurrentStoreProvider store={store}>
@@ -38,16 +47,18 @@ function StoreShell({ store }: { store: Store }) {
                     store={store}
                     isOpen={isMenuOpen}
                     onNavigate={() => setMenuOpen(false)}
-                    onClose={() => setMenuOpen(false)}
+                    onClose={closeMenu}
                 />
                 {isMenuOpen ? (
-                    <button type="button" className={styles.menuBackdrop} aria-label="Fechar menu" onClick={() => setMenuOpen(false)} />
+                    <button type="button" className={styles.menuBackdrop} aria-label="Fechar menu" onClick={closeMenu} />
                 ) : null}
                 <div className={styles.contentColumn}>
                     <div className={styles.topBar}>
                         <button
                             ref={menuToggleRef}
                             type="button"
+                            aria-expanded={isMenuOpen}
+                            aria-controls={PANEL_MENU_ID}
                             className={styles.menuToggle}
                             onClick={() => setMenuOpen(true)}
                         >
@@ -125,9 +136,12 @@ function StorePicker() {
 export function PanelLayout() {
     const session = useSession()
 
+    // Ao sair, a tela de pedidos desmonta sem limpar a contagem que deixou no título.
     useEffect(() => {
-        document.title = 'Painel · JG Cardápio'
-    }, [])
+        if (!session) {
+            document.title = 'Painel · JG Cardápio'
+        }
+    }, [session])
 
     return (
         <ThemeProvider folders={['base']}>

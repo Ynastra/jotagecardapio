@@ -6,8 +6,9 @@ import {
     type PanelOrder,
 } from '@/entities/order'
 import { supabase } from '@/shared/api'
+import { createLocalId } from '@/shared/lib'
 
-const ACTIVE_STATUS_LIST = 'received,preparing,ready'
+const ACTIVE_STATUSES: OrderStatus[] = ['received', 'preparing', 'ready']
 const ORDER_COLUMNS =
     'id, number, public_code, tracking_token, payment_status, preparing_at, ready_at, completed_at, canceled_at, customer_name, customer_phone, fulfillment, address, payment_method, change_for_cents, notes, items, subtotal_cents, delivery_fee_cents, payment_fee_cents, total_cents, status, created_at'
 
@@ -72,23 +73,43 @@ export type OrdersQuery = {
     limit: number
 }
 
-// Traz os pedidos em andamento de qualquer data mais os criados a partir de
-// `since`; o teto vale sobre o total.
-export async function fetchOrders({ storeId, since, limit }: OrdersQuery): Promise<PanelOrder[]> {
-    const { data, error } = await supabase
+export type OrdersFetchResult = {
+    orders: PanelOrder[]
+    // Quantos pedidos do período a consulta trouxe, para saber se bateu no teto.
+    periodOrderCount: number
+}
+
+// Traz todos os pedidos em andamento, de qualquer data, mais os criados a
+// partir de `since`, limitados a `limit`: o teto vale só para o período, para
+// que pedido aberto nunca fique de fora.
+export async function fetchOrders({ storeId, since, limit }: OrdersQuery): Promise<OrdersFetchResult> {
+    const activeQuery = supabase
         .from('orders')
         .select(ORDER_COLUMNS)
         .eq('store_id', storeId)
-        .or(`status.in.(${ACTIVE_STATUS_LIST}),created_at.gte.${since.toISOString()}`)
+        .in('status', ACTIVE_STATUSES)
+        .order('created_at', { ascending: false })
+    const periodQuery = supabase
+        .from('orders')
+        .select(ORDER_COLUMNS)
+        .eq('store_id', storeId)
+        .gte('created_at', since.toISOString())
         .order('created_at', { ascending: false })
         .limit(limit)
 
-    if (error) {
-        throw error
+    const [active, period] = await Promise.all([activeQuery, periodQuery])
+    if (active.error) {
+        throw active.error
+    }
+    if (period.error) {
+        throw period.error
     }
 
-    const orders = (data as OrderRow[]).map(mapOrder)
-    return orders
+    const periodOrders = (period.data as OrderRow[]).map(mapOrder)
+    const periodIds = new Set(periodOrders.map((order) => order.id))
+    const activeOutsidePeriod = (active.data as OrderRow[]).map(mapOrder).filter((order) => !periodIds.has(order.id))
+    const orders = [...periodOrders, ...activeOutsidePeriod].sort((first, second) => second.number - first.number)
+    return { orders, periodOrderCount: periodOrders.length }
 }
 
 function firstMappedOrder(data: unknown): PanelOrder | null {
@@ -198,8 +219,10 @@ export function subscribeToOrders(storeId: string, handlers: OrdersSubscriptionH
             return
         }
 
+        // Um tópico repetido faz o cliente recusar uma segunda inscrição; cada
+        // montagem usa o seu.
         channel = supabase
-            .channel(`pedidos-${storeId}`)
+            .channel(`pedidos-${storeId}-${createLocalId()}`)
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'orders', filter: `store_id=eq.${storeId}` },
@@ -222,7 +245,12 @@ export function subscribeToOrders(storeId: string, handlers: OrdersSubscriptionH
             })
     }
 
-    void start()
+    start().catch((error: unknown) => {
+        console.error('Falha ao abrir o canal de pedidos', error)
+        if (isActive) {
+            handlers.onFailed()
+        }
+    })
 
     const unsubscribe = () => {
         isActive = false

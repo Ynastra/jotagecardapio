@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom'
 import type { Store } from '@/entities/store'
 import { supabase } from '@/shared/api'
 
-import { MENU_ITEMS } from './menu-items'
+import { MENU_ITEMS, PANEL_MENU_ID } from './menu-items'
 import styles from './panel-layout.module.css'
 
 type PanelMenuProps = {
@@ -17,7 +17,7 @@ export function PanelMenu({ store, isOpen, onNavigate, onClose }: PanelMenuProps
     const menuClasses = [styles.menu, isOpen ? styles.menuOpen : ''].filter(Boolean).join(' ')
 
     return (
-        <nav className={menuClasses} aria-label="Menu do painel">
+        <nav id={PANEL_MENU_ID} className={menuClasses} aria-label="Menu do painel" tabIndex={-1}>
             <button type="button" className={styles.menuClose} onClick={onClose}>
                 Fechar
             </button>

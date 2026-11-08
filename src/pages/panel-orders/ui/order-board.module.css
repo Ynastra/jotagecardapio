@@ -16,6 +16,25 @@
     font-weight: 600;
 }
 
+.dismissible {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    justify-content: space-between;
+}
+
+.dismiss {
+    min-block-size: var(--touch-target);
+    padding: 0 var(--space-3);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
 .muted {
     padding: var(--space-8);
     color: var(--color-text-secondary);
