@@ -148,10 +148,27 @@ export function isStoreFormDirty(initial: StoreForm, current: StoreForm): boolea
     return isDirty
 }
 
-export function validateFulfillment(form: Pick<StoreForm, 'acceptsDelivery' | 'acceptsPickup'>): string | undefined {
+// Se há ao menos uma forma de pagamento ligada em cada modo de atendimento.
+export type PaymentCoverage = {
+    delivery: boolean
+    pickup: boolean
+}
+
+export function validateFulfillment(
+    form: Pick<StoreForm, 'acceptsDelivery' | 'acceptsPickup'>,
+    coverage: PaymentCoverage | null = null,
+): string | undefined {
     const hasOne = form.acceptsDelivery || form.acceptsPickup
-    const error = hasOne ? undefined : 'Deixe pelo menos uma forma de atendimento ligada.'
-    return error
+    if (!hasOne) {
+        return 'Deixe pelo menos uma forma de atendimento ligada.'
+    }
+    if (coverage && form.acceptsDelivery && !coverage.delivery) {
+        return 'Não há forma de pagamento ligada para entrega. Ligue uma em Pagamento antes de aceitar entrega.'
+    }
+    if (coverage && form.acceptsPickup && !coverage.pickup) {
+        return 'Não há forma de pagamento ligada para retirada. Ligue uma em Pagamento antes de aceitar retirada.'
+    }
+    return undefined
 }
 
 function validateMaxLength(text: string, max: number): string | undefined {
@@ -183,7 +200,7 @@ function validateBrandColor(brandColor: string): string | undefined {
     return error
 }
 
-function collectErrors(form: StoreForm): StoreFormErrors {
+function collectErrors(form: StoreForm, coverage: PaymentCoverage | null): StoreFormErrors {
     const candidates: Record<StoreFieldName, string | undefined> = {
         name: validateName(form.name),
         whatsapp: isValidBrazilianPhone(form.whatsapp) ? undefined : 'Informe o WhatsApp com DDD.',
@@ -191,7 +208,7 @@ function collectErrors(form: StoreForm): StoreFormErrors {
         address: validateMaxLength(form.address, ADDRESS_MAX),
         city: validateMaxLength(form.city, CITY_MAX),
         state: validateState(form.state),
-        fulfillment: validateFulfillment(form),
+        fulfillment: validateFulfillment(form, coverage),
         cartNoticeTitle: validateMaxLength(form.cartNoticeTitle, NOTICE_TITLE_MAX),
         cartNoticeBody: validateMaxLength(form.cartNoticeBody, NOTICE_BODY_MAX),
         brandColor: validateBrandColor(form.brandColor),
@@ -235,8 +252,8 @@ function buildPatch(form: StoreForm): StoreSettingsPatch {
     return patch
 }
 
-export function validateStoreForm(form: StoreForm): StoreFormResult {
-    const errors = collectErrors(form)
+export function validateStoreForm(form: StoreForm, coverage: PaymentCoverage | null = null): StoreFormResult {
+    const errors = collectErrors(form, coverage)
     const hasErrors = Object.keys(errors).length > 0
 
     const value = hasErrors ? null : buildPatch(form)

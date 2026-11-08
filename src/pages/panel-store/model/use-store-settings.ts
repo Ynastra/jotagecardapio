@@ -2,11 +2,13 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { fetchStoreSettings, updateStoreSettings, useReloadCurrentStore, type StoreSettings } from '@/entities/store'
 
+import { fetchPaymentCoverage } from '../api/payment-coverage'
 import {
     formFromSettings,
     isStoreFormDirty,
     validateFulfillment,
     validateStoreForm,
+    type PaymentCoverage,
     type StoreForm,
     type StoreFormErrors,
 } from './store-form'
@@ -25,6 +27,8 @@ export function useStoreSettings(storeId: string) {
     const [errors, setErrors] = useState<StoreFormErrors>({})
     const [isSaving, setSaving] = useState(false)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
+    const [coverage, setCoverage] = useState<PaymentCoverage | null>(null)
+    const [isFulfillmentChecked, setFulfillmentChecked] = useState(false)
 
     const applySettings = useCallback((settings: StoreSettings) => {
         const loaded = formFromSettings(settings)
@@ -32,15 +36,17 @@ export function useStoreSettings(storeId: string) {
         setInitial(loaded)
         setForm(loaded)
         setErrors({})
+        setFulfillmentChecked(false)
         setStatus('ready')
     }, [])
 
     useEffect(() => {
         let isCurrent = true
 
-        fetchStoreSettings(storeId)
-            .then((settings) => {
+        Promise.all([fetchStoreSettings(storeId), fetchPaymentCoverage(storeId)])
+            .then(([settings, loadedCoverage]) => {
                 if (isCurrent) {
+                    setCoverage(loadedCoverage)
                     applySettings(settings)
                 }
             })
@@ -57,23 +63,27 @@ export function useStoreSettings(storeId: string) {
         }
     }, [storeId, applySettings])
 
-    function update(patch: Partial<StoreForm>) {
-        if (!form) {
+    useEffect(() => {
+        if (!isFulfillmentChecked || !form) {
             return
         }
 
-        const next = { ...form, ...patch }
-        setForm(next)
+        setErrors((current) => ({ ...current, fulfillment: validateFulfillment(form, coverage) }))
+    }, [isFulfillmentChecked, form, coverage])
+
+    function update(patch: Partial<StoreForm>) {
+        setForm((current) => (current ? { ...current, ...patch } : current))
 
         const touchesFulfillment = 'acceptsDelivery' in patch || 'acceptsPickup' in patch
         if (touchesFulfillment) {
-            setErrors((current) => ({ ...current, fulfillment: validateFulfillment(next) }))
+            setFulfillmentChecked(true)
         }
     }
 
     function discard() {
         setForm(initial)
         setErrors({})
+        setFulfillmentChecked(false)
     }
 
     async function save(): Promise<boolean> {
@@ -81,7 +91,7 @@ export function useStoreSettings(storeId: string) {
             return false
         }
 
-        const result = validateStoreForm(form)
+        const result = validateStoreForm(form, coverage)
         setErrors(result.errors)
         if (!result.value) {
             return false

@@ -110,6 +110,17 @@ describe('validateStoreForm', () => {
         expect(validateFulfillment({ acceptsDelivery: false, acceptsPickup: true })).toBeUndefined()
     })
 
+    it('recusa ligar um modo de atendimento sem forma de pagamento ligada para ele', () => {
+        const onlyDeliveryPaid = { delivery: true, pickup: false }
+        const bothOn = { acceptsDelivery: true, acceptsPickup: true }
+
+        expect(validateFulfillment(bothOn, onlyDeliveryPaid)).toContain('retirada')
+        expect(validateFulfillment({ acceptsDelivery: true, acceptsPickup: false }, onlyDeliveryPaid)).toBeUndefined()
+        expect(validateFulfillment(bothOn, { delivery: false, pickup: true })).toContain('entrega')
+        expect(validateStoreForm(withChange(bothOn), onlyDeliveryPaid).value).toBeNull()
+        expect(validateStoreForm(withChange(bothOn), { delivery: true, pickup: true }).errors.fulfillment).toBeUndefined()
+    })
+
     it('limita título e texto do recado e desliga o recado quando os dois ficam vazios', () => {
         const long = validateStoreForm(withChange({ cartNoticeTitle: 'a'.repeat(61), cartNoticeBody: 'a'.repeat(301) }))
         const empty = validateStoreForm(withChange({ cartNoticeTitle: ' ', cartNoticeBody: '' }))
