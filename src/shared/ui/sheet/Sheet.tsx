@@ -26,7 +26,10 @@ export function Sheet({ title, onClose, children, footer, hideTitle = false }: S
         const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
         dialog?.showModal()
         if (window.matchMedia(FINE_POINTER_QUERY).matches) {
-            dialog?.querySelector<HTMLElement>(`.${styles.body} :is(input, select, textarea)`)?.focus()
+            // Sem preventScroll, um campo mais abaixo rola o corpo e a folha abre sem o começo (a foto).
+            dialog
+                ?.querySelector<HTMLElement>(`.${styles.body} :is(input, select, textarea)`)
+                ?.focus({ preventScroll: true })
         }
         return () => {
             dialog?.close()

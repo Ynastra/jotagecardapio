@@ -24,6 +24,12 @@
     box-shadow: var(--shadow-raised);
 }
 
+@media (min-width: 900px) {
+    .button {
+        max-inline-size: var(--menu-max);
+    }
+}
+
 .count {
     display: inline-flex;
     gap: var(--space-2);

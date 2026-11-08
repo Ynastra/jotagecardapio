@@ -86,5 +86,14 @@
     --seal-height: 20px;
     --logo-home-width: 280px;
     --content-max: 760px;
+    --menu-max: 1040px;
+    --store-logo-size: 96px;
+    --store-logo-overlap: calc(var(--store-logo-size) / -2 - var(--space-5));
+    --status-dot-size: 10px;
+    --product-photo-size: 104px;
+    --divider-width: 1px;
+    --category-bar-height: 56px;
+    --section-scroll-offset: calc(var(--category-bar-height) + var(--space-3));
+    --chevron-size: 8px;
     --sheet-max: 560px;
 }
