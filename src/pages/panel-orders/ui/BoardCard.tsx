@@ -26,6 +26,7 @@ type BoardCardProps = {
     order: PanelOrder
     timeZone: string
     isFresh: boolean
+    isPending: boolean
     notifyUrl: string | null
     onChangeStatus: (orderId: string, status: OrderStatus) => void
     onOpen: (orderId: string) => void
@@ -37,7 +38,7 @@ function summarizeAddress(address: OrderAddress): string {
     return summary
 }
 
-export function BoardCard({ order, timeZone, isFresh, notifyUrl, onChangeStatus, onOpen }: BoardCardProps) {
+export function BoardCard({ order, timeZone, isFresh, isPending, notifyUrl, onChangeStatus, onOpen }: BoardCardProps) {
     const nextStep = getNextStep(order.status, order.fulfillment)
     const reachedMarks = getReachedMarks(order.status)
     const classes = [styles.card, STATUS_CLASSES[order.status], isFresh ? styles.fresh : ''].filter(Boolean).join(' ')
@@ -81,7 +82,11 @@ export function BoardCard({ order, timeZone, isFresh, notifyUrl, onChangeStatus,
             </ol>
 
             <div className={styles.actions} onClick={(event) => event.stopPropagation()}>
-                {nextStep ? <Button onClick={() => onChangeStatus(order.id, nextStep.next)}>{nextStep.label}</Button> : null}
+                {nextStep ? (
+                    <Button disabled={isPending} onClick={() => onChangeStatus(order.id, nextStep.next)}>
+                        {nextStep.label}
+                    </Button>
+                ) : null}
                 {notifyUrl ? (
                     <a className={styles.notify} href={notifyUrl} target="_blank" rel="noopener noreferrer">
                         Avisar cliente

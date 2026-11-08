@@ -28,6 +28,7 @@ export type OrderBoardState = {
     errorMessage: string | null
     changeStatus: (orderId: string, status: OrderStatus) => Promise<void>
     changePaymentStatus: (orderId: string, paymentStatus: OrderPaymentStatus) => Promise<void>
+    isPending: (orderId: string) => boolean
     findOrder: (orderId: string) => PanelOrder | null
     isFresh: (order: PanelOrder) => boolean
     markSeen: (orderId: string) => void
@@ -42,10 +43,8 @@ export function useOrderBoard(store: Store): OrderBoardState {
     const [seenIds, setSeenIds] = useState<ReadonlySet<string>>(new Set())
 
     const periodStart = useMemo(() => getPeriodStart(period, new Date(), store.timezone), [period, store.timezone])
-    const { orders, isLoading, isTruncated, errorMessage, changeStatus, changePaymentStatus } = usePanelOrders(
-        store.id,
-        periodStart,
-    )
+    const { orders, isLoading, isTruncated, errorMessage, pendingOrderIds, changeStatus, changePaymentStatus } =
+        usePanelOrders(store.id, periodStart)
     const statusMessages = useStatusMessages(store.id)
 
     const visibleOrders = useMemo(
@@ -55,6 +54,8 @@ export function useOrderBoard(store: Store): OrderBoardState {
     const columns = useMemo(() => groupOrdersIntoColumns(visibleOrders), [visibleOrders])
     const finishedTotalCents = sumCompletedCents(columns.finished)
     const activeCount = orders.filter(isActiveOrder).length
+
+    const isPending = useCallback((orderId: string) => pendingOrderIds.has(orderId), [pendingOrderIds])
 
     const findOrder = useCallback(
         (orderId: string) => {
@@ -105,6 +106,7 @@ export function useOrderBoard(store: Store): OrderBoardState {
         errorMessage,
         changeStatus,
         changePaymentStatus,
+        isPending,
         findOrder,
         isFresh,
         markSeen,

@@ -23,6 +23,7 @@ type OrderDetailProps = {
     store: Store
     trackingUrl: string
     notifyUrl: string | null
+    isPending: boolean
     onChangePayment: (orderId: string, paymentStatus: OrderPaymentStatus) => void
 }
 
@@ -48,7 +49,7 @@ function describeOrderCount(count: number | null): string | null {
     return description
 }
 
-export function OrderDetail({ order, store, trackingUrl, notifyUrl, onChangePayment }: OrderDetailProps) {
+export function OrderDetail({ order, store, trackingUrl, notifyUrl, isPending, onChangePayment }: OrderDetailProps) {
     const [isLinkCopied, setLinkCopied] = useState(false)
     const orderCount = useCustomerOrderCount(store.id, order.customerPhone)
     const orderCountLabel = describeOrderCount(orderCount)
@@ -111,7 +112,11 @@ export function OrderDetail({ order, store, trackingUrl, notifyUrl, onChangePaym
                 <h3 className={styles.sectionTitle}>Pagamento</h3>
                 <div className={styles.row}>
                     <span>{PAYMENT_LABELS[order.paymentMethod]}</span>
-                    <Button variant="secondary" onClick={() => onChangePayment(order.id, nextPaymentStatus)}>
+                    <Button
+                        variant="secondary"
+                        disabled={isPending}
+                        onClick={() => onChangePayment(order.id, nextPaymentStatus)}
+                    >
                         {isPaid ? 'Pago' : 'Pendente'}
                     </Button>
                 </div>

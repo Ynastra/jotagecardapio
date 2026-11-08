@@ -61,6 +61,7 @@ export function PanelOrdersPage() {
                 order={order}
                 timeZone={store.timezone}
                 isFresh={board.isFresh(order)}
+                isPending={board.isPending(order.id)}
                 notifyUrl={board.getNotifyUrl(order)}
                 onChangeStatus={board.changeStatus}
                 onOpen={openDrawer}
@@ -134,6 +135,7 @@ export function PanelOrdersPage() {
                     store={store}
                     trackingUrl={board.getTrackingUrl(openOrder)}
                     notifyUrl={board.getNotifyUrl(openOrder)}
+                    isPending={board.isPending(openOrder.id)}
                     onClose={closeDrawer}
                     onChangeStatus={board.changeStatus}
                     onChangePayment={board.changePaymentStatus}

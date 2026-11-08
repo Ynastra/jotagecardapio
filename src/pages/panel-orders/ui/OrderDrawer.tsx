@@ -14,6 +14,7 @@ type OrderDrawerProps = {
     store: Store
     trackingUrl: string
     notifyUrl: string | null
+    isPending: boolean
     onClose: () => void
     onChangeStatus: (orderId: string, status: OrderStatus) => void
     onChangePayment: (orderId: string, paymentStatus: OrderPaymentStatus) => void
@@ -24,6 +25,7 @@ export function OrderDrawer({
     store,
     trackingUrl,
     notifyUrl,
+    isPending,
     onClose,
     onChangeStatus,
     onChangePayment,
@@ -81,6 +83,7 @@ export function OrderDrawer({
                         store={store}
                         trackingUrl={trackingUrl}
                         notifyUrl={notifyUrl}
+                        isPending={isPending}
                         onChangePayment={onChangePayment}
                     />
                 </div>
@@ -93,24 +96,30 @@ export function OrderDrawer({
                                 <Button variant="secondary" onClick={() => setConfirmingCancel(false)}>
                                     Manter pedido
                                 </Button>
-                                <Button onClick={cancelOrder}>Sim, cancelar</Button>
+                                <Button disabled={isPending} onClick={cancelOrder}>
+                                    Sim, cancelar
+                                </Button>
                             </div>
                         </div>
                     ) : (
                         <>
                             {nextStep ? (
-                                <Button wide onClick={() => onChangeStatus(order.id, nextStep.next)}>
+                                <Button wide disabled={isPending} onClick={() => onChangeStatus(order.id, nextStep.next)}>
                                     {nextStep.label}
                                 </Button>
                             ) : null}
                             <div className={styles.footerRow}>
                                 {previousStatus ? (
-                                    <Button variant="secondary" onClick={() => onChangeStatus(order.id, previousStatus)}>
+                                    <Button
+                                        variant="secondary"
+                                        disabled={isPending}
+                                        onClick={() => onChangeStatus(order.id, previousStatus)}
+                                    >
                                         Voltar status
                                     </Button>
                                 ) : null}
                                 {isActive ? (
-                                    <Button variant="ghost" onClick={() => setConfirmingCancel(true)}>
+                                    <Button variant="ghost" disabled={isPending} onClick={() => setConfirmingCancel(true)}>
                                         Cancelar pedido
                                     </Button>
                                 ) : null}

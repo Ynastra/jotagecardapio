@@ -88,20 +88,63 @@ export async function fetchOrders({ storeId, since, limit }: OrdersQuery): Promi
     return orders
 }
 
-export async function updateOrderStatus(orderId: string, status: OrderStatus): Promise<void> {
-    const { error } = await supabase.from('orders').update({ status }).eq('id', orderId)
-
-    if (error) {
-        throw error
-    }
+function firstMappedOrder(data: unknown): PanelOrder | null {
+    const rows = (data ?? []) as OrderRow[]
+    const order = rows.length > 0 ? mapOrder(rows[0]) : null
+    return order
 }
 
-export async function updatePaymentStatus(orderId: string, paymentStatus: OrderPaymentStatus): Promise<void> {
-    const { error } = await supabase.from('orders').update({ payment_status: paymentStatus }).eq('id', orderId)
+// Grava só se o status no banco ainda for o que a tela mostrava; sem linha
+// de volta, o pedido mudou em outro aparelho.
+export async function saveOrderStatus(
+    orderId: string,
+    expectedStatus: OrderStatus,
+    nextStatus: OrderStatus,
+): Promise<PanelOrder | null> {
+    const { data, error } = await supabase
+        .from('orders')
+        .update({ status: nextStatus })
+        .eq('id', orderId)
+        .eq('status', expectedStatus)
+        .select(ORDER_COLUMNS)
 
     if (error) {
         throw error
     }
+
+    const order = firstMappedOrder(data)
+    return order
+}
+
+export async function savePaymentStatus(
+    orderId: string,
+    expectedStatus: OrderPaymentStatus,
+    nextStatus: OrderPaymentStatus,
+): Promise<PanelOrder | null> {
+    const { data, error } = await supabase
+        .from('orders')
+        .update({ payment_status: nextStatus })
+        .eq('id', orderId)
+        .eq('payment_status', expectedStatus)
+        .select(ORDER_COLUMNS)
+
+    if (error) {
+        throw error
+    }
+
+    const order = firstMappedOrder(data)
+    return order
+}
+
+export async function fetchOrderById(orderId: string): Promise<PanelOrder | null> {
+    const { data, error } = await supabase.from('orders').select(ORDER_COLUMNS).eq('id', orderId)
+
+    if (error) {
+        throw error
+    }
+
+    const order = firstMappedOrder(data)
+    return order
 }
 
 export async function countCustomerOrders(storeId: string, customerPhone: string): Promise<number> {
