@@ -1,6 +1,6 @@
 begin;
 
-select plan(9);
+select plan(14);
 
 select is(
     (select count(*)::int from public.store_whatsapp_messages where active and custom_body is null),
@@ -24,6 +24,37 @@ select is(
 select lives_ok(
     $$ update public.store_whatsapp_messages set custom_body = 'Olá!', interval_minutes = 60 where type = 'greeting' $$,
     'membro edita uma mensagem'
+);
+
+select lives_ok(
+    $$ update public.store_whatsapp_messages set custom_body = repeat('a', 1000) where type = 'away' $$,
+    'aceita texto de 1000 caracteres'
+);
+
+select throws_ok(
+    $$ update public.store_whatsapp_messages set custom_body = repeat('a', 1001) where type = 'away' $$,
+    '23514',
+    null,
+    'recusa texto acima de 1000 caracteres'
+);
+
+select lives_ok(
+    $$ update public.store_whatsapp_messages set interval_minutes = 10080 where type = 'greeting' $$,
+    'aceita intervalo de 10080 minutos'
+);
+
+select throws_ok(
+    $$ update public.store_whatsapp_messages set interval_minutes = 10081 where type = 'greeting' $$,
+    '23514',
+    null,
+    'recusa intervalo acima de 10080 minutos'
+);
+
+select throws_ok(
+    $$ update public.store_whatsapp_messages set interval_minutes = 0 where type = 'greeting' $$,
+    '23514',
+    null,
+    'recusa intervalo zero'
 );
 
 select is(

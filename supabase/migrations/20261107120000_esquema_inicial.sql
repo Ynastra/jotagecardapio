@@ -827,8 +827,8 @@ create table public.store_whatsapp_messages (
         type in ('greeting', 'away', 'confirmed', 'preparing', 'out_for_delivery', 'ready_for_pickup', 'completed', 'canceled')
     ),
     active boolean not null default true,
-    custom_body text,
-    interval_minutes integer check (interval_minutes is null or interval_minutes > 0),
+    custom_body text check (char_length(custom_body) <= 1000),
+    interval_minutes integer check (interval_minutes is null or interval_minutes between 1 and 10080),
     primary key (store_id, type)
 );
 
