@@ -63,6 +63,18 @@ describe('validateMessagesForm', () => {
         expect(greeting.errors.greeting).toBe('{nome} não é uma variável desta mensagem.')
     })
 
+    it('recusa chaves com acento, espaço ou vazias', () => {
+        const accentedCode = validateMessagesForm(withBody('preparing', 'Pedido {código}'))
+        const accentedMenu = validateMessagesForm(withBody('greeting', 'Veja {cardápio}'))
+        const spaced = validateMessagesForm(withBody('preparing', 'Oi { nome }'))
+        const empty = validateMessagesForm(withBody('preparing', 'Oi {}'))
+
+        expect(accentedCode.errors.preparing).toBe('{código} não é uma variável desta mensagem.')
+        expect(accentedMenu.errors.greeting).toBe('{cardápio} não é uma variável desta mensagem.')
+        expect(spaced.errors.preparing).toBe('{ nome } não é uma variável desta mensagem.')
+        expect(empty.errors.preparing).toBe('{} não é uma variável desta mensagem.')
+    })
+
     it('aceita as variáveis do tipo', () => {
         const status = validateMessagesForm(withBody('preparing', '{nome} {loja} {codigo} {link}'))
         const greeting = validateMessagesForm(withBody('greeting', '{loja} {cardapio}'))

@@ -53,7 +53,7 @@ export type PreviewContext = {
 export const EXAMPLE_CUSTOMER_NAME = 'Maria'
 export const EXAMPLE_ORDER_CODE = '007-490361'
 
-const VARIABLE_PATTERN = /\{(\w+)\}/g
+const VARIABLE_PATTERN = /\{([^{}]*)\}/g
 const WHOLE_NUMBER_PATTERN = /^\d+$/
 
 export function hoursFromMinutes(minutes: number | null): string {
@@ -112,7 +112,7 @@ function validateBody(body: string, type: WhatsappMessageType): string | undefin
     }
 
     const unknown = findUnknownVariable(trimmed, type)
-    const error = unknown ? `{${unknown}} não é uma variável desta mensagem.` : undefined
+    const error = unknown !== undefined ? `{${unknown}} não é uma variável desta mensagem.` : undefined
     return error
 }
 
