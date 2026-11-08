@@ -78,6 +78,56 @@ export function formatTime(time: string): string {
     return formatted
 }
 
+export type StoreStatus = {
+    isOpen: boolean
+    label: string
+}
+
+function findNextOpening(hours: readonly StoreHours[], clock: LocalClock): { dayOffset: number; opensAt: string } | null {
+    // O offset DAYS_PER_WEEK cobre a loja que só abre de novo no mesmo dia da semana seguinte.
+    for (let dayOffset = 0; dayOffset <= DAYS_PER_WEEK; dayOffset += 1) {
+        const weekday = (clock.weekday + dayOffset) % DAYS_PER_WEEK
+        const upcoming = hours
+            .filter((range) => range.weekday === weekday)
+            .filter((range) => dayOffset > 0 || toMinutes(range.opensAt) > clock.minutes)
+            .sort((first, second) => toMinutes(first.opensAt) - toMinutes(second.opensAt))
+
+        if (upcoming.length > 0) {
+            return { dayOffset, opensAt: upcoming[0].opensAt }
+        }
+    }
+
+    return null
+}
+
+export function describeStoreStatus(
+    hours: readonly StoreHours[],
+    enforceOpeningHours: boolean,
+    clock: LocalClock,
+): StoreStatus {
+    if (!enforceOpeningHours) {
+        const alwaysOpen = { isOpen: true, label: 'Aberto' }
+        return alwaysOpen
+    }
+
+    const openRange = hours.find((range) => isWithinRange(range, clock))
+    if (openRange) {
+        const open = { isOpen: true, label: `Aberto até ${formatTime(openRange.closesAt)}` }
+        return open
+    }
+
+    const next = findNextOpening(hours, clock)
+    if (!next) {
+        const closed = { isOpen: false, label: 'Fechado' }
+        return closed
+    }
+
+    const weekday = (clock.weekday + next.dayOffset) % DAYS_PER_WEEK
+    const dayLabel = next.dayOffset === 0 ? 'hoje' : WEEKDAY_NAMES[weekday].toLowerCase()
+    const closed = { isOpen: false, label: `Fechado, abre ${dayLabel} às ${formatTime(next.opensAt)}` }
+    return closed
+}
+
 export function describeWeek(hours: readonly StoreHours[]): DaySchedule[] {
     const week = DISPLAY_ORDER.map((weekday) => ({
         weekday,
