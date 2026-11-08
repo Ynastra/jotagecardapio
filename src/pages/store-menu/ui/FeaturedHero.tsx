@@ -4,6 +4,16 @@ import type { FeaturedHero as FeaturedHeroPick } from '../model/featured-hero'
 import type { Product } from '../model/types'
 import styles from './featured-hero.module.css'
 
+const HYPHEN = /-/g
+const NON_BREAKING_HYPHEN = '‑'
+
+// No tamanho do destaque, "X-" sozinho numa linha parece outro produto; o
+// hífen inseparável mantém o nome composto inteiro e a quebra fica nos espaços.
+function keepHyphenatedWordsTogether(name: string): string {
+    const displayName = name.replace(HYPHEN, NON_BREAKING_HYPHEN)
+    return displayName
+}
+
 type FeaturedHeroProps = {
     hero: FeaturedHeroPick
     coverUrl: string | null
@@ -32,7 +42,7 @@ function HeroPrice({ product }: { product: Product }) {
 export function FeaturedHero({ hero, coverUrl, onOpen }: FeaturedHeroProps) {
     const { product, hasPhoto } = hero
     const photoUrl = hasPhoto ? product.imageUrl : null
-    const textClasses =hasPhoto ? styles.text : `${styles.text} ${styles.textWide}`
+    const textClasses = hasPhoto ? styles.text : `${styles.text} ${styles.textWide}`
 
     return (
         <div className={styles.section}>
@@ -42,7 +52,7 @@ export function FeaturedHero({ hero, coverUrl, onOpen }: FeaturedHeroProps) {
                 )}
                 <span className={textClasses}>
                     <span className={styles.kicker}>Destaque da casa</span>
-                    <span className={styles.name}>{product.name}</span>
+                    <span className={styles.name}>{keepHyphenatedWordsTogether(product.name)}</span>
                     {product.description ? <span className={styles.description}>{product.description}</span> : null}
                     <span className={styles.price}>
                         <HeroPrice product={product} />
