@@ -2,7 +2,7 @@ import type { PixKeyType } from '@/entities/store'
 import { PixPayment } from '@/shared/ui'
 
 import type { MethodForm, PaymentForm, PaymentFormErrors } from '../model/payment-form'
-import { PIX_KEY_MAX, PIX_KEY_TYPE_LABELS, PIX_KEY_TYPES } from '../model/pix-key'
+import { PIX_KEY_MAX, PIX_KEY_TYPE_LABELS, PIX_KEY_TYPES, pixKeyForDisplay } from '../model/pix-key'
 import styles from './payment.module.css'
 import { MethodRow } from './MethodRow'
 
@@ -16,7 +16,7 @@ type InPersonTabProps = {
 }
 
 export function InPersonTab({ form, errors, onChange }: InPersonTabProps) {
-    const previewKey = form.pixKey.trim() || SAMPLE_KEY
+    const previewKey = pixKeyForDisplay(form.pixKeyType, form.pixKey) || SAMPLE_KEY
     const previewKind = form.pixKeyType === '' ? null : form.pixKeyType
 
     function changeMethod(method: MethodForm['method'], patch: Partial<MethodForm>) {

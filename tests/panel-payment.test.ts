@@ -7,7 +7,7 @@ import {
     type MethodRule,
     type PaymentForm,
 } from '@/pages/panel-payment/model/payment-form'
-import { normalizePixKey } from '@/pages/panel-payment/model/pix-key'
+import { normalizePixKey, pixKeyForDisplay } from '@/pages/panel-payment/model/pix-key'
 
 const BOTH_MODES = { acceptsDelivery: true, acceptsPickup: true }
 
@@ -43,9 +43,28 @@ describe('normalizePixKey', () => {
         expect(normalizePixKey('cpf', '000.000.000-00').error).toBe('Informe um CPF válido.')
     })
 
-    it('aceita telefone com DDD e grava só dígitos', () => {
-        expect(normalizePixKey('phone', '(18) 99664-9346')).toEqual({ value: '18996649346', error: null })
+    it('aceita telefone com ou sem +55 e máscara e grava +55 mais DDD e número', () => {
+        const expected = { value: '+5518996649346', error: null }
+
+        expect(normalizePixKey('phone', '(18) 99664-9346')).toEqual(expected)
+        expect(normalizePixKey('phone', '+55 (18) 99664-9346')).toEqual(expected)
+        expect(normalizePixKey('phone', '5518996649346')).toEqual(expected)
+        expect(normalizePixKey('phone', '+5518996649346')).toEqual(expected)
+        expect(normalizePixKey('phone', '(18) 3333-4444').value).toBe('+551833334444')
+    })
+
+    it('recusa telefone sem DDD', () => {
         expect(normalizePixKey('phone', '99664-9346').error).toBe('Informe um telefone com DDD.')
+    })
+
+    it('mantém DDD 55 com número de 11 dígitos sem tratar como código do país', () => {
+        expect(normalizePixKey('phone', '(55) 99664-9346').value).toBe('+5555996649346')
+    })
+
+    it('exibe a chave telefone normalizada na prévia e como digitada enquanto incompleta', () => {
+        expect(pixKeyForDisplay('phone', '(18) 99664-9346')).toBe('+5518996649346')
+        expect(pixKeyForDisplay('phone', '(18) 996')).toBe('(18) 996')
+        expect(pixKeyForDisplay('', ' abc ')).toBe('abc')
     })
 
     it('aceita e-mail em minúsculas e recusa o malformado', () => {

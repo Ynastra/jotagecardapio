@@ -13,6 +13,8 @@ export const PIX_KEY_TYPE_LABELS: Record<PixKeyType, string> = {
     random: 'Chave aleatória',
 }
 
+const COUNTRY_CODE = '55'
+const COUNTRY_CODE_PHONE_LENGTHS = [12, 13]
 const CPF_LENGTH = 11
 const CNPJ_LENGTH = 14
 const CPF_FIRST_WEIGHT = 10
@@ -83,6 +85,15 @@ function normalizeDocument(text: string, isValid: (digits: string) => boolean): 
     return { value: digits, isValid: isValid(digits) }
 }
 
+function normalizePhone(text: string): { value: string; isValid: boolean } {
+    const digits = keepDigits(text)
+    const hasCountryCode = digits.startsWith(COUNTRY_CODE) && COUNTRY_CODE_PHONE_LENGTHS.includes(digits.length)
+    const nationalDigits = hasCountryCode ? digits.slice(COUNTRY_CODE.length) : digits
+    const isValid = isValidBrazilianPhone(nationalDigits)
+    const value = isValid ? `+${COUNTRY_CODE}${nationalDigits}` : nationalDigits
+    return { value, isValid }
+}
+
 function checkKey(type: PixKeyType, text: string): { value: string; isValid: boolean } {
     const trimmed = text.trim()
 
@@ -93,7 +104,7 @@ function checkKey(type: PixKeyType, text: string): { value: string; isValid: boo
         return normalizeDocument(trimmed, isValidCnpj)
     }
     if (type === 'phone') {
-        return normalizeDocument(trimmed, (digits) => isValidBrazilianPhone(digits))
+        return normalizePhone(trimmed)
     }
     if (type === 'email') {
         const email = trimmed.toLowerCase()
@@ -104,9 +115,22 @@ function checkKey(type: PixKeyType, text: string): { value: string; isValid: boo
     return { value: randomKey, isValid: RANDOM_KEY_PATTERN.test(randomKey) }
 }
 
-// CNPJ, CPF e telefone viram só dígitos; e-mail e chave aleatória ficam em minúsculas.
+// CNPJ e CPF viram só dígitos; telefone vira +55 mais DDD e número (aceita com ou sem +55);
+// e-mail e chave aleatória ficam em minúsculas.
 export function normalizePixKey(type: PixKeyType, text: string): PixKeyResult {
     const checked = checkKey(type, text)
     const error = checked.isValid ? null : INVALID_MESSAGES[type]
     return { value: checked.value, error }
+}
+
+// Chave como o cliente a verá: normalizada quando válida, como digitada enquanto incompleta.
+export function pixKeyForDisplay(type: PixKeyType | '', text: string): string {
+    const trimmed = text.trim()
+    if (type === '' || trimmed === '') {
+        return trimmed
+    }
+
+    const result = normalizePixKey(type, trimmed)
+    const display = result.error === null ? result.value : trimmed
+    return display
 }
