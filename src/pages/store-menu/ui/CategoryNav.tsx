@@ -4,14 +4,13 @@ import { AssetIcon, ThemeIcon } from '@/shared/ui'
 
 import { toAssetStem } from '../model/search'
 import type { Category } from '../model/types'
-import { FEATURED_SECTION_ID, getScrollBehavior } from '../model/use-active-section'
+import { getScrollBehavior } from '../model/use-active-section'
 import styles from './category-nav.module.css'
 
 type CategoryNavProps = {
     categories: readonly Category[]
     query: string
     onQueryChange: (query: string) => void
-    showFeatured: boolean
     activeId: string
     onSelect: (sectionId: string) => void
 }
@@ -31,14 +30,7 @@ function revealActiveChip(chipRow: HTMLElement) {
     chipRow.scrollTo({ left, behavior: getScrollBehavior() })
 }
 
-export function CategoryNav({
-    categories,
-    query,
-    onQueryChange,
-    showFeatured,
-    activeId,
-    onSelect,
-}: CategoryNavProps) {
+export function CategoryNav({ categories, query, onQueryChange, activeId, onSelect }: CategoryNavProps) {
     const [isSearchOpen, setSearchOpen] = useState(false)
     const searchInputRef = useRef<HTMLInputElement>(null)
     const chipRowRef = useRef<HTMLUListElement>(null)
@@ -94,19 +86,6 @@ export function CategoryNav({
                             <ThemeIcon name="busca" size={20} />
                         </button>
                         <ul ref={chipRowRef} className={styles.chips}>
-                            {showFeatured ? (
-                                <li>
-                                    <button
-                                        type="button"
-                                        className={getChipClassName(FEATURED_SECTION_ID)}
-                                        aria-current={activeId === FEATURED_SECTION_ID}
-                                        onClick={() => onSelect(FEATURED_SECTION_ID)}
-                                    >
-                                        <ThemeIcon name="destaque" size={18} />
-                                        Destaques
-                                    </button>
-                                </li>
-                            ) : null}
                             {categories.map((category) => (
                                 <li key={category.id}>
                                     <button

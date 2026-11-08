@@ -117,10 +117,40 @@
     --menu-tracking-title: -0.06em;
     --menu-tracking-item: -0.03em;
     --menu-font-serif: Georgia, 'Times New Roman', serif;
+
+    --menu-hero-bg: #080705;
+    --menu-hero-ink: #fff4df;
+    --menu-hero-muted: #d0c6b7;
+    --menu-hero-gold: #eab36e;
+    --menu-hero-gold-soft: #efbc79;
+    --menu-hero-kicker: #f3ba77;
+    --menu-hero-stripe-dark: #402d20;
+    --menu-hero-circle-ink: #251c12;
+    --menu-hero-radius: 12px;
+    --menu-hero-stripe-height: 5px;
+    --menu-hero-stripe-step: 12px;
+    --menu-hero-arrow-size: 28px;
+    --menu-hero-photo-fade: 14%;
+    --menu-hero-cover-opacity: 0.35;
+    --menu-hero-min-height: 164px;
+    --menu-hero-text-width: 60%;
+    --menu-hero-photo-width: 45%;
+    --menu-hero-pad-block: 16px;
+    --menu-hero-pad-inline: 16px;
+    --menu-font-size-hero: clamp(2.05rem, 8vw, 3.05rem);
+    --menu-font-size-kicker: 0.6875rem;
+    --menu-tracking-hero: -0.08em;
+    --menu-tracking-kicker: 0.15em;
 }
 
 @media (min-width: 681px) {
     :root {
         --menu-gutter: 20px;
+        --menu-hero-min-height: 276px;
+        --menu-hero-text-width: 57%;
+        --menu-hero-photo-width: 53%;
+        --menu-hero-pad-block: 28px;
+        --menu-hero-pad-inline: 5%;
+        --menu-font-size-hero: clamp(2.5rem, 7vw, 5.5rem);
     }
 }
