@@ -2,21 +2,9 @@ import type { DraftLine } from '@/entities/order'
 
 import type { Product, Store } from './types'
 
+export { getProductAvailability, type ProductAvailability } from '@/entities/product'
+
 export const MAX_ITEM_QUANTITY = 99
-
-export type ProductAvailability = 'available' | 'inactive' | 'soldOut'
-
-export function getProductAvailability(product: Pick<Product, 'active' | 'stock'>): ProductAvailability {
-    if (!product.active) {
-        return 'inactive'
-    }
-
-    if (product.stock === 0) {
-        return 'soldOut'
-    }
-
-    return 'available'
-}
 
 // Produto só de mesa nunca entra no cardápio online; produto desativado só
 // aparece quando a loja escolheu mostrar indisponíveis.

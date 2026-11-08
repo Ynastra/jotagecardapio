@@ -1,4 +1,7 @@
 import type { PaymentMethod } from '@/entities/order'
+import type { Product } from '@/entities/product'
+
+export type { OptionGroup, Product, ProductOption } from '@/entities/product'
 
 export type StoreHours = {
     // 0 = domingo, igual ao Date do JavaScript e ao Postgres.
@@ -57,43 +60,6 @@ export type Store = {
     deliveryZones: DeliveryZone[]
     freeDeliveryAboveCents: number | null
     paymentMethods: StorePaymentMethod[]
-}
-
-export type ProductOption = {
-    id: string
-    name: string
-    description: string | null
-    imageUrl?: string | null
-    priceCents: number
-    // null = sem limite por item.
-    maxQuantity: number | null
-}
-
-export type OptionGroup = {
-    id: string
-    title: string
-    minChoices: number
-    // null = sem limite de unidades no grupo.
-    maxChoices: number | null
-    options: ProductOption[]
-}
-
-export type Product = {
-    id: string
-    categoryId: string
-    name: string
-    description: string | null
-    priceCents: number
-    promoPriceCents: number | null
-    serves: number | null
-    portionLabel: string | null
-    imageUrl: string | null
-    featured: boolean
-    active: boolean
-    // null = sem controle de estoque.
-    stock: number | null
-    sellsDeliveryPickup: boolean
-    optionGroups: OptionGroup[]
 }
 
 export type Category = {
