@@ -169,13 +169,17 @@ export function validateMessagesForm(form: MessagesForm): MessagesFormResult {
 export function buildMessagePreview(type: WhatsappMessageType, body: string, context: PreviewContext): string {
     const trimmed = body.trim()
     const template = trimmed === '' ? DEFAULT_MESSAGES[type] : trimmed
-    const preview = fillPlaceholders(template, {
+    const exampleValues: Record<string, string> = {
         nome: EXAMPLE_CUSTOMER_NAME,
         loja: context.storeName,
         codigo: EXAMPLE_ORDER_CODE,
         link: context.exampleOrderUrl,
         cardapio: context.menuUrl,
-    })
+    }
+    const typeValues = Object.fromEntries(
+        VARIABLES_BY_TYPE[type].map((variable) => [variable, exampleValues[variable]]),
+    )
+    const preview = fillPlaceholders(template, typeValues)
     return preview
 }
 

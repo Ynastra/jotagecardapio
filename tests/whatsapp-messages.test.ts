@@ -144,6 +144,12 @@ describe('buildMessagePreview', () => {
         expect(preview).toBe('Maria, o pedido 007-490361: https://exemplo.com/ze/pedido/exemplo')
     })
 
+    it('mantém como escrita a variável que não é do tipo da mensagem', () => {
+        const preview = buildMessagePreview('greeting', 'Oi {nome}, bem-vindo à {loja}', previewContext)
+
+        expect(preview).toBe(`Oi {nome}, bem-vindo à ${previewContext.storeName}`)
+    })
+
     it('tem texto padrão para os oito tipos', () => {
         expect(Object.keys(DEFAULT_MESSAGES)).toHaveLength(8)
     })
