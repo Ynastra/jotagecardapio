@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
 import { ThemeProvider } from '@/shared/lib'
-import { ThemeIcon } from '@/shared/ui'
+import { MakerSignature, ThemeIcon } from '@/shared/ui'
 
 import styles from './home-page.module.css'
 
@@ -22,6 +22,7 @@ export function HomePage() {
                         <ThemeIcon name="pedidos" size={20} />
                         Entrar no painel da loja
                     </a>
+                    <MakerSignature className={styles.signature} />
                 </div>
             </main>
         </ThemeProvider>

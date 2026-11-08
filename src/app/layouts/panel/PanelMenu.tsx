@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 
 import type { Store } from '@/entities/store'
 import { supabase } from '@/shared/api'
+import { MakerSignature } from '@/shared/ui'
 
 import { MENU_ITEMS, PANEL_MENU_ID } from './menu-items'
 import styles from './panel-layout.module.css'
@@ -59,6 +60,8 @@ export function PanelMenu({ store, isOpen, onNavigate, onClose }: PanelMenuProps
                     </button>
                 </li>
             </ul>
+
+            <MakerSignature className={styles.menuSignature} />
         </nav>
     )
 }

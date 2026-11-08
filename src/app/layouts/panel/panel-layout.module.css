@@ -18,6 +18,15 @@
     font-size: var(--font-size-2xl);
 }
 
+.loginSignature {
+    margin-block-end: var(--space-6);
+    color: var(--color-text-muted);
+}
+
+.menuSignature {
+    color: var(--color-on-jg-muted);
+}
+
 .field {
     display: grid;
     gap: var(--space-1);
