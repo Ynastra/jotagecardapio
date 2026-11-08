@@ -1,6 +1,6 @@
 begin;
 
-select plan(22);
+select plan(23);
 
 delete from public.orders;
 
@@ -100,6 +100,12 @@ select pg_temp.add_order(
     jsonb_build_array(pg_temp.line(pg_temp.cola(), 'Nome antigo', 1, 1100))
 );
 
+select pg_temp.add_order(
+    8, 'completed', 'pickup', '666', 5000,
+    (date_trunc('month', now() at time zone 'America/Sao_Paulo') - interval '11 months' - interval '1 hour') at time zone 'America/Sao_Paulo',
+    jsonb_build_array(pg_temp.line(pg_temp.cola(), 'Nome antigo', 1, 5000))
+);
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '5e1d0000-0000-4000-8000-0000000000aa', true);
 select set_config('request.jwt.claims', '{"sub": "5e1d0000-0000-4000-8000-0000000000aa", "role": "authenticated"}', true);
@@ -171,6 +177,13 @@ select is(
     pg_temp.march_dashboard() -> 'monthly_revenue' -> 0 ->> 'month',
     to_char(date_trunc('month', now() at time zone 'America/Sao_Paulo') - interval '11 months', 'YYYY-MM'),
     'a série começa onze meses antes do atual'
+);
+
+select is(
+    (select sum((month_entry ->> 'revenue_cents')::integer)::integer
+        from jsonb_array_elements(pg_temp.march_dashboard() -> 'monthly_revenue') as month_entry),
+    1800,
+    'pedido anterior ao primeiro mês da série não entra nela'
 );
 
 select is(

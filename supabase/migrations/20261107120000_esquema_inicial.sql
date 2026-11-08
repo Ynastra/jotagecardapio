@@ -887,6 +887,12 @@ as $$
         from store_zone z
         cross join generate_series(0, 11) as back
     ),
+    series_start as (
+        select min(m.local_start) at time zone z.name as started_at
+        from month_starts m
+        cross join store_zone z
+        group by z.name
+    ),
     monthly_revenue as (
         select
             m.local_start,
@@ -896,6 +902,7 @@ as $$
         left join public.orders o
             on o.store_id = target_store
            and o.status <> 'canceled'
+           and o.created_at >= (select started_at from series_start)
            and (o.created_at at time zone z.name) >= m.local_start
            and (o.created_at at time zone z.name) < m.local_start + interval '1 month'
         group by m.local_start
