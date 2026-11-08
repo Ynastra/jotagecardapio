@@ -110,7 +110,10 @@ export function useCatalog(storeId: string): CatalogState {
         return saved ? null : SAVE_FAILED_MESSAGE
     }
 
-    const addCategory = (name: string) => perform(() => createCategory(storeId, name, nextPosition(categories)))
+    const addCategory = (name: string) =>
+        perform(async () => {
+            await createCategory(storeId, name, nextPosition(categories))
+        })
     const editCategory = (categoryId: string, name: string) => perform(() => renameCategory(categoryId, name))
     const toggleCategory = (categoryId: string, active: boolean) => perform(() => setCategoryActive(categoryId, active))
     const removeCategory = (categoryId: string) => perform(() => deleteCategory(categoryId))
@@ -141,7 +144,9 @@ export function useCatalog(storeId: string): CatalogState {
     function duplicateProduct(product: ManagedProduct) {
         const siblings = products.filter((candidate) => candidate.categoryId === product.categoryId)
         const copy = buildProductCopy(product, nextPosition(siblings))
-        return perform(() => createProduct(storeId, copy.values, copy.position, copy.links))
+        return perform(async () => {
+            await createProduct(storeId, copy.values, copy.position, copy.links)
+        })
     }
 
     return {

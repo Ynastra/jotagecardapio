@@ -4,6 +4,7 @@ import { HomePage } from '@/pages/home'
 import { OrderTrackingPage } from '@/pages/order-tracking'
 import { AddonsPage } from '@/pages/panel-addons'
 import { PanelOrdersPage } from '@/pages/panel-orders'
+import { ProductEditPage } from '@/pages/panel-product-edit'
 import { ProductsPage } from '@/pages/panel-products'
 import { StoreMenuPage } from '@/pages/store-menu'
 
@@ -21,6 +22,8 @@ export function App() {
                     <Route index element={<Navigate to="pedidos" replace />} />
                     <Route path="pedidos" element={<PanelOrdersPage />} />
                     <Route path="produtos" element={<ProductsPage />} />
+                    <Route path="produtos/novo" element={<ProductEditPage />} />
+                    <Route path="produtos/:id" element={<ProductEditPage />} />
                     <Route path="adicionais"element={<AddonsPage />} />
                     <Route path="*" element={<Navigate to="/painel/pedidos" replace />} />
                 </Route>

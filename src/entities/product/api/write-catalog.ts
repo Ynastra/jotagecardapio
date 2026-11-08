@@ -42,12 +42,30 @@ function buildProductColumns(values: ProductValues) {
     return columns
 }
 
+async function insertOptionLinks(storeId: string, productId: string, links: readonly ProductOptionLink[]) {
+    if (links.length === 0) {
+        return
+    }
+
+    const rows = links.map((link) => ({
+        store_id: storeId,
+        product_id: productId,
+        group_id: link.groupId,
+        position: link.position,
+        min_choices: link.minChoices,
+        max_choices: link.maxChoices,
+    }))
+    const { error } = await supabase.from('product_option_groups').insert(rows)
+    throwOnError(error)
+}
+
+// Devolve o id do produto criado.
 export async function createProduct(
     storeId: string,
     values: ProductValues,
     position: number,
     links: readonly ProductOptionLink[],
-): Promise<void> {
+): Promise<string> {
     const { data, error } = await supabase
         .from('products')
         .insert({ store_id: storeId, position, ...buildProductColumns(values) })
@@ -55,23 +73,32 @@ export async function createProduct(
         .single()
     throwOnError(error)
 
-    if (!data || links.length === 0) {
-        return
-    }
-
-    const rows = links.map((link) => ({
-        store_id: storeId,
-        product_id: data.id,
-        group_id: link.groupId,
-        position: link.position,
-        min_choices: link.minChoices,
-        max_choices: link.maxChoices,
-    }))
-    const { error: linkError } = await supabase.from('product_option_groups').insert(rows)
-    if (linkError) {
-        await supabase.from('products').delete().eq('id', data.id)
+    const productId = (data as { id: string }).id
+    try {
+        await insertOptionLinks(storeId, productId, links)
+    } catch (linkError) {
+        await supabase.from('products').delete().eq('id', productId)
         throw linkError
     }
+    return productId
+}
+
+export async function updateProduct(
+    storeId: string,
+    productId: string,
+    values: ProductValues,
+    position: number,
+    links: readonly ProductOptionLink[],
+): Promise<void> {
+    const { error } = await supabase
+        .from('products')
+        .update({ position, ...buildProductColumns(values) })
+        .eq('id', productId)
+    throwOnError(error)
+
+    const { error: clearError } = await supabase.from('product_option_groups').delete().eq('product_id', productId)
+    throwOnError(clearError)
+    await insertOptionLinks(storeId, productId, links)
 }
 
 export async function setProductPrice(productId: string, priceCents: number): Promise<void> {
@@ -99,9 +126,17 @@ export async function deleteProduct(productId: string): Promise<void> {
     throwOnError(error)
 }
 
-export async function createCategory(storeId: string, name: string, position: number): Promise<void> {
-    const { error } = await supabase.from('categories').insert({ store_id: storeId, name, position })
+// Devolve o id da categoria criada.
+export async function createCategory(storeId: string, name: string, position: number): Promise<string> {
+    const { data, error } = await supabase
+        .from('categories')
+        .insert({ store_id: storeId, name, position })
+        .select('id')
+        .single()
     throwOnError(error)
+
+    const categoryId = (data as { id: string }).id
+    return categoryId
 }
 
 export async function renameCategory(categoryId: string, name: string): Promise<void> {

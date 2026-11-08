@@ -18,6 +18,7 @@ export {
     type InfoTag,
     type PortionUnit,
 } from './model/tags'
+export { ProductCard } from './ui/ProductCard'
 export { fetchCatalog, type Catalog } from './api/fetch-catalog'
 export {
     createCategory,
@@ -32,6 +33,7 @@ export {
     setProductFeatured,
     setProductPrice,
     setProductPromoPrice,
+    updateProduct,
     type PositionedTable,
     type PositionUpdate,
 } from './api/write-catalog'
