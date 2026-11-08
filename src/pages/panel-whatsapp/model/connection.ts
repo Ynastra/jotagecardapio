@@ -8,6 +8,12 @@ export type StoredSession = {
     updatedAt: string
 }
 
+export type GatewaySnapshot = {
+    state: ConnectionState
+    phone: string | null
+    qr: string | null
+}
+
 export type ConnectionView = {
     state: ConnectionState
     label: string
@@ -46,6 +52,21 @@ export function formatUpdatedAt(isoTimestamp: string, timeZone: string): string 
     )
     const text = `${date} às ${time}`
     return text
+}
+
+export function sessionFromSnapshot(snapshot: GatewaySnapshot, updatedAt: string): StoredSession {
+    const session = { state: snapshot.state, phone: snapshot.phone, updatedAt }
+    return session
+}
+
+export function shouldPollSession(state: ConnectionState): boolean {
+    const shouldPoll = state === 'connecting'
+    return shouldPoll
+}
+
+export function qrImageSource(qr: string | null): string | null {
+    const source = qr ? `data:image/png;base64,${qr}` : null
+    return source
 }
 
 export function describeConnection(session: StoredSession | null, timeZone: string): ConnectionView {

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { describeConnection, formatSessionPhone } from '@/pages/panel-whatsapp/model/connection'
+import {
+    describeConnection,
+    formatSessionPhone,
+    qrImageSource,
+    sessionFromSnapshot,
+    shouldPollSession,
+} from '@/pages/panel-whatsapp/model/connection'
 
 const TIME_ZONE = 'America/Sao_Paulo'
 
@@ -43,6 +49,34 @@ describe('describeConnection', () => {
         const session = { state: 'connected' as const, phone: null, updatedAt: '2026-11-08T15:30:00Z' }
 
         expect(describeConnection(session, TIME_ZONE).phoneText).toBeNull()
+    })
+})
+
+describe('sessionFromSnapshot', () => {
+    it('guarda estado e número e descarta o QR', () => {
+        const snapshot = { state: 'connected' as const, phone: '5518996649346', qr: null }
+
+        const session = sessionFromSnapshot(snapshot, '2026-11-08T15:30:00Z')
+
+        expect(session).toEqual({ state: 'connected', phone: '5518996649346', updatedAt: '2026-11-08T15:30:00Z' })
+    })
+})
+
+describe('shouldPollSession', () => {
+    it('consulta só enquanto conecta', () => {
+        expect(shouldPollSession('connecting')).toBe(true)
+        expect(shouldPollSession('connected')).toBe(false)
+        expect(shouldPollSession('disconnected')).toBe(false)
+    })
+})
+
+describe('qrImageSource', () => {
+    it('monta a imagem a partir do base64', () => {
+        expect(qrImageSource('iVBOR')).toBe('data:image/png;base64,iVBOR')
+    })
+
+    it('sem QR não há imagem', () => {
+        expect(qrImageSource(null)).toBeNull()
     })
 })
 
