@@ -29,6 +29,7 @@ export type DeliveryForm = {
     latitudeText: string
     longitudeText: string
     locationQuery: string
+    locationFallbackQuery: string
 }
 
 export type DeliveryFieldName =
@@ -71,6 +72,23 @@ function joinLocationQuery(settings: StoreSettings): string {
     return query
 }
 
+// O Nominatim não acha o texto com número e bairro; só o logradouro, a cidade e a UF costumam bastar.
+function joinFallbackLocationQuery(settings: StoreSettings): string {
+    const street = (settings.address ?? '').split(',')[0]
+    const parts = [street, settings.city, settings.state]
+    const query = parts
+        .map((part) => (part ?? '').trim())
+        .filter(Boolean)
+        .join(', ')
+    return query
+}
+
+export function listLocationQueries(form: Pick<DeliveryForm, 'locationQuery' | 'locationFallbackQuery'>): string[] {
+    const candidates = [form.locationQuery, form.locationFallbackQuery]
+    const queries = candidates.filter((query, index) => query !== '' && candidates.indexOf(query) === index)
+    return queries
+}
+
 export function formFromSettings(settings: StoreSettings): DeliveryForm {
     const form = {
         prepTimeText: String(settings.prepTimeMinutes),
@@ -82,6 +100,7 @@ export function formFromSettings(settings: StoreSettings): DeliveryForm {
         latitudeText: formatCoordinateText(settings.latitude),
         longitudeText: formatCoordinateText(settings.longitude),
         locationQuery: joinLocationQuery(settings),
+        locationFallbackQuery: joinFallbackLocationQuery(settings),
     }
     return form
 }

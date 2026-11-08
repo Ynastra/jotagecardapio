@@ -4,6 +4,7 @@ import type { StoreSettings } from '@/entities/store'
 import {
     formFromSettings,
     isDeliveryFormDirty,
+    listLocationQueries,
     validateDeliveryForm,
     type DeliveryForm,
 } from '@/pages/panel-delivery/model/delivery-form'
@@ -46,6 +47,32 @@ function withChange(patch: Partial<DeliveryForm>): DeliveryForm {
     const form = { ...loaded, ...patch }
     return form
 }
+
+describe('listLocationQueries', () => {
+    it('tenta o endereço completo e depois só o logradouro com cidade e UF', () => {
+        const form = formFromSettings({
+            ...settings,
+            address: 'Rua Francisco Xavier de Oliveira, 48, Lado Este',
+            city: 'Lucélia',
+            state: 'SP',
+        })
+
+        expect(listLocationQueries(form)).toEqual([
+            'Rua Francisco Xavier de Oliveira, 48, Lado Este, Lucélia, SP',
+            'Rua Francisco Xavier de Oliveira, Lucélia, SP',
+        ])
+    })
+
+    it('não repete a consulta quando o endereço não tem vírgula', () => {
+        const form = formFromSettings({ ...settings, address: 'Praça Central', city: 'Lucélia', state: 'SP' })
+
+        expect(listLocationQueries(form)).toEqual(['Praça Central, Lucélia, SP'])
+    })
+
+    it('fica vazia sem endereço, cidade e UF', () => {
+        expect(listLocationQueries(loaded)).toEqual([])
+    })
+})
 
 describe('formFromSettings', () => {
     it('mostra taxa em reais, raio com vírgula e frete grátis desligado quando vazio', () => {

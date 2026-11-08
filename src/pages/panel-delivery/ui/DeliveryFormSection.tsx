@@ -1,12 +1,13 @@
 import { useState } from 'react'
 
-import { locateByText } from '@/shared/api'
+import { locateByText, type Coordinates } from '@/shared/api'
 import { ActiveSwitch, Button } from '@/shared/ui'
 
 import {
     DELIVERY_MODE_LABELS,
     DELIVERY_MODES,
     formatCoordinateText,
+    listLocationQueries,
     MAX_RADIUS_KM,
     PREP_TIME_MAX,
     PREP_TIME_MIN,
@@ -36,6 +37,19 @@ function buildMapUrl(coordinates: { latitude: number; longitude: number }): stri
     return url
 }
 
+// Uma consulta por vez, em ordem: a mais completa primeiro.
+async function locateFirst(queries: readonly string[]): Promise<Coordinates | null> {
+    for (const query of queries) {
+        const found = await locateByText(query)
+        if (found) {
+            return found
+        }
+    }
+
+    const nothingFound = null
+    return nothingFound
+}
+
 function StoreLocationBlock({ form, errors, onChange }: DeliveryFormSectionProps) {
     const [isLocating, setLocating] = useState(false)
     const [message, setMessage] = useState<string | null>(null)
@@ -43,13 +57,14 @@ function StoreLocationBlock({ form, errors, onChange }: DeliveryFormSectionProps
 
     async function locateStore() {
         setMessage(null)
-        if (form.locationQuery === '') {
+        const queries = listLocationQueries(form)
+        if (queries.length === 0) {
             setMessage(MISSING_STORE_ADDRESS_MESSAGE)
             return
         }
 
         setLocating(true)
-        const found = await locateByText(form.locationQuery)
+        const found = await locateFirst(queries)
         setLocating(false)
 
         if (!found) {
