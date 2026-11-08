@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><title>jotagetech-icone-slack</title><defs>
+<linearGradient id="top" gradientUnits="userSpaceOnUse" x1="212" y1="175" x2="443" y2="88"><stop stop-color="#05356c"/><stop offset=".48" stop-color="#0088ff"/><stop offset="1" stop-color="#00f4eb"/></linearGradient>
+<linearGradient id="left" gradientUnits="userSpaceOnUse" x1="195" y1="123" x2="200" y2="333"><stop stop-color="#00e0ee"/><stop offset=".5" stop-color="#00aaff"/><stop offset="1" stop-color="#0038f7"/></linearGradient>
+<linearGradient id="dark" gradientUnits="userSpaceOnUse" x1="68" y1="277" x2="309" y2="423"><stop stop-color="#075392"/><stop offset=".5" stop-color="#03214b"/><stop offset="1" stop-color="#041e49"/></linearGradient>
+<linearGradient id="under" gradientUnits="userSpaceOnUse" x1="261" y1="161" x2="425" y2="149"><stop stop-color="#041b43"/><stop offset="1" stop-color="#064e94"/></linearGradient>
+<linearGradient id="ribbon" gradientUnits="userSpaceOnUse" x1="90" y1="300" x2="208" y2="390"><stop stop-color="#00e5ec"/><stop offset=".48" stop-color="#0097ff"/><stop offset="1" stop-color="#003bf4"/></linearGradient>
+<linearGradient id="right" gradientUnits="userSpaceOnUse" x1="391" y1="282" x2="340" y2="431"><stop stop-color="#00f1e9"/><stop offset="1" stop-color="#00a1f1"/></linearGradient>
+<linearGradient id="circuit" gradientUnits="userSpaceOnUse" x1="343" y1="293" x2="298" y2="426"><stop stop-color="#00f4ec"/><stop offset=".6" stop-color="#00b7ff"/><stop offset="1" stop-color="#0043fc"/></linearGradient>
+<linearGradient id="textDark" x1="0" y1="0" x2=".7" y2="1"><stop stop-color="#064d87"/><stop offset="1" stop-color="#00183e"/></linearGradient>
+<linearGradient id="textCyan" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#00d3df"/><stop offset="1" stop-color="#00a0cb"/></linearGradient>
+</defs><path fill="#fff" d="M0 0H512V512H0Z"/><g id="simbolo">
+<path fill="url(#left)" d="M238 102 C199 117 177 145 177 180 L177 266 C177 287 182 296 195 310 L233 348 L252 318 L252 175 Z"/>
+<path fill="url(#under)" d="M252 176 L387 176 C400 176 407 168 426 145 L306 145 C284 145 265 156 252 176 Z"/>
+<path fill="url(#top)" d="M212 324 L212 149 C212 110 242 83 290 83 L449 83 C466 83 469 98 458 110 L426 145 L307 145 C277 145 252 168 252 196 L252 310 C252 328 245 340 233 347 Z"/>
+<path fill="url(#right)" d="M351 261 L378 277 C394 287 399 296 399 312 L399 386 C399 399 392 405 382 414 L366 427 C363 430 359 431 353 431 L300 431 L353 376 Z"/>
+<path fill="url(#dark)" d="M292 229 L347 258 C360 265 365 275 365 291 L365 365 C365 376 360 383 351 392 L307 431 L299 431 Q293 431 293 423 L293 403 L263 403 C253 403 248 409 237 415 C216 427 194 432 170 431 C103 431 53 388 49 316 Q47 298 60 298 C91 301 99 333 124 353 C150 374 191 374 220 355 C241 341 250 326 252 310 L252 368 L330 368 L330 336 L292 336 Z"/>
+<path fill="url(#ribbon)" d="M60 298 L126 298 Q138 298 141 312 C148 343 173 359 193 359 C219 359 243 342 251 316 C249 350 228 376 199 383 C153 394 121 373 102 347 C86 324 78 306 60 298 Z"/>
+<path fill="none" stroke="url(#circuit)" stroke-width="5" stroke-linecap="round" d="M295 426 L339 379 Q344 374 344 368 L344 302"/>
+<circle cx="345" cy="295" r="6.5" fill="none" stroke="#00e7f0" stroke-width="4"/>
+</g></svg>
