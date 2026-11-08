@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { getNextDayStart, getPeriodStart } from '@/pages/panel-orders/model/period'
+import { getPeriodStart } from '@/pages/panel-orders/model/period'
+import { getNextDayStart } from '@/shared/lib'
 
 const SAO_PAULO = 'America/Sao_Paulo'
 

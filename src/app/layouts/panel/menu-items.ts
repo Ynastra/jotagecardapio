@@ -8,7 +8,7 @@ export type MenuItem = {
 
 // Cada tela marca `isReady` quando é entregue; as demais aparecem como "Em breve".
 export const MENU_ITEMS: readonly MenuItem[] = [
-    { path: 'inicio', label: 'Início', isReady: false },
+    { path: 'inicio', label: 'Início', isReady: true },
     { path: 'pedidos', label: 'Pedidos', isReady: true },
     { path: 'produtos', label: 'Produtos', isReady: true },
     { path: 'adicionais', label: 'Adicionais', isReady: true },
