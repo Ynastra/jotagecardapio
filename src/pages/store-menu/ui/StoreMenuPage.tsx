@@ -103,7 +103,7 @@ function StoreMenuView({ menu }: { menu: StoreMenu }) {
 
     return (
         <div className={styles.page} style={buildBrandStyle(store)}>
-            <StoreHeader store={store} />
+            <StoreHeader store={store} itemCount={cart.itemCount} onOpenCart={() => setCheckoutOpen(true)} />
             <CategoryNav
                 categories={categories}
                 query={query}
@@ -203,19 +203,21 @@ export function StoreMenuPage() {
 
     return (
         <ThemeProvider folders={folders}>
-            {state.status === 'loading' ? <p className={styles.loading}>Carregando cardápio</p> : null}
-            {state.status === 'ready' ? <StoreMenuView menu={state.menu} /> : null}
-            {state.status === 'not-found' ? (
-                <StatusMessage illustration="nao-encontrado" title="Cardápio não encontrado">
-                    <p>Confira o endereço que você recebeu da loja.</p>
-                </StatusMessage>
-            ) : null}
-            {state.status === 'error' ? (
-                <StatusMessage illustration="erro-conexao" title="Não deu para abrir o cardápio">
-                    <p>Confira a internet e tente de novo.</p>
-                    <Button onClick={() => window.location.reload()}>Tentar de novo</Button>
-                </StatusMessage>
-            ) : null}
+            <div className={styles.scope}>
+                {state.status === 'loading' ? <p className={styles.loading}>Carregando cardápio</p> : null}
+                {state.status === 'ready' ? <StoreMenuView menu={state.menu} /> : null}
+                {state.status === 'not-found' ? (
+                    <StatusMessage illustration="nao-encontrado" title="Cardápio não encontrado">
+                        <p>Confira o endereço que você recebeu da loja.</p>
+                    </StatusMessage>
+                ) : null}
+                {state.status === 'error' ? (
+                    <StatusMessage illustration="erro-conexao" title="Não deu para abrir o cardápio">
+                        <p>Confira a internet e tente de novo.</p>
+                        <Button onClick={() => window.location.reload()}>Tentar de novo</Button>
+                    </StatusMessage>
+                ) : null}
+            </div>
         </ThemeProvider>
     )
 }

@@ -96,4 +96,31 @@
     --section-scroll-offset: calc(var(--category-bar-height) + var(--space-3));
     --chevron-size: 8px;
     --sheet-max: 560px;
+
+    --menu-paper: #f7f3ea;
+    --menu-paper-sunken: #efe8da;
+    --menu-ink: #201e18;
+    --menu-ink-soft: #4a443a;
+    --menu-ink-muted: #635c50;
+    --menu-rule: #d5cdbd;
+    --menu-rule-strong: #aca499;
+    --menu-rust: #883e21;
+    --menu-open: #365835;
+    --menu-open-dot: #4b7846;
+
+    --menu-column-max: 1024px;
+    --menu-gutter: 16px;
+    --menu-logo-size: 48px;
+    --menu-status-dot-size: 7px;
+    --menu-font-size-name: clamp(1.3rem, 3vw, 1.95rem);
+    --menu-tracking-name: -0.065em;
+    --menu-tracking-title: -0.06em;
+    --menu-tracking-item: -0.03em;
+    --menu-font-serif: Georgia, 'Times New Roman', serif;
+}
+
+@media (min-width: 681px) {
+    :root {
+        --menu-gutter: 20px;
+    }
 }

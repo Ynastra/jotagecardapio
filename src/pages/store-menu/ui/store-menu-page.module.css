@@ -1,3 +1,20 @@
+.scope {
+    --color-bg: var(--menu-paper);
+    --color-surface: var(--menu-paper);
+    --color-surface-muted: var(--menu-paper-sunken);
+    --color-text: var(--menu-ink);
+    --color-text-secondary: var(--menu-ink-soft);
+    --color-text-muted: var(--menu-ink-muted);
+    --color-border: var(--menu-rule);
+    --color-border-strong: var(--menu-rule-strong);
+    --color-accent: var(--menu-rust);
+    --color-success: var(--menu-open);
+
+    min-block-size: 100dvh;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+}
+
 .page {
     min-block-size: 100dvh;
     padding-block-end: var(--cart-bar-clearance);
@@ -6,15 +23,9 @@
 .content {
     display: grid;
     gap: var(--space-6);
-    max-inline-size: var(--content-max);
+    max-inline-size: var(--menu-column-max);
     margin-inline: auto;
-    padding: var(--space-5) var(--space-3);
-}
-
-@media (min-width: 900px) {
-    .content {
-        max-inline-size: var(--menu-max);
-    }
+    padding: var(--space-5) var(--menu-gutter);
 }
 
 .sectionTitle {
