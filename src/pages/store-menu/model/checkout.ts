@@ -273,6 +273,7 @@ const ORDER_ERROR_MESSAGES: Record<string, string> = {
     invalid_option_selection: 'Um item ficou com opcionais incompletos. Remova e monte de novo.',
     below_minimum_order: 'O pedido não atingiu o valor mínimo da loja.',
     invalid_change: 'O troco precisa ser para um valor maior que o total.',
+    too_many_orders: 'Muitos pedidos em pouco tempo. Tente de novo em alguns minutos.',
 }
 
 const UNKNOWN_ERROR_MESSAGE = 'Não deu para enviar o pedido. Confira a internet e tente de novo.'
