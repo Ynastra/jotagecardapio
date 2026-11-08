@@ -1,6 +1,6 @@
 begin;
 
-select plan(16);
+select plan(17);
 
 update public.stores
 set enforce_opening_hours = false, delivery_mode = 'radius', delivery_max_km = 6
@@ -77,6 +77,13 @@ select public.place_order(pg_temp.order_payload('delivery', to_jsonb(-23.5614), 
 select ok(
     (pg_temp.last_order()).delivery_distance_km > 99,
     'sem limite de km calcula a distância e aceita o pedido'
+);
+
+select public.place_order(pg_temp.order_payload('delivery', to_jsonb(21.72028), to_jsonb(128.98111)));
+
+select ok(
+    (pg_temp.last_order()).delivery_distance_km > 10000,
+    'sem limite de km aceita e grava uma distância acima de 10000 km'
 );
 
 update public.stores set delivery_max_km = 6 where slug = 'zedoburguerlucelia';

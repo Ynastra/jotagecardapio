@@ -10,7 +10,7 @@ alter table public.stores
     add constraint stores_coordinates_together check ((latitude is null) = (longitude is null));
 
 alter table public.orders
-    add column delivery_distance_km numeric(5, 1),
+    add column delivery_distance_km numeric(6, 1),
     add column distance_unverified boolean not null default false;
 
 -- Haversine, com o raio médio da Terra em km.
@@ -63,7 +63,7 @@ declare
     customer_latitude numeric;
     customer_longitude numeric;
     distance_to_customer numeric;
-    delivery_distance numeric(5, 1) := null;
+    delivery_distance numeric(6, 1) := null;
     distance_is_unverified boolean := false;
 
     item jsonb;
