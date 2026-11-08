@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { getPeriodStart } from '@/pages/panel-orders/model/period'
+import { getNextDayStart, getPeriodStart } from '@/pages/panel-orders/model/period'
 
 const SAO_PAULO = 'America/Sao_Paulo'
 
@@ -50,5 +50,29 @@ describe('getPeriodStart', () => {
 
     it('atravessa a virada de ano nos últimos 3 meses', () => {
         expect(startIso('quarter', '2026-01-15T15:00:00Z')).toBe('2025-10-15T03:00:00.000Z')
+    })
+})
+
+describe('getNextDayStart', () => {
+    function nextIso(nowIso: string, timeZone = SAO_PAULO): string {
+        const next = getNextDayStart(new Date(nowIso), timeZone).toISOString()
+        return next
+    }
+
+    it('é a próxima meia-noite no fuso da loja', () => {
+        expect(nextIso('2026-11-07T15:00:00Z')).toBe('2026-11-08T03:00:00.000Z')
+    })
+
+    it('ainda conta o dia local quando já virou o dia em UTC', () => {
+        expect(nextIso('2026-11-07T02:00:00Z')).toBe('2026-11-07T03:00:00.000Z')
+    })
+
+    it('atravessa a virada de mês e de ano', () => {
+        expect(nextIso('2026-11-30T15:00:00Z')).toBe('2026-12-01T03:00:00.000Z')
+        expect(nextIso('2026-12-31T15:00:00Z')).toBe('2027-01-01T03:00:00.000Z')
+    })
+
+    it('respeita um fuso à frente de UTC', () => {
+        expect(nextIso('2026-11-07T20:00:00Z', 'Asia/Tokyo')).toBe('2026-11-08T15:00:00.000Z')
     })
 })

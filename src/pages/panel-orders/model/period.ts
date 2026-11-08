@@ -87,6 +87,13 @@ function shiftMonths(day: CalendarDay, months: number): CalendarDay {
     return result
 }
 
+// Próxima meia-noite no fuso da loja, quando "hoje" vira outro dia.
+export function getNextDayStart(now: Date, timeZone: string): Date {
+    const tomorrow = shiftDays(getZonedDay(now, timeZone), 1)
+    const nextDayStart = getStartOfDay(tomorrow, timeZone)
+    return nextDayStart
+}
+
 // Primeiro instante do período, no fuso da loja. A semana começa na segunda.
 export function getPeriodStart(period: PeriodKey, now: Date, timeZone: string): Date {
     const today = getZonedDay(now, timeZone)

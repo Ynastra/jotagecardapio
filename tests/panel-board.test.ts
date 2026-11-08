@@ -48,11 +48,26 @@ describe('filterOrders', () => {
         expect(filterOrders(orders, { ...baseFilters, search: '#1' })).toEqual([delivery])
     })
 
-    it('esconde pedido anterior ao início do período', () => {
-        const old = buildPanelOrder({ id: 'c', createdAt: '2026-11-07T02:59:59Z' })
-        const first = buildPanelOrder({ id: 'd', createdAt: '2026-11-07T03:00:00Z' })
+    it('esconde concluído e cancelado anteriores ao início do período', () => {
+        const oldCompleted = buildPanelOrder({ id: 'c', status: 'completed', createdAt: '2026-11-07T02:59:59Z' })
+        const oldCanceled = buildPanelOrder({ id: 'e', status: 'canceled', createdAt: '2026-11-07T02:59:59Z' })
+        const first = buildPanelOrder({ id: 'd', status: 'completed', createdAt: '2026-11-07T03:00:00Z' })
 
-        expect(filterOrders([old, first], baseFilters)).toEqual([first])
+        expect(filterOrders([oldCompleted, oldCanceled, first], baseFilters)).toEqual([first])
+    })
+
+    it('mostra pedido em andamento mesmo criado antes do período', () => {
+        const received = buildPanelOrder({ id: 'f', status: 'received', createdAt: '2026-11-06T02:00:00Z' })
+        const preparing = buildPanelOrder({ id: 'g', status: 'preparing', createdAt: '2026-10-01T12:00:00Z' })
+        const ready = buildPanelOrder({ id: 'h', status: 'ready', createdAt: '2026-09-01T12:00:00Z' })
+
+        expect(filterOrders([received, preparing, ready], baseFilters)).toEqual([received, preparing, ready])
+    })
+
+    it('mantém o filtro de canal sobre o pedido em andamento antigo', () => {
+        const oldDelivery = buildPanelOrder({ id: 'i', status: 'preparing', fulfillment: 'delivery', createdAt: '2026-10-01T12:00:00Z' })
+
+        expect(filterOrders([oldDelivery], { ...baseFilters, channel: 'pickup' })).toEqual([])
     })
 })
 

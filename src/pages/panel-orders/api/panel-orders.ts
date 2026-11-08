@@ -7,6 +7,7 @@ import {
 } from '@/entities/order'
 import { supabase } from '@/shared/api'
 
+const ACTIVE_STATUS_LIST = 'received,preparing,ready'
 const ORDER_COLUMNS =
     'id, number, public_code, tracking_token, payment_status, preparing_at, ready_at, completed_at, canceled_at, customer_name, customer_phone, fulfillment, address, payment_method, change_for_cents, notes, items, subtotal_cents, delivery_fee_cents, payment_fee_cents, total_cents, status, created_at'
 
@@ -71,12 +72,14 @@ export type OrdersQuery = {
     limit: number
 }
 
+// Traz os pedidos em andamento de qualquer data mais os criados a partir de
+// `since`; o teto vale sobre o total.
 export async function fetchOrders({ storeId, since, limit }: OrdersQuery): Promise<PanelOrder[]> {
     const { data, error } = await supabase
         .from('orders')
         .select(ORDER_COLUMNS)
         .eq('store_id', storeId)
-        .gte('created_at', since.toISOString())
+        .or(`status.in.(${ACTIVE_STATUS_LIST}),created_at.gte.${since.toISOString()}`)
         .order('created_at', { ascending: false })
         .limit(limit)
 
@@ -162,24 +165,66 @@ export async function countCustomerOrders(storeId: string, customerPhone: string
     return total
 }
 
+export type OrdersSubscriptionHandlers = {
+    onOrder: (order: PanelOrder, isNew: boolean) => void
+    // Chamado a cada vez que o canal fica de pé, na entrada e em cada reconexão.
+    onSubscribed: () => void
+    onFailed: () => void
+}
+
 // Avisa a cada pedido novo ou mudança de status; devolve a função que encerra.
-export function subscribeToOrders(storeId: string, onChange: (order: PanelOrder, isNew: boolean) => void): () => void {
-    const channel = supabase
-        .channel(`pedidos-${storeId}`)
-        .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'orders', filter: `store_id=eq.${storeId}` },
-            (payload) => {
-                if (payload.eventType === 'DELETE') {
+// O canal só entra depois de o cliente de tempo real receber o token da
+// sessão: com o token anônimo a política de leitura filtra os eventos sem erro.
+export function subscribeToOrders(storeId: string, handlers: OrdersSubscriptionHandlers): () => void {
+    let isActive = true
+    let channel: ReturnType<typeof supabase.channel> | null = null
+
+    async function start() {
+        try {
+            const { data } = await supabase.auth.getSession()
+            const accessToken = data.session?.access_token
+            if (accessToken) {
+                await supabase.realtime.setAuth(accessToken)
+            }
+        } catch (error) {
+            console.warn('Não deu para entregar o token ao tempo real', error)
+        }
+
+        if (!isActive) {
+            return
+        }
+
+        channel = supabase
+            .channel(`pedidos-${storeId}`)
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'orders', filter: `store_id=eq.${storeId}` },
+                (payload) => {
+                    if (payload.eventType === 'DELETE') {
+                        return
+                    }
+                    handlers.onOrder(mapOrder(payload.new as OrderRow), payload.eventType === 'INSERT')
+                },
+            )
+            .subscribe((status) => {
+                if (!isActive) {
                     return
                 }
-                onChange(mapOrder(payload.new as OrderRow), payload.eventType === 'INSERT')
-            },
-        )
-        .subscribe()
+                if (status === 'SUBSCRIBED') {
+                    handlers.onSubscribed()
+                } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                    handlers.onFailed()
+                }
+            })
+    }
+
+    void start()
 
     const unsubscribe = () => {
-        supabase.removeChannel(channel)
+        isActive = false
+        if (channel) {
+            supabase.removeChannel(channel)
+        }
     }
     return unsubscribe
 }

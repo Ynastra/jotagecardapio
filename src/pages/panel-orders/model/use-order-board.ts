@@ -5,10 +5,11 @@ import type { Store } from '@/entities/store'
 
 import { groupOrdersIntoColumns, sumCompletedCents, type BoardColumns } from './board'
 import { buildCustomerWhatsappUrl, buildTrackingUrl } from './customer-contact'
-import { filterOrders, type ChannelFilter } from './filters'
+import { filterOrders, isVisibleInPeriod, type ChannelFilter } from './filters'
 import { isActiveOrder } from './order-flow'
-import { getPeriodStart, type PeriodKey } from './period'
+import type { PeriodKey } from './period'
 import { usePanelOrders } from './use-panel-orders'
+import { usePeriodStart } from './use-period-start'
 import { useStatusMessages } from './use-status-messages'
 
 export type OrderBoardState = {
@@ -42,7 +43,7 @@ export function useOrderBoard(store: Store): OrderBoardState {
     const [period, setPeriod] = useState<PeriodKey>('today')
     const [seenIds, setSeenIds] = useState<ReadonlySet<string>>(new Set())
 
-    const periodStart = useMemo(() => getPeriodStart(period, new Date(), store.timezone), [period, store.timezone])
+    const periodStart = usePeriodStart(period, store.timezone)
     const { orders, isLoading, isTruncated, errorMessage, pendingOrderIds, changeStatus, changePaymentStatus } =
         usePanelOrders(store.id, periodStart)
     const statusMessages = useStatusMessages(store.id)
@@ -53,7 +54,11 @@ export function useOrderBoard(store: Store): OrderBoardState {
     )
     const columns = useMemo(() => groupOrdersIntoColumns(visibleOrders), [visibleOrders])
     const finishedTotalCents = sumCompletedCents(columns.finished)
-    const activeCount = orders.filter(isActiveOrder).length
+    const periodOrders = useMemo(
+        () => orders.filter((order) => isVisibleInPeriod(order, periodStart)),
+        [orders, periodStart],
+    )
+    const activeCount = periodOrders.filter(isActiveOrder).length
 
     const isPending = useCallback((orderId: string) => pendingOrderIds.has(orderId), [pendingOrderIds])
 
@@ -100,7 +105,7 @@ export function useOrderBoard(store: Store): OrderBoardState {
         visibleCount: visibleOrders.length,
         activeCount,
         finishedTotalCents,
-        hasNoOrders: !isLoading && orders.length === 0,
+        hasNoOrders: !isLoading && periodOrders.length === 0,
         isLoading,
         isTruncated,
         errorMessage,

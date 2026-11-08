@@ -5,6 +5,8 @@ import { playNewOrderChime } from '@/shared/lib'
 
 import { fetchOrderById, fetchOrders, saveOrderStatus, savePaymentStatus, subscribeToOrders } from '../api/panel-orders'
 import { hasReachedQueryLimit, ORDERS_QUERY_LIMIT } from './board'
+import { isVisibleInPeriod } from './filters'
+import { mergeFetchedWithRealtime } from './merge-orders'
 import { upsertOrder } from './order-flow'
 import { resolveOrderWrite } from './order-write'
 
@@ -26,49 +28,88 @@ export function usePanelOrders(storeId: string, periodStart: Date): PanelOrdersS
     const [pendingOrderIds, setPendingOrderIds] = useState<ReadonlySet<string>>(new Set())
     const pendingRef = useRef(new Set<string>())
     const ordersRef = useRef<PanelOrder[]>([])
+    const periodStartRef = useRef(periodStart)
+    const fetchSequenceRef = useRef(0)
+    const isFetchingRef = useRef(false)
+    const arrivedDuringFetchRef = useRef(new Map<string, PanelOrder>())
+    const isChannelSettledRef = useRef(false)
     const periodStartMs = periodStart.getTime()
 
     ordersRef.current = orders
+    periodStartRef.current = periodStart
 
-    useEffect(() => {
-        let isCurrent = true
+    const loadOrders = useCallback(async () => {
+        const sequence = ++fetchSequenceRef.current
+        isFetchingRef.current = true
+        arrivedDuringFetchRef.current.clear()
         setLoading(true)
 
-        fetchOrders({ storeId, since: new Date(periodStartMs), limit: ORDERS_QUERY_LIMIT })
-            .then((loaded) => {
-                if (isCurrent) {
-                    setOrders(loaded)
-                    setTruncated(hasReachedQueryLimit(loaded.length))
-                    setErrorMessage(null)
-                }
-            })
-            .catch((error: unknown) => {
-                console.error('Falha ao carregar pedidos', error)
-                if (isCurrent) {
-                    setErrorMessage('Não deu para carregar os pedidos. Recarregue a página.')
-                }
-            })
-            .finally(() => {
-                if (isCurrent) {
-                    setLoading(false)
-                }
-            })
+        try {
+            const fetched = await fetchOrders({ storeId, since: new Date(periodStartMs), limit: ORDERS_QUERY_LIMIT })
+            if (sequence !== fetchSequenceRef.current) {
+                return
+            }
 
-        return () => {
-            isCurrent = false
+            const arrived = Array.from(arrivedDuringFetchRef.current.values())
+            setOrders(mergeFetchedWithRealtime(fetched, arrived))
+            setTruncated(hasReachedQueryLimit(fetched.length))
+            setErrorMessage(null)
+        } catch (error) {
+            console.error('Falha ao carregar pedidos', error)
+            if (sequence === fetchSequenceRef.current) {
+                setErrorMessage('Não deu para carregar os pedidos. Recarregue a página.')
+            }
+        } finally {
+            if (sequence === fetchSequenceRef.current) {
+                isFetchingRef.current = false
+                arrivedDuringFetchRef.current.clear()
+                setLoading(false)
+            }
         }
     }, [storeId, periodStartMs])
 
+    const loadOrdersRef = useRef(loadOrders)
+    loadOrdersRef.current = loadOrders
+
     useEffect(() => {
-        const unsubscribe = subscribeToOrders(storeId, (order, isNew) => {
-            setOrders((current) => upsertOrder(current, order))
-            if (isNew) {
-                playNewOrderChime()
-            }
+        isChannelSettledRef.current = false
+
+        function settleAndLoad() {
+            isChannelSettledRef.current = true
+            void loadOrdersRef.current()
+        }
+
+        const unsubscribe = subscribeToOrders(storeId, {
+            onOrder: (order, isNew) => {
+                if (!isVisibleInPeriod(order, periodStartRef.current)) {
+                    setOrders((current) => current.filter((existing) => existing.id !== order.id))
+                    return
+                }
+
+                if (isFetchingRef.current) {
+                    arrivedDuringFetchRef.current.set(order.id, order)
+                }
+                setOrders((current) => upsertOrder(current, order))
+                if (isNew) {
+                    playNewOrderChime()
+                }
+            },
+            onSubscribed: settleAndLoad,
+            onFailed: () => {
+                if (!isChannelSettledRef.current) {
+                    settleAndLoad()
+                }
+            },
         })
 
         return unsubscribe
     }, [storeId])
+
+    useEffect(() => {
+        if (isChannelSettledRef.current) {
+            void loadOrders()
+        }
+    }, [loadOrders])
 
     const runOrderWrite = useCallback(
         async (orderId: string, save: (current: PanelOrder) => Promise<PanelOrder | null>, failureMessage: string) => {
