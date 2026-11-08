@@ -4,7 +4,7 @@ services:
         container_name: jgcardapio-waha
         restart: unless-stopped
         ports:
-            - "3000:3000"
+            - "${WAHA_BIND_ADDRESS:-127.0.0.1}:3000:3000"
         environment:
             WAHA_API_KEY: ${WAHA_API_KEY:?defina WAHA_API_KEY em infra/whatsapp/.env}
             WAHA_DASHBOARD_ENABLED: "false"
