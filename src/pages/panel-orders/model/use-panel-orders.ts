@@ -156,12 +156,13 @@ export function usePanelOrders(
             pendingRef.current.add(orderId)
             setPendingOrderIds(new Set(pendingRef.current))
 
+            let savedOrder: PanelOrder | null = null
             try {
                 const resolution = resolveOrderWrite(await save(current))
                 if (resolution.kind === 'saved') {
                     setOrders((existing) => upsertOrder(existing, resolution.order))
                     setErrorMessage(null)
-                    onSaved?.(resolution.order)
+                    savedOrder = resolution.order
                 } else {
                     setErrorMessage(resolution.message)
                     const fresh = await fetchOrderById(storeId, orderId)
@@ -175,6 +176,14 @@ export function usePanelOrders(
             } finally {
                 pendingRef.current.delete(orderId)
                 setPendingOrderIds(new Set(pendingRef.current))
+            }
+
+            if (savedOrder) {
+                try {
+                    onSaved?.(savedOrder)
+                } catch (error) {
+                    console.error('Falha depois de gravar o pedido', error)
+                }
             }
         },
         [storeId],

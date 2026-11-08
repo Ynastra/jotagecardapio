@@ -45,6 +45,10 @@ describe('chatIdCandidate', () => {
         expect(chatIdCandidate('1133334444')).toBe('551133334444')
     })
 
+    it('tira zeros à esquerda antes de decidir o prefixo', () => {
+        expect(chatIdCandidate('011 99999-8888')).toBe('5511999998888')
+    })
+
     it('mantém telefone que já tem o código do país', () => {
         expect(chatIdCandidate('+55 11 99999-8888')).toBe('5511999998888')
     })

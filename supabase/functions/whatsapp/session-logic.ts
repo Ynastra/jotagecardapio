@@ -31,7 +31,7 @@ export function phoneFromGatewayId(gatewayId: string | null | undefined): string
 }
 
 export function chatIdCandidate(customerPhone: string): string | null {
-    const digits = customerPhone.replace(/\D/g, '')
+    const digits = customerPhone.replace(/\D/g, '').replace(/^0+/, '')
     if (digits.length < MIN_PHONE_DIGITS || digits.length > MAX_PHONE_DIGITS) {
         return null
     }

@@ -170,8 +170,11 @@ async function connect(admin: SupabaseClient, storeId: string): Promise<SessionS
 async function disconnect(admin: SupabaseClient, storeId: string): Promise<SessionSnapshot> {
     const name = sessionName(storeId)
     const session = await readGatewaySession(name)
-    if (session) {
+    if (session?.status === 'WORKING') {
         await gatewayJson(`/api/sessions/${name}/logout`, { method: 'POST' })
+    }
+    if (session && session.status !== 'STOPPED') {
+        await gatewayJson(`/api/sessions/${name}/stop`, { method: 'POST' })
     }
 
     const snapshot: SessionSnapshot = { state: 'disconnected', phone: null, qr: null }

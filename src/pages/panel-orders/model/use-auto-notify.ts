@@ -35,7 +35,14 @@ export function useAutoNotify(storeId: string, buildMessage: (order: PanelOrder)
 
     const notifyCustomer = useCallback(
         (order: PanelOrder) => {
-            const message = buildMessage(order)
+            let message: string | null
+            try {
+                message = buildMessage(order)
+            } catch (error: unknown) {
+                console.error('Falha ao montar o aviso ao cliente', error)
+                showNotice(AUTO_NOTIFY_FAILED_MESSAGE)
+                return
+            }
             if (message === null) {
                 return
             }

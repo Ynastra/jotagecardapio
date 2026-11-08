@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { fetchSession, runSessionAction } from '../api/session'
 import { sessionFromSnapshot, shouldPollSession, type GatewaySnapshot, type StoredSession } from './connection'
@@ -13,6 +13,7 @@ export function useSession(storeId: string) {
     const [qr, setQr] = useState<string | null>(null)
     const [isGatewayDown, setGatewayDown] = useState(false)
     const [isBusy, setBusy] = useState(false)
+    const actionGenerationRef = useRef(0)
 
     const applySnapshot = useCallback((snapshot: GatewaySnapshot) => {
         setSession(sessionFromSnapshot(snapshot, new Date().toISOString()))
@@ -68,29 +69,37 @@ export function useSession(storeId: string) {
         }
 
         let isCurrent = true
+        let timer: number | undefined
 
-        const timer = window.setInterval(() => {
-            runSessionAction('status', storeId)
-                .then((snapshot) => {
-                    if (isCurrent) {
-                        applySnapshot(snapshot)
-                    }
-                })
-                .catch((error: unknown) => {
-                    console.error('Falha ao consultar a sessão do WhatsApp', error)
-                    if (isCurrent) {
-                        setGatewayDown(true)
-                    }
-                })
-        }, POLL_INTERVAL_MS)
+        async function poll() {
+            const generation = actionGenerationRef.current
+            try {
+                const snapshot = await runSessionAction('status', storeId)
+                if (isCurrent && generation === actionGenerationRef.current) {
+                    applySnapshot(snapshot)
+                }
+            } catch (error: unknown) {
+                console.error('Falha ao consultar a sessão do WhatsApp', error)
+                if (isCurrent && generation === actionGenerationRef.current) {
+                    setGatewayDown(true)
+                }
+            }
+
+            if (isCurrent) {
+                timer = window.setTimeout(() => void poll(), POLL_INTERVAL_MS)
+            }
+        }
+
+        timer = window.setTimeout(() => void poll(), POLL_INTERVAL_MS)
 
         return () => {
             isCurrent = false
-            window.clearInterval(timer)
+            window.clearTimeout(timer)
         }
     }, [isPolling, storeId, applySnapshot])
 
     async function runAction(action: 'connect' | 'disconnect') {
+        actionGenerationRef.current += 1
         setBusy(true)
         try {
             const snapshot = await runSessionAction(action, storeId)
