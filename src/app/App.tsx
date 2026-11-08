@@ -4,6 +4,7 @@ import { HomePage } from '@/pages/home'
 import { OrderTrackingPage } from '@/pages/order-tracking'
 import { AddonsPage } from '@/pages/panel-addons'
 import { DeliveryPage } from '@/pages/panel-delivery'
+import { PanelHomePage } from '@/pages/panel-home'
 import { HoursPage } from '@/pages/panel-hours'
 import { PanelOrdersPage } from '@/pages/panel-orders'
 import { PaymentPage } from '@/pages/panel-payment'
@@ -25,6 +26,7 @@ export function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/painel" element={<PanelLayout />}>
                     <Route index element={<Navigate to="pedidos" replace />} />
+                    <Route path="inicio" element={<PanelHomePage />} />
                     <Route path="pedidos" element={<PanelOrdersPage />} />
                     <Route path="produtos" element={<ProductsPage />} />
                     <Route path="produtos/novo" element={<ProductEditPage />} />

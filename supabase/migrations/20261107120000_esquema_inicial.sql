@@ -817,6 +817,139 @@ $$;
 revoke execute on function public.get_order_tracking(text) from public;
 grant execute on function public.get_order_tracking(text) to anon, authenticated;
 
+-- Painel Início -------------------------------------------------------------
+
+-- Resumo do período para o painel. Pedido cancelado fica fora de todos os
+-- totais e aparece só na contagem à parte. Roda com os direitos de quem chama,
+-- então a RLS de orders e products decide o acesso: quem não é membro da loja
+-- recebe zeros e lista vazia.
+create function public.get_store_dashboard(
+    target_store uuid,
+    period_start timestamptz,
+    period_end timestamptz
+)
+returns jsonb
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+    with store_zone as (
+        select coalesce(
+            (select timezone from public.stores where id = target_store),
+            'America/Sao_Paulo'
+        ) as name
+    ),
+    period_orders as (
+        select o.status, o.fulfillment, o.customer_phone, o.total_cents, o.items
+        from public.orders o
+        where o.store_id = target_store
+          and o.created_at >= period_start
+          and o.created_at < period_end
+    ),
+    counted_orders as (
+        select * from period_orders where status <> 'canceled'
+    ),
+    totals as (
+        select
+            count(*) as orders_count,
+            coalesce(sum(total_cents), 0) as revenue_cents,
+            count(distinct customer_phone) as customers_count,
+            count(*) filter (where fulfillment = 'delivery') as delivery_count,
+            count(*) filter (where fulfillment = 'pickup') as pickup_count
+        from counted_orders
+    ),
+    order_lines as (
+        select
+            (line ->> 'product_id')::uuid as product_id,
+            line ->> 'name' as line_name,
+            (line ->> 'quantity')::integer as quantity,
+            (line ->> 'total_cents')::integer as total_cents
+        from counted_orders
+        cross join lateral jsonb_array_elements(items) as line
+    ),
+    top_products as (
+        select
+            l.product_id,
+            coalesce(p.name, max(l.line_name)) as name,
+            p.image_url,
+            p.price_cents,
+            sum(l.quantity) as quantity,
+            sum(l.total_cents) as revenue_cents
+        from order_lines l
+        left join public.products p on p.id = l.product_id
+        group by l.product_id, p.name, p.image_url, p.price_cents
+        order by sum(l.quantity) desc, sum(l.total_cents) desc, coalesce(p.name, max(l.line_name))
+        limit 5
+    ),
+    month_starts as (
+        select date_trunc('month', now() at time zone z.name) - make_interval(months => back) as local_start
+        from store_zone z
+        cross join generate_series(0, 11) as back
+    ),
+    series_start as (
+        select min(m.local_start) at time zone z.name as started_at
+        from month_starts m
+        cross join store_zone z
+        group by z.name
+    ),
+    monthly_revenue as (
+        select
+            m.local_start,
+            coalesce(sum(o.total_cents), 0) as revenue_cents
+        from month_starts m
+        cross join store_zone z
+        left join public.orders o
+            on o.store_id = target_store
+           and o.status <> 'canceled'
+           and o.created_at >= (select started_at from series_start)
+           and (o.created_at at time zone z.name) >= m.local_start
+           and (o.created_at at time zone z.name) < m.local_start + interval '1 month'
+        group by m.local_start
+    )
+    select jsonb_build_object(
+        'revenue_cents', t.revenue_cents,
+        'orders_count', t.orders_count,
+        'customers_count', t.customers_count,
+        'delivery_count', t.delivery_count,
+        'pickup_count', t.pickup_count,
+        'canceled_count', (select count(*) from period_orders where status = 'canceled'),
+        'items_total', (select coalesce(sum(quantity), 0) from order_lines),
+        'top_products', coalesce(
+            (select jsonb_agg(
+                jsonb_build_object(
+                    'product_id', tp.product_id,
+                    'name', tp.name,
+                    'image_url', tp.image_url,
+                    'price_cents', tp.price_cents,
+                    'quantity', tp.quantity,
+                    'revenue_cents', tp.revenue_cents
+                )
+                order by tp.quantity desc, tp.revenue_cents desc, tp.name
+            ) from top_products tp),
+            '[]'::jsonb
+        ),
+        'monthly_revenue', (
+            select jsonb_agg(
+                jsonb_build_object(
+                    'month', to_char(mr.local_start, 'YYYY-MM'),
+                    'revenue_cents', mr.revenue_cents
+                )
+                order by mr.local_start
+            ) from monthly_revenue mr
+        ),
+        'in_progress_count', (
+            select count(*)
+            from public.orders
+            where store_id = target_store and status in ('received', 'preparing', 'ready')
+        )
+    )
+    from totals t;
+$$;
+
+revoke execute on function public.get_store_dashboard(uuid, timestamptz, timestamptz) from public;
+grant execute on function public.get_store_dashboard(uuid, timestamptz, timestamptz) to authenticated;
+
 -- WhatsApp ----------------------------------------------------------------
 
 -- custom_body nulo usa o texto padrão do app. interval_minutes vale só para a
