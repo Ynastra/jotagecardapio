@@ -4,10 +4,11 @@
     padding: var(--space-4) var(--space-5) var(--space-5);
 }
 
-.photo {
+.cover {
+    display: block;
     inline-size: 100%;
-    aspect-ratio: 4 / 3;
-    border-radius: var(--radius-md);
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
 }
 
 .facts {

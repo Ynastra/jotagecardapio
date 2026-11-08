@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import type { DraftLine } from '@/entities/order'
 import { createLocalId, formatCents } from '@/shared/lib'
-import { Button, QuantityStepper, Sheet, ThemeIcon, ThemeImage } from '@/shared/ui'
+import { Button, QuantityStepper, Sheet, ThemeIcon } from '@/shared/ui'
 
 import {
     calculateUnitPriceCents,
@@ -80,8 +80,10 @@ export function ProductSheet({ product, maxQuantity, onAdd, onClose }: ProductSh
 
     return (
         <Sheet title={product.name} onClose={onClose} footer={footer}>
+            {product.imageUrl ? (
+                <img className={styles.cover} src={product.imageUrl} alt={product.name} decoding="async" />
+            ) : null}
             <div className={styles.intro}>
-                <ThemeImage className={styles.photo} src={product.imageUrl} fallbackStem="produto-sem-foto" alt={product.name} />
                 <div className={styles.facts}>
                     {product.portionLabel ? <span className={styles.fact}>{product.portionLabel}</span> : null}
                     {product.serves ? (
