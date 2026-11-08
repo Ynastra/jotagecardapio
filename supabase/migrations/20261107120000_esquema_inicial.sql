@@ -135,6 +135,8 @@ create table public.products (
     active boolean not null default true,
     position integer not null default 0,
     unique (id, store_id),
+    constraint products_name_length check (char_length(name) <= 120),
+    constraint products_description_length check (char_length(description) <= 600),
     constraint products_portion_complete check ((portion_amount is null) = (portion_unit is null)),
     constraint products_portion_amount_positive check (portion_amount is null or portion_amount > 0),
     constraint products_portion_unit_valid check (
@@ -164,7 +166,12 @@ create table public.option_groups (
     id uuid primary key default gen_random_uuid(),
     store_id uuid not null references public.stores (id) on delete cascade,
     title text not null,
-    unique (id, store_id)
+    description text,
+    active boolean not null default true,
+    position integer not null default 0,
+    unique (id, store_id),
+    constraint option_groups_title_length check (char_length(title) <= 120),
+    constraint option_groups_description_length check (char_length(description) <= 200)
 );
 
 create table public.options (
@@ -179,7 +186,9 @@ create table public.options (
     max_quantity integer default 1 check (max_quantity is null or max_quantity >= 1),
     position integer not null default 0,
     active boolean not null default true,
-    foreign key (group_id, store_id) references public.option_groups (id, store_id) on delete cascade
+    foreign key (group_id, store_id) references public.option_groups (id, store_id) on delete cascade,
+    constraint options_name_length check (char_length(name) <= 120),
+    constraint options_description_length check (char_length(description) <= 200)
 );
 
 -- min_choices >= 1 torna o grupo obrigatório neste produto.
@@ -389,7 +398,7 @@ create policy "membro edita produtos" on public.products
     for all using (public.is_store_member(store_id)) with check (public.is_store_member(store_id));
 
 create policy "grupos públicos" on public.option_groups
-    for select using (public.is_store_public(store_id) or public.is_store_member(store_id));
+    for select using ((active and public.is_store_public(store_id)) or public.is_store_member(store_id));
 create policy "membro edita grupos" on public.option_groups
     for all using (public.is_store_member(store_id)) with check (public.is_store_member(store_id));
 
@@ -625,7 +634,7 @@ begin
             from public.options o
             join public.option_groups g on g.id = o.group_id
             join public.product_option_groups link on link.group_id = g.id and link.product_id = target_product.id
-            where o.id = (chosen ->> 'option_id')::uuid and o.active;
+            where o.id = (chosen ->> 'option_id')::uuid and o.active and g.active;
             if not found then
                 raise exception 'option_unavailable';
             end if;
@@ -648,7 +657,7 @@ begin
             select g.id, g.title, link.min_choices, link.max_choices
             from public.option_groups g
             join public.product_option_groups link on link.group_id = g.id
-            where link.product_id = target_product.id
+            where link.product_id = target_product.id and g.active
         loop
             select coalesce(sum((value ->> 'quantity')::integer), 0) into group_units
             from jsonb_array_elements(line_options)
