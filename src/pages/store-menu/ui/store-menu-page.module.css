@@ -29,12 +29,13 @@
 }
 
 .sectionTitle {
-    display: flex;
-    gap: var(--space-2);
-    align-items: center;
     margin-block-end: var(--space-3);
-    padding-inline: var(--space-2);
-    font-size: var(--font-size-xl);
+    font-family: var(--menu-font-serif);
+    font-size: var(--menu-font-size-section);
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: var(--menu-tracking-title);
+    overflow-wrap: anywhere;
 }
 
 .category {
@@ -43,24 +44,16 @@
 
 .products {
     display: grid;
-    gap: var(--divider-width);
-    overflow: hidden;
-    border: var(--divider-width) solid var(--color-border);
-    border-radius: var(--radius-md);
-    background-color: var(--color-border);
 }
 
 .products > li {
-    background-color: var(--color-surface);
+    border-block-start: var(--divider-width) solid var(--color-border);
 }
 
 @media (min-width: 900px) {
     .products {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .products > li:last-child:nth-child(odd) {
-        grid-column: 1 / -1;
+        column-gap: var(--space-8);
     }
 }
 

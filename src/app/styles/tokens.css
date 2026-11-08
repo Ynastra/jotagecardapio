@@ -90,7 +90,6 @@
     --store-logo-size: 96px;
     --store-logo-overlap: calc(var(--store-logo-size) / -2 - var(--space-5));
     --status-dot-size: 10px;
-    --product-photo-size: 104px;
     --divider-width: 1px;
     --category-bar-height: 48px;
     --section-scroll-offset: calc(var(--category-bar-height) + var(--space-3));
@@ -143,12 +142,25 @@
     --menu-tracking-kicker: 0.15em;
     --menu-tab-gap: 13px;
     --menu-tab-underline: 3px;
+    --menu-thumb-width: 76px;
+    --menu-thumb-height: 76px;
+    --menu-plus-size: 24px;
+    --menu-font-size-section: clamp(1.8rem, 4vw, 2.7rem);
+    --menu-row-min-height: 82px;
+}
+
+@media (min-width: 900px) {
+    :root {
+        --menu-thumb-width: 96px;
+        --menu-thumb-height: 88px;
+    }
 }
 
 @media (min-width: 681px) {
     :root {
         --menu-gutter: 20px;
         --menu-tab-gap: 20px;
+        --menu-plus-size: 28px;
         --menu-hero-min-height: 276px;
         --menu-hero-text-width: 57%;
         --menu-hero-photo-width: 53%;
