@@ -93,12 +93,19 @@ export function getAvailableFulfillment(store: Store, requested: Fulfillment): F
     return fulfillment
 }
 
+export function chargesByNeighborhood(store: Pick<Store, 'deliveryMode'>): boolean {
+    const isByNeighborhood = store.deliveryMode === 'neighborhood'
+    return isByNeighborhood
+}
+
 export function getDeliveryFeeCents(store: Store, form: CheckoutForm): number {
     if (form.fulfillment === 'pickup') {
         return 0
     }
 
-    const zone = store.deliveryZones.find((candidate) => candidate.id === form.deliveryZoneId)
+    const zone = chargesByNeighborhood(store)
+        ? store.deliveryZones.find((candidate) => candidate.id === form.deliveryZoneId)
+        : undefined
     const fee = zone ? zone.feeCents : store.deliveryFeeCents
     return fee
 }
@@ -155,7 +162,7 @@ function validateDelivery(form: CheckoutForm, store: Store): string | null {
     if (!form.street.trim() || !form.number.trim()) {
         return 'Informe a rua e o número para a entrega.'
     }
-    if (store.deliveryZones.length > 0 && !form.deliveryZoneId) {
+    if (chargesByNeighborhood(store) && !form.deliveryZoneId) {
         return 'Escolha o bairro da entrega.'
     }
 
@@ -203,13 +210,14 @@ export function validateCheckout(form: CheckoutForm, store: Store, subtotalCents
 }
 
 export function buildPlaceOrderPayload(
-    store: Pick<Store, 'slug' | 'requireCep'>,
+    store: Pick<Store, 'slug' | 'requireCep' | 'deliveryMode'>,
     form: CheckoutForm,
     lines: readonly DraftLine[],
 ): PlaceOrderPayload {
     const storeSlug = store.slug
     const sendsCep = store.requireCep
     const isDelivery = form.fulfillment === 'delivery'
+    const sendsZone = isDelivery && chargesByNeighborhood(store) && form.deliveryZoneId !== ''
     // CEP, cidade e UF lembrados de outra loja não vão para quem não pede CEP.
     const address = isDelivery
         ? {
@@ -231,7 +239,7 @@ export function buildPlaceOrderPayload(
         customer_phone: keepDigits(form.customerPhone),
         fulfillment: form.fulfillment,
         address,
-        delivery_zone_id: isDelivery && form.deliveryZoneId ? form.deliveryZoneId : null,
+        delivery_zone_id: sendsZone ? form.deliveryZoneId : null,
         payment_method: form.paymentMethod,
         change_for_cents: changeForCents,
         notes: form.notes.trim(),

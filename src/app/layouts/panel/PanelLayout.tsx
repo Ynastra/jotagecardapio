@@ -12,7 +12,12 @@ import { PanelMenu } from './PanelMenu'
 import styles from './panel-layout.module.css'
 import { useSession } from './use-session'
 
-function StoreShell({ store }: { store: Store }) {
+type StoreShellProps = {
+    store: Store
+    onReload: () => Promise<void>
+}
+
+function StoreShell({ store, onReload }: StoreShellProps) {
     const [isMenuOpen, setMenuOpen] = useState(false)
     const menuToggleRef = useRef<HTMLButtonElement>(null)
 
@@ -41,7 +46,7 @@ function StoreShell({ store }: { store: Store }) {
     }, [isMenuOpen, closeMenu])
 
     return (
-        <CurrentStoreProvider store={store}>
+        <CurrentStoreProvider store={store} onReload={onReload}>
             <div className={styles.shell}>
                 <PanelMenu
                     store={store}
@@ -78,6 +83,10 @@ function StoreShell({ store }: { store: Store }) {
 function StorePicker() {
     const [stores, setStores] = useState<Store[] | null>(null)
     const [selectedId, setSelectedId] = useState<string | null>(null)
+
+    const reloadStores = useCallback(async () => {
+        setStores(await fetchMyStores())
+    }, [])
 
     useEffect(() => {
         fetchMyStores()
@@ -116,7 +125,7 @@ function StorePicker() {
         )
     }
     if (selected) {
-        return <StoreShell store={selected} />
+        return <StoreShell store={selected} onReload={reloadStores} />
     }
 
     return (

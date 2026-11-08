@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 import type { ManagedProduct } from '@/entities/product'
 import { useCurrentStore } from '@/entities/store'
-import { Button, StatusMessage } from '@/shared/ui'
+import { Button, ConfirmSheet, StatusMessage } from '@/shared/ui'
 
 import {
     describeItemCount,
@@ -14,7 +14,6 @@ import {
 import { useCatalog } from '../model/use-catalog'
 import { CategoryBlock } from './CategoryBlock'
 import { CategorySheet } from './CategorySheet'
-import { ConfirmSheet } from './ConfirmSheet'
 import { FeaturedPickerSheet } from './FeaturedPickerSheet'
 import { FeaturedSection } from './FeaturedSection'
 import styles from './products.module.css'

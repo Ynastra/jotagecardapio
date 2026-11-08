@@ -29,6 +29,8 @@ export type AddressDisplay = 'hidden' | 'city' | 'full'
 
 export type PixKeyType = 'cnpj' | 'cpf' | 'email' | 'phone' | 'random'
 
+export type DeliveryMode = 'fixed' | 'radius' | 'neighborhood'
+
 export type Store = {
     id: string
     slug: string
@@ -41,6 +43,7 @@ export type Store = {
     brandColor: string | null
     minOrderCents: number
     deliveryFeeCents: number
+    deliveryMode: DeliveryMode
     acceptsDelivery: boolean
     acceptsPickup: boolean
     enforceOpeningHours: boolean

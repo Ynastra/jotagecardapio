@@ -1,10 +1,10 @@
 import { supabase } from '@/shared/api'
 
 import { selectOnlineProducts } from '../model/availability'
-import type { Category,OptionGroup, Product, Store, StoreMenu } from '../model/types'
+import type { Category, DeliveryMode, OptionGroup, Product, Store, StoreMenu } from '../model/types'
 
 const STORE_COLUMNS =
-    'id, slug, name, address, whatsapp, logo_url, cover_url, theme, brand_color, min_order_cents, delivery_fee_cents, free_delivery_above_cents, accepts_delivery, accepts_pickup, enforce_opening_hours, timezone, prep_time_minutes, city, state, address_display, require_cep, order_copy_whatsapp, hide_unavailable_items, cart_notice_title, cart_notice_body, pix_key, pix_key_type'
+    'id, slug, name, address, whatsapp, logo_url, cover_url, theme, brand_color, min_order_cents, delivery_fee_cents, delivery_mode, free_delivery_above_cents, accepts_delivery, accepts_pickup, enforce_opening_hours, timezone, prep_time_minutes, city, state, address_display, require_cep, order_copy_whatsapp, hide_unavailable_items, cart_notice_title, cart_notice_body, pix_key, pix_key_type'
 
 const PORTION_UNIT_LABELS: Record<string, string> = {
     g: 'g',
@@ -28,6 +28,7 @@ type StoreRow = {
     brand_color: string | null
     min_order_cents: number
     delivery_fee_cents: number
+    delivery_mode: DeliveryMode
     free_delivery_above_cents: number | null
     accepts_delivery: boolean
     accepts_pickup: boolean
@@ -215,6 +216,7 @@ function buildStore(row: StoreRow, rows: MenuRows): Store {
         brandColor: row.brand_color,
         minOrderCents: row.min_order_cents,
         deliveryFeeCents: row.delivery_fee_cents,
+        deliveryMode: row.delivery_mode,
         freeDeliveryAboveCents: row.free_delivery_above_cents,
         acceptsDelivery: row.accepts_delivery,
         acceptsPickup: row.accepts_pickup,

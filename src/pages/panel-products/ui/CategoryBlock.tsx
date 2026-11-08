@@ -1,10 +1,8 @@
 import type { ManagedProduct } from '@/entities/product'
-import { Button } from '@/shared/ui'
+import { ActionMenu, ActiveSwitch, Button } from '@/shared/ui'
 
 import type { CatalogCategory } from '../model/catalog'
 import type { MoveDirection } from '../model/ordering'
-import { ActionMenu } from './ActionMenu'
-import { ActiveSwitch } from './ActiveSwitch'
 import { ProductRow } from './ProductRow'
 import styles from './products.module.css'
 

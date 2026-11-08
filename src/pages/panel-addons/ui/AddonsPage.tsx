@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 
 import { useCurrentStore } from '@/entities/store'
-import { Button, StatusMessage } from '@/shared/ui'
+import { Button, ConfirmSheet, StatusMessage } from '@/shared/ui'
 
 import { describeItemCount, describeUsage, filterGroupsBySearch, type AddonGroup, type AddonOption } from '../model/addon-group'
 import { useAddons } from '../model/use-addons'
-import { ConfirmSheet } from './ConfirmSheet'
 import { GroupBlock } from './GroupBlock'
 import { GroupSheet } from './GroupSheet'
 import { OptionSheet } from './OptionSheet'

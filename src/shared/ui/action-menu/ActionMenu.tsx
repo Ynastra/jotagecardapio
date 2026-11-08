@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 
-import styles from './products.module.css'
+import styles from './action-menu.module.css'
 
 export type MenuAction = {
     label: string
@@ -28,15 +28,15 @@ export function ActionMenu({ label, actions }: ActionMenuProps) {
 
     return (
         <details ref={detailsRef} className={styles.menu}>
-            <summary ref={toggleRef} className={styles.menuToggle} aria-label={label}>
+            <summary ref={toggleRef} className={styles.toggle} aria-label={label}>
                 Mais
             </summary>
-            <div className={styles.menuList}>
+            <div className={styles.list}>
                 {actions.map((action) => (
                     <button
                         key={action.label}
                         type="button"
-                        className={action.isDanger ? `${styles.menuItem} ${styles.menuDanger}` : styles.menuItem}
+                        className={action.isDanger ? `${styles.item} ${styles.danger}` : styles.item}
                         disabled={action.disabled}
                         onClick={() => select(action)}
                     >

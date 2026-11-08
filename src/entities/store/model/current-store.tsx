@@ -1,17 +1,40 @@
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, type ReactNode } from 'react'
 
 import type { Store } from './types'
 
-const CurrentStoreContext = createContext<Store | null>(null)
+type CurrentStoreValue = {
+    store: Store
+    reload: () => Promise<void>
+}
 
-export function CurrentStoreProvider({ store, children }: { store: Store; children: ReactNode }) {
-    return <CurrentStoreContext.Provider value={store}>{children}</CurrentStoreContext.Provider>
+type CurrentStoreProviderProps = {
+    store: Store
+    onReload: () => Promise<void>
+    children: ReactNode
+}
+
+const CurrentStoreContext = createContext<CurrentStoreValue | null>(null)
+
+export function CurrentStoreProvider({ store, onReload, children }: CurrentStoreProviderProps) {
+    const value = useMemo(() => ({ store, reload: onReload }), [store, onReload])
+    return <CurrentStoreContext.Provider value={value}>{children}</CurrentStoreContext.Provider>
+}
+
+function useCurrentStoreValue(): CurrentStoreValue {
+    const value = useContext(CurrentStoreContext)
+    if (!value) {
+        throw new Error('useCurrentStore precisa estar dentro de CurrentStoreProvider')
+    }
+    return value
 }
 
 export function useCurrentStore(): Store {
-    const store = useContext(CurrentStoreContext)
-    if (!store) {
-        throw new Error('useCurrentStore precisa estar dentro de CurrentStoreProvider')
-    }
+    const { store } = useCurrentStoreValue()
     return store
+}
+
+// Busca a loja de novo depois de salvar, para o nome no topo do painel acompanhar.
+export function useReloadCurrentStore(): () => Promise<void> {
+    const { reload } = useCurrentStoreValue()
+    return reload
 }

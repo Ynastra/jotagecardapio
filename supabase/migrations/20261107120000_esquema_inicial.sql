@@ -39,14 +39,23 @@ create table public.stores (
     free_delivery_above_cents integer,
     active boolean not null default true,
     created_at timestamptz not null default now(),
-    constraint stores_prep_time_positive check (prep_time_minutes > 0),
+    constraint stores_prep_time_positive check (prep_time_minutes > 0 and prep_time_minutes <= 240),
+    constraint stores_name_length check (char_length(name) <= 80),
+    constraint stores_address_length check (char_length(address) <= 200),
+    constraint stores_city_length check (char_length(city) <= 80),
+    constraint stores_cart_notice_title_length check (char_length(cart_notice_title) <= 60),
+    constraint stores_cart_notice_body_length check (char_length(cart_notice_body) <= 300),
+    -- 77 caracteres é o limite do campo da chave no padrão do Pix.
+    constraint stores_pix_key_length check (char_length(pix_key) <= 77),
     constraint stores_state_format check (state is null or state ~ '^[A-Z]{2}$'),
     constraint stores_address_display_valid check (address_display in ('hidden', 'city', 'full')),
     constraint stores_pix_key_type_valid check (
         pix_key_type is null or pix_key_type in ('cnpj', 'cpf', 'email', 'phone', 'random')
     ),
     constraint stores_delivery_mode_valid check (delivery_mode in ('fixed', 'radius', 'neighborhood')),
-    constraint stores_delivery_max_km_positive check (delivery_max_km is null or delivery_max_km > 0),
+    constraint stores_delivery_max_km_positive check (
+        delivery_max_km is null or (delivery_max_km > 0 and delivery_max_km <= 50)
+    ),
     constraint stores_free_delivery_positive check (
         free_delivery_above_cents is null or free_delivery_above_cents >= 0
     ),
@@ -99,7 +108,8 @@ create table public.delivery_zones (
     neighborhood text not null,
     fee_cents integer not null check (fee_cents >= 0),
     active boolean not null default true,
-    unique (store_id, neighborhood)
+    unique (store_id, neighborhood),
+    constraint delivery_zones_neighborhood_length check (char_length(neighborhood) <= 80)
 );
 
 create table public.categories (
@@ -558,7 +568,10 @@ begin
         );
         delivery_fee_cents := target_store.delivery_fee_cents;
 
-        if zone_id_text is not null then
+        if target_store.delivery_mode = 'neighborhood' then
+            if zone_id_text is null then
+                raise exception 'delivery_zone_required';
+            end if;
             select * into target_zone
             from public.delivery_zones
             where id = zone_id_text::uuid and store_id = target_store.id and active;
@@ -567,8 +580,6 @@ begin
             end if;
             delivery_fee_cents := target_zone.fee_cents;
             order_address := order_address || jsonb_build_object('neighborhood', target_zone.neighborhood);
-        elsif exists (select 1 from public.delivery_zones where store_id = target_store.id and active) then
-            raise exception 'delivery_zone_required';
         end if;
     elsif fulfillment = 'pickup' then
         if not target_store.accepts_pickup then

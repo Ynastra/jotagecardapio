@@ -14,6 +14,7 @@ export function createStore(overrides: Partial<Store> = {}): Store {
         brandColor: '#060504',
         minOrderCents: 700,
         deliveryFeeCents: 500,
+        deliveryMode: 'fixed',
         acceptsDelivery: true,
         acceptsPickup: true,
         enforceOpeningHours: true,
