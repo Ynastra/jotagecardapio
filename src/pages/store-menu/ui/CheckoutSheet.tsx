@@ -17,6 +17,7 @@ import { placeOrder, PlaceOrderError } from '../api/place-order'
 import {
     buildPlaceOrderPayload,
     calculateOrderTotals,
+    chargesByNeighborhood,
     describeOrderError,
     EMPTY_CHECKOUT_FORM,
     getAvailableFulfillment,
@@ -129,7 +130,7 @@ export function CheckoutSheet({
             street: address.street || current.street,
             city: address.city || current.city,
             state: address.state || current.state,
-            neighborhood: store.deliveryZones.length > 0 ? current.neighborhood : address.neighborhood || current.neighborhood,
+            neighborhood: chargesByNeighborhood(store) ? current.neighborhood : address.neighborhood || current.neighborhood,
         }))
     }
 
@@ -239,7 +240,7 @@ export function CheckoutSheet({
                                     {cepMessage ? <p className={styles.hint}>{cepMessage}</p> : null}
                                 </>
                             ) : null}
-                            {store.deliveryZones.length > 0 ? (
+                            {chargesByNeighborhood(store) ? (
                                 <label className={styles.field}>
                                     Bairro
                                     <select

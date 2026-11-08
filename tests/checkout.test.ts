@@ -24,6 +24,7 @@ const store: Store = {
     brandColor: '#060504',
     minOrderCents: 700,
     deliveryFeeCents: 500,
+    deliveryMode: 'fixed',
     acceptsDelivery: true,
     acceptsPickup: true,
     enforceOpeningHours: true,
@@ -73,7 +74,11 @@ describe('validateCheckout', () => {
     })
 
     it('exige bairro quando a loja cobra por bairro', () => {
-        const withZones = { ...store, deliveryZones: [{ id: 'centro', neighborhood: 'Centro', feeCents: 300 }] }
+        const withZones = {
+            ...store,
+            deliveryMode: 'neighborhood' as const,
+            deliveryZones: [{ id: 'centro', neighborhood: 'Centro', feeCents: 300 }],
+        }
 
         expect(validateCheckout(filledForm, withZones, 3399)).toBe('Escolha o bairro da entrega.')
     })
@@ -87,11 +92,45 @@ describe('validateCheckout', () => {
 
 describe('getDeliveryFeeCents', () => {
     it('usa a taxa do bairro, a taxa fixa ou zero na retirada', () => {
-        const withZones = { ...store, deliveryZones: [{ id: 'centro', neighborhood: 'Centro', feeCents: 300 }] }
+        const withZones = {
+            ...store,
+            deliveryMode: 'neighborhood' as const,
+            deliveryZones: [{ id: 'centro', neighborhood: 'Centro', feeCents: 300 }],
+        }
 
         expect(getDeliveryFeeCents(withZones, { ...filledForm, deliveryZoneId: 'centro' })).toBe(300)
         expect(getDeliveryFeeCents(store, filledForm)).toBe(500)
         expect(getDeliveryFeeCents(store, { ...filledForm, fulfillment: 'pickup' })).toBe(0)
+    })
+})
+
+describe('modalidade de entrega', () => {
+    const zones = [{ id: 'centro', neighborhood: 'Centro', feeCents: 300 }]
+    const lines = [] as const
+    const withZoneChosen = { ...filledForm, deliveryZoneId: 'centro' }
+
+    it.each(['fixed', 'radius'] as const)('em %s ignora bairros cadastrados: não exige, cobra a taxa da loja e não envia zona', (mode) => {
+        const byMode = { ...store, deliveryMode: mode, deliveryZones: zones }
+
+        expect(validateCheckout(filledForm, byMode, 3399)).toBeNull()
+        expect(getDeliveryFeeCents(byMode, withZoneChosen)).toBe(500)
+        expect(buildPlaceOrderPayload(byMode, withZoneChosen, lines).delivery_zone_id).toBeNull()
+    })
+
+    it('em neighborhood exige o bairro, cobra a taxa dele e envia a zona', () => {
+        const byNeighborhood = { ...store, deliveryMode: 'neighborhood' as const, deliveryZones: zones }
+
+        expect(validateCheckout(filledForm, byNeighborhood, 3399)).toBe('Escolha o bairro da entrega.')
+        expect(validateCheckout(withZoneChosen, byNeighborhood, 3399)).toBeNull()
+        expect(getDeliveryFeeCents(byNeighborhood, withZoneChosen)).toBe(300)
+        expect(buildPlaceOrderPayload(byNeighborhood, withZoneChosen, lines).delivery_zone_id).toBe('centro')
+    })
+
+    it('na retirada nunca envia zona', () => {
+        const byNeighborhood = { ...store, deliveryMode: 'neighborhood' as const, deliveryZones: zones }
+        const pickup = { ...withZoneChosen, fulfillment: 'pickup' as const }
+
+        expect(buildPlaceOrderPayload(byNeighborhood, pickup, lines).delivery_zone_id).toBeNull()
     })
 })
 
