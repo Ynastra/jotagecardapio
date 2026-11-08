@@ -1,6 +1,7 @@
 .page {
     display: grid;
     gap: var(--space-4);
+    min-inline-size: 0;
 }
 
 .title {
@@ -86,8 +87,16 @@
     min-block-size: var(--touch-target);
 }
 
+.boardArea {
+    display: grid;
+    gap: var(--space-3);
+    min-inline-size: 0;
+    container-type: inline-size;
+}
+
 .board {
     display: grid;
+    min-inline-size: 0;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--space-4);
     align-items: start;
@@ -127,10 +136,12 @@
 
 .columnTitle {
     flex: 1;
+    min-inline-size: 0;
     font-size: var(--font-size-lg);
 }
 
 .columnCount {
+    flex-shrink: 0;
     color: var(--column-accent);
     font-family: var(--font-display);
     font-size: var(--font-size-3xl);
@@ -149,7 +160,8 @@
     text-align: center;
 }
 
-@media (width <= 860px) {
+/* Abaixo de quatro colunas legíveis, o próprio quadro rola na horizontal. */
+@container (width < 1100px) {
     .columnPicker {
         display: block;
     }
@@ -157,7 +169,7 @@
     .board {
         grid-template-columns: none;
         grid-auto-flow: column;
-        grid-auto-columns: 85%;
+        grid-auto-columns: min(85%, 320px);
         overflow-x: auto;
         scroll-snap-type: x mandatory;
     }

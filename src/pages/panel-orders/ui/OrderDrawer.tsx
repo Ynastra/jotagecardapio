@@ -38,8 +38,12 @@ export function OrderDrawer({
 
     useEffect(() => {
         const dialog = dialogRef.current
+        const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
         dialog?.showModal()
-        return () => dialog?.close()
+        return () => {
+            dialog?.close()
+            opener?.focus()
+        }
     }, [])
 
     function handleBackdropClick(event: MouseEvent<HTMLDialogElement>) {

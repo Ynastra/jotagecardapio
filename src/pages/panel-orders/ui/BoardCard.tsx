@@ -49,7 +49,19 @@ export function BoardCard({ order, timeZone, isFresh, isPending, notifyUrl, onCh
     return (
         <article className={classes} onClick={() => onOpen(order.id)}>
             <header className={styles.header}>
-                <h3 className={styles.code}>{order.publicCode}</h3>
+                <h3 className={styles.code}>
+                    <button
+                        type="button"
+                        className={styles.openButton}
+                        aria-label={`Abrir pedido ${order.publicCode}`}
+                        onClick={(event) => {
+                            event.stopPropagation()
+                            onOpen(order.id)
+                        }}
+                    >
+                        {order.publicCode}
+                    </button>
+                </h3>
                 <time className={styles.time} dateTime={order.createdAt}>
                     {describeOrderMoment(order.createdAt, new Date(), timeZone)}
                 </time>

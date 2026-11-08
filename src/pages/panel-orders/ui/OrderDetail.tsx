@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import {
     describeOrderDeadline,
@@ -17,6 +17,8 @@ import { summarizeOptionGroups } from '../model/option-groups'
 import { buildOrderTimeline } from '../model/order-timeline'
 import { useCustomerOrderCount } from '../model/use-customer-order-count'
 import styles from './order-drawer.module.css'
+
+const COPIED_FEEDBACK_MS = 2500
 
 type OrderDetailProps = {
     order: PanelOrder
@@ -58,6 +60,15 @@ export function OrderDetail({ order, store, trackingUrl, notifyUrl, isPending, o
     const isPaid = order.paymentStatus === 'paid'
     const nextPaymentStatus: OrderPaymentStatus = isPaid ? 'pending' : 'paid'
     const deadline = describeOrderDeadline(order.createdAt, store.prepTimeMinutes, store.timezone, order.fulfillment)
+
+    useEffect(() => {
+        if (!isLinkCopied) {
+            return
+        }
+
+        const timer = window.setTimeout(() => setLinkCopied(false), COPIED_FEEDBACK_MS)
+        return () => window.clearTimeout(timer)
+    }, [isLinkCopied])
 
     async function copyTrackingLink() {
         await navigator.clipboard.writeText(trackingUrl)

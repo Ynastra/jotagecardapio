@@ -139,8 +139,12 @@ export async function savePaymentStatus(
     return order
 }
 
-export async function fetchOrderById(orderId: string): Promise<PanelOrder | null> {
-    const { data, error } = await supabase.from('orders').select(ORDER_COLUMNS).eq('id', orderId)
+export async function fetchOrderById(storeId: string, orderId: string): Promise<PanelOrder | null> {
+    const { data, error } = await supabase
+        .from('orders')
+        .select(ORDER_COLUMNS)
+        .eq('store_id', storeId)
+        .eq('id', orderId)
 
     if (error) {
         throw error

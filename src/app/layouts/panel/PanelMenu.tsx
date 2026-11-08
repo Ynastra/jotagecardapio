@@ -10,13 +10,17 @@ type PanelMenuProps = {
     store: Store
     isOpen: boolean
     onNavigate: () => void
+    onClose: () => void
 }
 
-export function PanelMenu({ store, isOpen, onNavigate }: PanelMenuProps) {
+export function PanelMenu({ store, isOpen, onNavigate, onClose }: PanelMenuProps) {
     const menuClasses = [styles.menu, isOpen ? styles.menuOpen : ''].filter(Boolean).join(' ')
 
     return (
         <nav className={menuClasses} aria-label="Menu do painel">
+            <button type="button" className={styles.menuClose} onClick={onClose}>
+                Fechar
+            </button>
             <img className={styles.logo} src="/marca/logo-horizontal-branco.png" alt="JG Cardápio" />
             <p className={styles.storeName}>{store.name}</p>
 

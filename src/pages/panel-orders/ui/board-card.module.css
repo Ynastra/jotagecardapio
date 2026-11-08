@@ -57,9 +57,22 @@
     font-size: var(--font-size-xl);
     font-weight: 800;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.openButton {
+    min-block-size: var(--touch-target);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
 }
 
 .time {
+    flex-shrink: 0;
     color: var(--color-text-secondary);
     font-variant-numeric: tabular-nums;
 }

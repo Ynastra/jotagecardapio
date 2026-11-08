@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 
 import { CurrentStoreProvider, fetchMyStores, type Store } from '@/entities/store'
@@ -13,17 +13,44 @@ import { useSession } from './use-session'
 
 function StoreShell({ store }: { store: Store }) {
     const [isMenuOpen, setMenuOpen] = useState(false)
+    const menuToggleRef = useRef<HTMLButtonElement>(null)
+
+    useEffect(() => {
+        if (!isMenuOpen) {
+            return
+        }
+
+        function closeOnEscape(event: KeyboardEvent) {
+            if (event.key === 'Escape') {
+                setMenuOpen(false)
+                menuToggleRef.current?.focus()
+            }
+        }
+
+        document.addEventListener('keydown', closeOnEscape)
+        return () => document.removeEventListener('keydown', closeOnEscape)
+    }, [isMenuOpen])
 
     return (
         <CurrentStoreProvider store={store}>
             <div className={styles.shell}>
-                <PanelMenu store={store} isOpen={isMenuOpen} onNavigate={() => setMenuOpen(false)} />
+                <PanelMenu
+                    store={store}
+                    isOpen={isMenuOpen}
+                    onNavigate={() => setMenuOpen(false)}
+                    onClose={() => setMenuOpen(false)}
+                />
                 {isMenuOpen ? (
                     <button type="button" className={styles.menuBackdrop} aria-label="Fechar menu" onClick={() => setMenuOpen(false)} />
                 ) : null}
-                <div>
+                <div className={styles.contentColumn}>
                     <div className={styles.topBar}>
-                        <button type="button" className={styles.menuToggle} onClick={() => setMenuOpen(true)}>
+                        <button
+                            ref={menuToggleRef}
+                            type="button"
+                            className={styles.menuToggle}
+                            onClick={() => setMenuOpen(true)}
+                        >
                             Menu
                         </button>
                         <strong>{store.name}</strong>

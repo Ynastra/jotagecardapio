@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
 import type { PanelOrder } from '@/entities/order'
@@ -7,6 +7,7 @@ import { formatCents, unlockChime } from '@/shared/lib'
 import { StatusMessage } from '@/shared/ui'
 
 import { ORDERS_QUERY_LIMIT } from '../model/board'
+import { useLinkedOrder } from '../model/use-linked-order'
 import { useOrderBoard } from '../model/use-order-board'
 import { BoardCard } from './BoardCard'
 import { BoardColumn, type ColumnTone } from './BoardColumn'
@@ -31,17 +32,33 @@ export function PanelOrdersPage() {
     const store = useCurrentStore()
     const board = useOrderBoard(store)
     const [searchParams, setSearchParams] = useSearchParams()
+    const [isOrderMissing, setOrderMissing] = useState(false)
     const openOrderId = searchParams.get(OPEN_ORDER_PARAM)
     const openOrder = openOrderId ? board.findOrder(openOrderId) : null
 
     function openDrawer(orderId: string) {
         board.markSeen(orderId)
+        setOrderMissing(false)
         setSearchParams({ [OPEN_ORDER_PARAM]: orderId })
     }
 
     function closeDrawer() {
         setSearchParams({})
     }
+
+    function reportMissingOrder() {
+        setOrderMissing(true)
+        setSearchParams({})
+    }
+
+    useLinkedOrder({
+        storeId: store.id,
+        orderId: openOrderId,
+        isListed: openOrder !== null,
+        isBoardLoading: board.isLoading,
+        onFound: board.adoptOrder,
+        onMissing: reportMissingOrder,
+    })
 
     useEffect(() => {
         if (openOrderId) {
@@ -83,22 +100,14 @@ export function PanelOrdersPage() {
                 orderCount={board.visibleCount}
             />
 
-            <select
-                className={styles.columnPicker}
-                aria-label="Ir para a coluna"
-                defaultValue={COLUMN_DEFINITIONS[0].id}
-                onChange={(event) => jumpToColumn(event.target.value)}
-            >
-                {COLUMN_DEFINITIONS.map((column) => (
-                    <option key={column.id} value={column.id}>
-                        {column.title} ({board.columns[column.key].length})
-                    </option>
-                ))}
-            </select>
-
             {board.errorMessage ? (
                 <p className={styles.error} role="alert">
                     {board.errorMessage}
+                </p>
+            ) : null}
+            {isOrderMissing ? (
+                <p className={styles.error} role="alert">
+                    Pedido não encontrado
                 </p>
             ) : null}
             {board.isTruncated ? <p className={styles.notice}>Mostrando os {ORDERS_QUERY_LIMIT} mais recentes</p> : null}
@@ -109,23 +118,38 @@ export function PanelOrdersPage() {
                 </StatusMessage>
             ) : null}
 
-            <div className={styles.board}>
-                {COLUMN_DEFINITIONS.map((column) => {
-                    const columnOrders = board.columns[column.key]
-                    const totalLabel = column.key === 'finished' ? formatCents(board.finishedTotalCents) : undefined
-                    return (
-                        <BoardColumn
-                            key={column.id}
-                            columnId={column.id}
-                            title={column.title}
-                            tone={column.tone}
-                            count={columnOrders.length}
-                            totalLabel={totalLabel}
-                        >
-                            {columnOrders.map(renderCard)}
-                        </BoardColumn>
-                    )
-                })}
+            <div className={styles.boardArea}>
+                <select
+                    className={styles.columnPicker}
+                    aria-label="Ir para a coluna"
+                    defaultValue={COLUMN_DEFINITIONS[0].id}
+                    onChange={(event) => jumpToColumn(event.target.value)}
+                >
+                    {COLUMN_DEFINITIONS.map((column) => (
+                        <option key={column.id} value={column.id}>
+                            {column.title} ({board.columns[column.key].length})
+                        </option>
+                    ))}
+                </select>
+
+                <div className={styles.board}>
+                    {COLUMN_DEFINITIONS.map((column) => {
+                        const columnOrders = board.columns[column.key]
+                        const totalLabel = column.key === 'finished' ? formatCents(board.finishedTotalCents) : undefined
+                        return (
+                            <BoardColumn
+                                key={column.id}
+                                columnId={column.id}
+                                title={column.title}
+                                tone={column.tone}
+                                count={columnOrders.length}
+                                totalLabel={totalLabel}
+                            >
+                                {columnOrders.map(renderCard)}
+                            </BoardColumn>
+                        )
+                    })}
+                </div>
             </div>
 
             {openOrder ? (

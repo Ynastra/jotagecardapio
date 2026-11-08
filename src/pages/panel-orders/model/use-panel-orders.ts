@@ -18,6 +18,7 @@ export type PanelOrdersState = {
     pendingOrderIds: ReadonlySet<string>
     changeStatus: (orderId: string, status: OrderStatus) => Promise<void>
     changePaymentStatus: (orderId: string, paymentStatus: OrderPaymentStatus) => Promise<void>
+    adoptOrder: (order: PanelOrder) => void
 }
 
 export function usePanelOrders(storeId: string, periodStart: Date): PanelOrdersState {
@@ -128,7 +129,7 @@ export function usePanelOrders(storeId: string, periodStart: Date): PanelOrdersS
                     setErrorMessage(null)
                 } else {
                     setErrorMessage(resolution.message)
-                    const fresh = await fetchOrderById(orderId)
+                    const fresh = await fetchOrderById(storeId, orderId)
                     if (fresh) {
                         setOrders((existing) => upsertOrder(existing, fresh))
                     }
@@ -141,7 +142,7 @@ export function usePanelOrders(storeId: string, periodStart: Date): PanelOrdersS
                 setPendingOrderIds(new Set(pendingRef.current))
             }
         },
-        [],
+        [storeId],
     )
 
     const changeStatus = useCallback(
@@ -168,5 +169,18 @@ export function usePanelOrders(storeId: string, periodStart: Date): PanelOrdersS
         [runOrderWrite],
     )
 
-    return { orders, isLoading, isTruncated, errorMessage, pendingOrderIds, changeStatus, changePaymentStatus }
+    const adoptOrder = useCallback((order: PanelOrder) => {
+        setOrders((existing) => upsertOrder(existing, order))
+    }, [])
+
+    return {
+        orders,
+        isLoading,
+        isTruncated,
+        errorMessage,
+        pendingOrderIds,
+        changeStatus,
+        changePaymentStatus,
+        adoptOrder,
+    }
 }

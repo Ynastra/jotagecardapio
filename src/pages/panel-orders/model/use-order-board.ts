@@ -30,6 +30,7 @@ export type OrderBoardState = {
     changeStatus: (orderId: string, status: OrderStatus) => Promise<void>
     changePaymentStatus: (orderId: string, paymentStatus: OrderPaymentStatus) => Promise<void>
     isPending: (orderId: string) => boolean
+    adoptOrder: (order: PanelOrder) => void
     findOrder: (orderId: string) => PanelOrder | null
     isFresh: (order: PanelOrder) => boolean
     markSeen: (orderId: string) => void
@@ -44,7 +45,7 @@ export function useOrderBoard(store: Store): OrderBoardState {
     const [seenIds, setSeenIds] = useState<ReadonlySet<string>>(new Set())
 
     const periodStart = usePeriodStart(period, store.timezone)
-    const { orders, isLoading, isTruncated, errorMessage, pendingOrderIds, changeStatus, changePaymentStatus } =
+    const { orders, isLoading, isTruncated, errorMessage, pendingOrderIds, changeStatus, changePaymentStatus, adoptOrder } =
         usePanelOrders(store.id, periodStart)
     const statusMessages = useStatusMessages(store.id)
 
@@ -112,6 +113,7 @@ export function useOrderBoard(store: Store): OrderBoardState {
         changeStatus,
         changePaymentStatus,
         isPending,
+        adoptOrder,
         findOrder,
         isFresh,
         markSeen,
