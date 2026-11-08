@@ -7,8 +7,10 @@
 }
 
 .illustration {
-    inline-size: min(280px, 70%);
+    inline-size: 240px;
+    max-inline-size: 100%;
     block-size: auto;
+    image-rendering: pixelated;
 }
 
 .title {
