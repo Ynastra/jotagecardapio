@@ -129,6 +129,40 @@
     gap: var(--space-2);
 }
 
+.stateRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    align-items: center;
+}
+
+.stateBadge {
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-status-canceled-soft);
+    color: var(--color-status-canceled);
+    font-weight: 700;
+}
+
+.stateConnected {
+    background-color: var(--color-success-soft);
+    color: var(--color-success);
+}
+
+.stateConnecting {
+    background-color: var(--color-warning-soft);
+    color: var(--color-text);
+}
+
+.riskNotice {
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background-color: var(--color-warning-soft);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
 .error {
     display: flex;
     gap: var(--space-3);

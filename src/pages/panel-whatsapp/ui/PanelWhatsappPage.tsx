@@ -6,6 +6,7 @@ import { Button, StatusMessage } from '@/shared/ui'
 import { MESSAGE_TYPES } from '../model/message-types'
 import type { PreviewContext } from '../model/messages-form'
 import { useMessages } from '../model/use-messages'
+import { ConnectionSection } from './ConnectionSection'
 import { MessageSection } from './MessageSection'
 import styles from './panel-whatsapp.module.css'
 
@@ -59,6 +60,8 @@ export function PanelWhatsappPage() {
     return (
         <div className={styles.page}>
             <h1 className={styles.title}>WhatsApp</h1>
+
+            <ConnectionSection storeId={store.id} timeZone={store.timezone} />
 
             {messages.errorMessage ? (
                 <div className={styles.error} role="alert">
