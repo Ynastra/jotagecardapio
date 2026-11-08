@@ -90,6 +90,8 @@
     --store-logo-size: 96px;
     --store-logo-overlap: calc(var(--store-logo-size) / -2 - var(--space-5));
     --status-dot-size: 10px;
+    --product-photo-size: 104px;
+    --divider-width: 1px;
     --category-bar-height: 56px;
     --section-scroll-offset: calc(var(--category-bar-height) + var(--space-3));
     --chevron-size: 8px;

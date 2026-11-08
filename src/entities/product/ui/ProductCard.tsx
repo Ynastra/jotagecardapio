@@ -1,5 +1,5 @@
 import { formatCents } from '@/shared/lib'
-import { ThemeIcon, ThemeImage } from '@/shared/ui'
+import { ThemeIcon } from '@/shared/ui'
 
 import { getProductAvailability, type ProductAvailability } from '../model/availability'
 import type { Product } from '../model/types'
@@ -61,7 +61,9 @@ export function ProductCard({ product, onOpen, layout = 'row' }: ProductCardProp
                 ) : null}
                 <ProductPrice product={product} />
             </div>
-            <ThemeImage className={styles.photo} src={product.imageUrl} fallbackStem="produto-sem-foto" alt="" />
+            {product.imageUrl ? (
+                <img className={styles.photo} src={product.imageUrl} alt="" loading="lazy" decoding="async" />
+            ) : null}
         </button>
     )
 }
