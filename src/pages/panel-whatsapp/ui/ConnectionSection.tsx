@@ -26,17 +26,25 @@ export function ConnectionSection({ storeId, timeZone }: ConnectionSectionProps)
         <section className={styles.section} aria-label="Conexão">
             <h2 className={styles.sectionTitle}>Conexão</h2>
 
+            {status === 'loading' ? (
+                <p className={styles.hint} role="status">
+                    Lendo o estado da conexão...
+                </p>
+            ) : null}
+
             {status === 'failed' ? (
                 <p className={styles.fieldError} role="alert">
                     Não deu para ler o estado da conexão. Confira a internet.
                 </p>
-            ) : (
+            ) : null}
+
+            {status === 'ready' ? (
                 <div className={styles.stateRow}>
                     <span className={BADGE_CLASS[view.state]}>{view.label}</span>
                     {view.phoneText ? <span>{view.phoneText}</span> : null}
                     {view.updatedAtText ? <span className={styles.hint}>Atualizado em {view.updatedAtText}</span> : null}
                 </div>
-            )}
+            ) : null}
 
             <p className={styles.riskNotice}>{RISK_NOTICE}</p>
 
