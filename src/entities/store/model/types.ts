@@ -37,6 +37,8 @@ export type StoreSettingsValues = {
     freeDeliveryAboveCents: number | null
     pixKey: string | null
     pixKeyType: PixKeyType | null
+    latitude: number | null
+    longitude: number | null
 }
 
 // Configurações editáveis da loja; o endereço do cardápio (slug) não muda

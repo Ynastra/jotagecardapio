@@ -83,4 +83,6 @@ export type PanelOrder = PlacedOrder & {
     readyAt: string | null
     completedAt: string | null
     canceledAt: string | null
+    deliveryDistanceKm?: number | null
+    distanceUnverified?: boolean
 }

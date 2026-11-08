@@ -34,6 +34,8 @@ const COLUMN_BY_FIELD = {
     freeDeliveryAboveCents: 'free_delivery_above_cents',
     pixKey: 'pix_key',
     pixKeyType: 'pix_key_type',
+    latitude: 'latitude',
+    longitude: 'longitude',
 } as const satisfies Record<keyof StoreSettingsValues, string>
 
 const SETTINGS_COLUMNS = `id, slug, ${Object.values(COLUMN_BY_FIELD).join(', ')}`
@@ -65,6 +67,13 @@ type StoreSettingsRow = {
     free_delivery_above_cents: number | null
     pix_key: string | null
     pix_key_type: PixKeyType | null
+    latitude: number | string | null
+    longitude: number | string | null
+}
+
+function toNullableNumber(value: number | string | null): number | null {
+    const parsed = value === null ? null : Number(value)
+    return parsed
 }
 
 function mapSettings(row: StoreSettingsRow): StoreSettings {
@@ -95,6 +104,8 @@ function mapSettings(row: StoreSettingsRow): StoreSettings {
         freeDeliveryAboveCents: row.free_delivery_above_cents,
         pixKey: row.pix_key,
         pixKeyType: row.pix_key_type,
+        latitude: toNullableNumber(row.latitude),
+        longitude: toNullableNumber(row.longitude),
     }
     return settings
 }

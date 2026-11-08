@@ -1,4 +1,5 @@
 import type { DraftLine, Fulfillment, PaymentMethod } from '@/entities/order'
+import type { AddressQuery, Coordinates } from '@/shared/api'
 import { formatCents, isValidBrazilianPhone, isValidCep, keepDigits, parseReaisToCents } from '@/shared/lib'
 
 import type { Store, StorePaymentMethod } from './types'
@@ -70,6 +71,8 @@ export type PlaceOrderPayload = {
         neighborhood: string
         complement: string
         reference: string
+        latitude?: number
+        longitude?: number
     } | null
     delivery_zone_id: string | null
     payment_method: PaymentMethod
@@ -209,15 +212,31 @@ export function validateCheckout(form: CheckoutForm, store: Store, subtotalCents
     return firstError
 }
 
+// CEP, cidade e UF lembrados de outra loja não entram na busca de quem não pede CEP.
+export function buildAddressQuery(store: Pick<Store, 'requireCep'>, form: CheckoutForm): AddressQuery {
+    const sendsCep = store.requireCep
+
+    const query = {
+        cep: sendsCep ? form.cep : '',
+        city: sendsCep ? form.city : '',
+        state: sendsCep ? form.state : '',
+        street: form.street,
+        number: form.number,
+    }
+    return query
+}
+
 export function buildPlaceOrderPayload(
     store: Pick<Store, 'slug' | 'requireCep' | 'deliveryMode'>,
     form: CheckoutForm,
     lines: readonly DraftLine[],
+    location: Coordinates | null = null,
 ): PlaceOrderPayload {
     const storeSlug = store.slug
     const sendsCep = store.requireCep
     const isDelivery = form.fulfillment === 'delivery'
     const sendsZone = isDelivery && chargesByNeighborhood(store) && form.deliveryZoneId !== ''
+    const coordinates = isDelivery && location ? location : {}
     // CEP, cidade e UF lembrados de outra loja não vão para quem não pede CEP.
     const address = isDelivery
         ? {
@@ -229,6 +248,7 @@ export function buildPlaceOrderPayload(
               neighborhood: form.neighborhood.trim(),
               complement: form.complement.trim(),
               reference: form.reference.trim(),
+              ...coordinates,
           }
         : null
     const changeForCents = form.paymentMethod === 'cash' ? parseReaisToCents(form.changeFor) : null
@@ -266,6 +286,8 @@ const ORDER_ERROR_MESSAGES: Record<string, string> = {
     pickup_unavailable: 'A loja não está com retirada no balcão. Escolha entrega.',
     invalid_delivery_zone: 'Este bairro não está mais na área de entrega.',
     delivery_zone_required: 'Escolha o bairro da entrega.',
+    out_of_delivery_range:
+        'Este endereço fica fora da área de entrega da loja. Confira o endereço ou escolha retirar na loja.',
     empty_order: 'A sacola está vazia.',
     product_unavailable: 'Um item da sacola não está mais disponível. Remova e tente de novo.',
     insufficient_stock: 'Um item da sacola não tem estoque para essa quantidade. Diminua a quantidade e tente de novo.',

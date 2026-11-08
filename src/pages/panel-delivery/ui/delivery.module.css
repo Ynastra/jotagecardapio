@@ -69,6 +69,29 @@
     font-size: var(--font-size-sm);
 }
 
+.location {
+    display: grid;
+    gap: var(--space-3);
+    min-inline-size: 0;
+}
+
+.locationTitle {
+    font-weight: 600;
+}
+
+.locationActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+}
+
+.mapLink {
+    color: var(--color-jg-primary);
+    font-weight: 600;
+    text-decoration: underline;
+}
+
 .modes {
     display: flex;
     flex-wrap: wrap;

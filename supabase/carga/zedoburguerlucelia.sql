@@ -24,13 +24,13 @@ begin
     insert into public.stores (
         id, slug, name, address, whatsapp, brand_color, min_order_cents, delivery_fee_cents,
         prep_time_minutes, city, state, address_display, require_cep, order_copy_whatsapp,
-        hide_unavailable_items, delivery_mode, delivery_max_km
+        hide_unavailable_items, delivery_mode, delivery_max_km, latitude, longitude
     ) values (
         store, 'zedoburguerlucelia', 'Zé do Burguer',
         'Rua Francisco Xavier de Oliveira, 48, Lado Este',
         '5518996649346', '#060504', 700, 800,
         30, 'Lucélia', 'SP', 'full', true, true,
-        true, 'radius', 6
+        true, 'radius', 6, -21.72028, -51.01889
     );
 
     insert into public.store_whatsapp_messages (store_id, type) values

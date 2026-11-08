@@ -1,11 +1,17 @@
-import { ActiveSwitch } from '@/shared/ui'
+import { useState } from 'react'
+
+import { locateByText, type Coordinates } from '@/shared/api'
+import { ActiveSwitch, Button } from '@/shared/ui'
 
 import {
     DELIVERY_MODE_LABELS,
     DELIVERY_MODES,
+    formatCoordinateText,
+    listLocationQueries,
     MAX_RADIUS_KM,
     PREP_TIME_MAX,
     PREP_TIME_MIN,
+    readFormCoordinates,
     type DeliveryForm,
     type DeliveryFormErrors,
 } from '../model/delivery-form'
@@ -19,6 +25,99 @@ type DeliveryFormSectionProps = {
 
 function FieldError({ message }: { message: string | undefined }) {
     return message ? <span className={styles.fieldError}>{message}</span> : null
+}
+
+const MAP_ZOOM = 16
+const ADDRESS_NOT_FOUND_MESSAGE = 'Não achamos esse endereço. Preencha a latitude e a longitude.'
+const MISSING_STORE_ADDRESS_MESSAGE = 'Cadastre o endereço da loja antes de localizar.'
+
+function buildMapUrl(coordinates: { latitude: number; longitude: number }): string {
+    const { latitude, longitude } = coordinates
+    const url = `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=${MAP_ZOOM}/${latitude}/${longitude}`
+    return url
+}
+
+// Uma consulta por vez, em ordem: a mais completa primeiro.
+async function locateFirst(queries: readonly string[]): Promise<Coordinates | null> {
+    for (const query of queries) {
+        const found = await locateByText(query)
+        if (found) {
+            return found
+        }
+    }
+
+    const nothingFound = null
+    return nothingFound
+}
+
+function StoreLocationBlock({ form, errors, onChange }: DeliveryFormSectionProps) {
+    const [isLocating, setLocating] = useState(false)
+    const [message, setMessage] = useState<string | null>(null)
+    const coordinates = readFormCoordinates(form)
+
+    async function locateStore() {
+        setMessage(null)
+        const queries = listLocationQueries(form)
+        if (queries.length === 0) {
+            setMessage(MISSING_STORE_ADDRESS_MESSAGE)
+            return
+        }
+
+        setLocating(true)
+        const found = await locateFirst(queries)
+        setLocating(false)
+
+        if (!found) {
+            setMessage(ADDRESS_NOT_FOUND_MESSAGE)
+            return
+        }
+        onChange({
+            latitudeText: formatCoordinateText(found.latitude),
+            longitudeText: formatCoordinateText(found.longitude),
+        })
+    }
+
+    return (
+        <div className={styles.location}>
+            <h3 className={styles.locationTitle}>Localização da loja</h3>
+            <div className={styles.fieldRow}>
+                <label className={styles.field}>
+                    Latitude
+                    <input
+                        inputMode="decimal"
+                        value={form.latitudeText}
+                        aria-invalid={errors.latitudeText !== undefined}
+                        onChange={(event) => onChange({ latitudeText: event.target.value })}
+                    />
+                    <FieldError message={errors.latitudeText} />
+                </label>
+                <label className={styles.field}>
+                    Longitude
+                    <input
+                        inputMode="decimal"
+                        value={form.longitudeText}
+                        aria-invalid={errors.longitudeText !== undefined}
+                        onChange={(event) => onChange({ longitudeText: event.target.value })}
+                    />
+                    <FieldError message={errors.longitudeText} />
+                </label>
+            </div>
+            <div className={styles.locationActions}>
+                <Button variant="secondary" onClick={locateStore} disabled={isLocating}>
+                    {isLocating ? 'Localizando' : 'Localizar pelo endereço'}
+                </Button>
+                {coordinates ? (
+                    <a className={styles.mapLink} href={buildMapUrl(coordinates)} target="_blank" rel="noopener noreferrer">
+                        Ver no mapa
+                    </a>
+                ) : null}
+            </div>
+            {message ? <span className={styles.fieldError}>{message}</span> : null}
+            {coordinates ? null : (
+                <p className={styles.notice}>Sem a localização da loja, a distância dos pedidos não é conferida.</p>
+            )}
+        </div>
+    )
 }
 
 export function DeliveryFormSection({ form, errors, onChange }: DeliveryFormSectionProps) {
@@ -88,11 +187,7 @@ export function DeliveryFormSection({ form, errors, onChange }: DeliveryFormSect
             ) : (
                 <p className={styles.hint}>A lista de bairros abaixo vale como área de entrega.</p>
             )}
-            {form.mode === 'radius' ? (
-                <p className={styles.notice}>
-                    A distância ainda não é conferida automaticamente; a taxa vale para qualquer endereço.
-                </p>
-            ) : null}
+            {form.mode === 'radius' ? <StoreLocationBlock form={form} errors={errors} onChange={onChange} /> : null}
 
             <div className={styles.field}>
                 Frete grátis acima de

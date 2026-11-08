@@ -80,6 +80,7 @@ export function BoardCard({ order, timeZone, isFresh, isPending, notifyUrl, onCh
             {order.fulfillment === 'delivery' && order.address ? (
                 <p className={styles.address}>{summarizeAddress(order.address)}</p>
             ) : null}
+            {order.distanceUnverified ? <p className={styles.distanceWarning}>Distância não conferida</p> : null}
 
             <p className={styles.payment}>
                 <span>{PAYMENT_LABELS[order.paymentMethod]}</span>
