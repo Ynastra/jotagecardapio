@@ -4,7 +4,7 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import type { DraftLine, OrderMessageContext, PlacedOrder } from '@/entities/order'
 import { ProductCard } from '@/entities/product'
 import { buildBrandStyle, ThemeProvider } from '@/shared/lib'
-import { Button, StatusMessage, ThemeIcon } from '@/shared/ui'
+import { Button, MakerSignature, StatusMessage, ThemeIcon } from '@/shared/ui'
 
 import { countProductInCart, getMaxQuantity, getProductAvailability } from '../model/availability'
 import { isStoreOpenNow } from '../model/opening-hours'
@@ -144,6 +144,7 @@ function StoreMenuView({ menu }: { menu: StoreMenu }) {
                 <a href="/">
                     <img className={styles.seal} src="/marca/selo-feito-com.png" alt="Feito com JG Cardápio" />
                 </a>
+                <MakerSignature className={styles.signature} />
             </footer>
 
             {cart.itemCount > 0 ? (

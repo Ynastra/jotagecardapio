@@ -1,0 +1,17 @@
+.signature {
+    display: flex;
+    gap: var(--space-1);
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    font-size: var(--font-size-xs);
+}
+
+.symbol {
+    inline-size: 20px;
+    block-size: 20px;
+}
+
+.name {
+    font-weight: 600;
+}
