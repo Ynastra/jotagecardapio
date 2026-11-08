@@ -22,6 +22,7 @@
 
 .featured {
     min-inline-size: 0;
+    scroll-margin-block-start: var(--section-scroll-offset);
 }
 
 .featuredList {
@@ -34,7 +35,7 @@
 }
 
 .category {
-    scroll-margin-block-start: 132px;
+    scroll-margin-block-start: var(--section-scroll-offset);
 }
 
 .products {

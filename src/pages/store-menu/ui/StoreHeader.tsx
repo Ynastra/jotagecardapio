@@ -10,7 +10,6 @@ import styles from './store-header.module.css'
 
 type StoreHeaderProps = {
     store: Store
-    isOpen: boolean
 }
 
 function describeDeliveryFact(store: Store): string | null {

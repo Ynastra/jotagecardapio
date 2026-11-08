@@ -12,6 +12,7 @@ import { buildOrderConfirmation } from '../model/order-confirmation'
 import { filterCategories } from '../model/search'
 import type { Store, StoreMenu } from '../model/types'
 import { useCart } from '../model/use-cart'
+import { FEATURED_SECTION_ID, toSectionElementId, useActiveSection } from '../model/use-active-section'
 import { useStoreMenu } from '../model/use-store-menu'
 import { CartBar } from './CartBar'
 import { CategoryNav } from './CategoryNav'
@@ -64,6 +65,11 @@ function StoreMenuView({ menu }: { menu: StoreMenu }) {
     const featuredProducts = products.filter((product) => product.featured)
     const showFeatured = featuredProducts.length > 0 && query.trim() === ''
     const confirmation = placed ? buildOrderConfirmation(store, placed.order, placed.context) : null
+    const sectionIds = [
+        ...(showFeatured ? [FEATURED_SECTION_ID] : []),
+        ...visibleCategories.map((category) => category.id),
+    ]
+    const { activeId, selectSection } = useActiveSection(sectionIds)
 
     useEffect(() => {
         document.title = `${store.name} · Cardápio`
@@ -97,12 +103,23 @@ function StoreMenuView({ menu }: { menu: StoreMenu }) {
 
     return (
         <div className={styles.page} style={buildBrandStyle(store)}>
-            <StoreHeader store={store} isOpen={isOpen} />
-            <CategoryNav categories={categories} query={query} onQueryChange={setQuery} />
+            <StoreHeader store={store} />
+            <CategoryNav
+                categories={categories}
+                query={query}
+                onQueryChange={setQuery}
+                showFeatured={showFeatured}
+                activeId={activeId}
+                onSelect={selectSection}
+            />
 
             <main className={styles.content}>
                 {showFeatured ? (
-                    <section className={styles.featured} aria-labelledby="destaques">
+                    <section
+                        id={toSectionElementId(FEATURED_SECTION_ID)}
+                        className={styles.featured}
+                        aria-labelledby="destaques"
+                    >
                         <h2 id="destaques" className={styles.sectionTitle}>
                             <ThemeIcon name="destaque" size={22} />
                             Destaques
@@ -118,7 +135,7 @@ function StoreMenuView({ menu }: { menu: StoreMenu }) {
                 {visibleCategories.map((category) => (
                     <section
                         key={category.id}
-                        id={`categoria-${category.id}`}
+                        id={toSectionElementId(category.id)}
                         className={styles.category}
                         aria-labelledby={`titulo-${category.id}`}
                     >
