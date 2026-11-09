@@ -1,7 +1,7 @@
 export { buildBrandStyle } from './brand-style'
 export { formatCep, isValidCep } from './cep'
 export { formatCents, parseReaisToCents } from './money'
-export { formatBrazilianPhone, isValidBrazilianPhone, keepDigits } from './phone'
+export { formatBrazilianPhone, formatNationalPhone, isValidBrazilianPhone, keepDigits } from './phone'
 export { readStoredJson, writeStoredJson } from './storage'
 export { getContrastRatio, isHexColor, pickReadableTextColor } from './color'
 export { ThemeProvider, useThemeAsset } from './theme/theme-context'

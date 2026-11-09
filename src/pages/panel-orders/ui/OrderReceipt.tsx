@@ -8,7 +8,14 @@ import {
     type PanelOrder,
 } from '@/entities/order'
 import type { Store } from '@/entities/store'
-import { formatBrazilianPhone, formatCep, formatCents, ThemeProvider, useThemeAsset } from '@/shared/lib'
+import {
+    formatBrazilianPhone,
+    formatCep,
+    formatCents,
+    formatNationalPhone,
+    ThemeProvider,
+    useThemeAsset,
+} from '@/shared/lib'
 
 import { describeChangeNote } from '../model/change-note'
 import { listOptionAnswers } from '../model/option-groups'
@@ -144,7 +151,9 @@ export function OrderReceipt({ order, store }: OrderReceiptProps) {
 
             {order.notes ? <p className={styles.noteBox}>Observação do pedido: {order.notes}</p> : null}
 
-            <p className={styles.footer}>{store.name}</p>
+            <p className={styles.footer}>
+                {store.name} · {formatNationalPhone(store.whatsapp)}
+            </p>
         </div>,
         document.body,
     )

@@ -2,6 +2,7 @@ export type Store = {
     id: string
     name: string
     slug: string
+    whatsapp: string
     timezone: string
     prepTimeMinutes: number
 }
