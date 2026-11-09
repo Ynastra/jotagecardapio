@@ -123,6 +123,7 @@
     text-align: center;
 }
 
+/* var() não resolve dentro de @page, então o rolo de 80 mm fica literal. */
 @page {
     size: 80mm auto;
     margin: 0;
@@ -133,10 +134,12 @@
         display: none;
     }
 
+    /* A térmica de 80 mm só imprime nos 72 mm do meio; a comanda fica nessa
+       faixa, centralizada, para nada sair cortado nas bordas. */
     .receipt {
         display: block;
-        inline-size: 80mm;
-        padding: var(--receipt-padding-block) var(--receipt-padding-inline);
+        inline-size: var(--receipt-width);
+        margin-inline: auto;
         background-color: var(--receipt-paper);
         color: var(--receipt-ink);
         font-family: var(--receipt-font);
@@ -145,5 +148,15 @@
         line-height: 1.35;
         print-color-adjust: exact;
         -webkit-print-color-adjust: exact;
+    }
+
+    .copy {
+        padding: var(--receipt-padding-block) var(--space-1);
+    }
+
+    /* Cada via numa página: com o corte por página no driver, as vias saem
+       separadas numa impressão só. */
+    .copy:not(:last-child) {
+        break-after: page;
     }
 }

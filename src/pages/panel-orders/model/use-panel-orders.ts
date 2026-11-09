@@ -28,6 +28,7 @@ export function usePanelOrders(
     periodStart: Date,
     pinnedOrderId: string | null,
     onStatusSaved?: (order: PanelOrder) => void,
+    onNewOrder?: (order: PanelOrder) => void,
 ): PanelOrdersState {
     const [orders, setOrders] = useState<PanelOrder[]>([])
     const [isLoading, setLoading] = useState(true)
@@ -39,6 +40,7 @@ export function usePanelOrders(
     const periodStartRef = useRef(periodStart)
     const pinnedOrderIdRef = useRef(pinnedOrderId)
     const onStatusSavedRef = useRef(onStatusSaved)
+    const onNewOrderRef = useRef(onNewOrder)
     const fetchSequenceRef = useRef(0)
     const isFetchingRef = useRef(false)
     const arrivedDuringFetchRef = useRef(new Map<string, PanelOrder>())
@@ -50,6 +52,7 @@ export function usePanelOrders(
     periodStartRef.current = periodStart
     pinnedOrderIdRef.current = pinnedOrderId
     onStatusSavedRef.current = onStatusSaved
+    onNewOrderRef.current = onNewOrder
 
     const loadOrders = useCallback(async () => {
         const sequence = ++fetchSequenceRef.current
@@ -122,6 +125,7 @@ export function usePanelOrders(
 
                 if (isNew) {
                     playNewOrderChime()
+                    onNewOrderRef.current?.(order)
                 }
             },
             onSubscribed: settleAndLoad,

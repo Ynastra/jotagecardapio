@@ -21,9 +21,13 @@ import { describeChangeNote } from '../model/change-note'
 import { listOptionAnswers } from '../model/option-groups'
 import styles from './order-receipt.module.css'
 
-type OrderReceiptProps = {
+type ReceiptCopyProps = {
     order: PanelOrder
     store: Store
+}
+
+type OrderReceiptProps = ReceiptCopyProps & {
+    copies?: number
 }
 
 const KIND_TITLES: Record<Fulfillment, string> = {
@@ -60,14 +64,28 @@ function ReceiptStamp() {
 }
 
 // Fica fora da raiz da página: ao imprimir, a raiz some e só a comanda sai.
-export function OrderReceipt({ order, store }: OrderReceiptProps) {
+// As vias vão numa impressão só, uma por página.
+export function OrderReceipt({ order, store, copies = 1 }: OrderReceiptProps) {
+    const copyNumbers = Array.from({ length: Math.max(1, copies) }, (_, index) => index)
+
+    return createPortal(
+        <div className={styles.receipt}>
+            {copyNumbers.map((copyNumber) => (
+                <ReceiptCopy key={copyNumber} order={order} store={store} />
+            ))}
+        </div>,
+        document.body,
+    )
+}
+
+function ReceiptCopy({ order, store }: ReceiptCopyProps) {
     const address = describeReceiptAddress(order)
     const changeNote = describeChangeNote(order.changeForCents, order.totalCents)
     const deadline = describeOrderDeadline(order.createdAt, store.prepTimeMinutes, store.timezone, order.fulfillment)
     const orderTime = formatClockTime(order.createdAt, store.timezone)
 
-    return createPortal(
-        <div className={styles.receipt}>
+    return (
+        <div className={styles.copy}>
             <ThemeProvider folders={[store.slug]}>
                 <ReceiptStamp />
             </ThemeProvider>
@@ -154,7 +172,6 @@ export function OrderReceipt({ order, store }: OrderReceiptProps) {
             <p className={styles.footer}>
                 {store.name} · {formatNationalPhone(store.whatsapp)}
             </p>
-        </div>,
-        document.body,
+        </div>
     )
 }
