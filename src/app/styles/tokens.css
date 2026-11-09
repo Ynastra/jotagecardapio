@@ -90,10 +90,90 @@
     --store-logo-size: 96px;
     --store-logo-overlap: calc(var(--store-logo-size) / -2 - var(--space-5));
     --status-dot-size: 10px;
-    --product-photo-size: 104px;
     --divider-width: 1px;
-    --category-bar-height: 56px;
+    --category-bar-height: 48px;
     --section-scroll-offset: calc(var(--category-bar-height) + var(--space-3));
     --chevron-size: 8px;
     --sheet-max: 560px;
+
+    --menu-paper: #f7f3ea;
+    --menu-paper-sunken: #efe8da;
+    --menu-ink: #201e18;
+    --menu-ink-soft: #4a443a;
+    --menu-ink-muted: #635c50;
+    --menu-rule: #d5cdbd;
+    --menu-rule-strong: #aca499;
+    --menu-rust: #883e21;
+    --menu-open: #365835;
+    --menu-open-dot: #4b7846;
+
+    --menu-column-max: 1024px;
+    --menu-gutter: 16px;
+    --menu-logo-size: 48px;
+    --menu-status-dot-size: 7px;
+    --menu-font-size-name: clamp(1.3rem, 3vw, 1.95rem);
+    --menu-tracking-name: -0.065em;
+    --menu-tracking-title: -0.06em;
+    --menu-tracking-item: -0.03em;
+    --menu-font-serif: Georgia, 'Times New Roman', serif;
+
+    --menu-hero-bg: #080705;
+    --menu-hero-ink: #fff4df;
+    --menu-hero-muted: #d0c6b7;
+    --menu-hero-gold: #eab36e;
+    --menu-hero-gold-soft: #efbc79;
+    --menu-hero-kicker: #f3ba77;
+    --menu-hero-stripe-dark: #402d20;
+    --menu-hero-circle-ink: #251c12;
+    --menu-hero-radius: 12px;
+    --menu-hero-stripe-height: 5px;
+    --menu-hero-stripe-step: 12px;
+    --menu-hero-arrow-size: 28px;
+    --menu-hero-photo-fade: 14%;
+    --menu-hero-cover-opacity: 0.35;
+    --menu-hero-min-height: 164px;
+    --menu-hero-text-width: 60%;
+    --menu-hero-photo-width: 45%;
+    --menu-hero-pad-block: 16px;
+    --menu-hero-pad-inline: 16px;
+    --menu-font-size-hero: clamp(1.75rem, 7.5vw, 3.05rem);
+    --menu-font-size-kicker: 0.6875rem;
+    --menu-tracking-hero: -0.08em;
+    --menu-tracking-kicker: 0.15em;
+    --menu-tab-gap: 13px;
+    --menu-tab-underline: 3px;
+    --menu-thumb-width: 76px;
+    --menu-thumb-height: 76px;
+    --menu-plus-size: 24px;
+    --menu-font-size-section: clamp(1.8rem, 4vw, 2.7rem);
+    --menu-row-min-height: 82px;
+    --menu-brand-edge-ink: 55%;
+    --menu-sheet-cover-max: 28dvh;
+}
+
+@media (min-width: 640px) {
+    :root {
+        --menu-sheet-cover-max: 45dvh;
+    }
+}
+
+@media (min-width: 900px) {
+    :root {
+        --menu-thumb-width: 96px;
+        --menu-thumb-height: 88px;
+    }
+}
+
+@media (min-width: 681px) {
+    :root {
+        --menu-gutter: 20px;
+        --menu-tab-gap: 20px;
+        --menu-plus-size: 28px;
+        --menu-hero-min-height: 276px;
+        --menu-hero-text-width: 57%;
+        --menu-hero-photo-width: 53%;
+        --menu-hero-pad-block: 28px;
+        --menu-hero-pad-inline: 5%;
+        --menu-font-size-hero: clamp(2.5rem, 7vw, 5rem);
+    }
 }

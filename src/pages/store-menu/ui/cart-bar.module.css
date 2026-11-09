@@ -3,31 +3,28 @@
     inset-inline: 0;
     inset-block-end: 0;
     z-index: var(--z-cart-bar);
-    padding: var(--space-3) var(--space-4) var(--padding-safe-bottom);
+    padding: var(--space-3) var(--menu-gutter) var(--padding-safe-bottom);
     background: linear-gradient(to top, var(--color-bg) 70%, transparent);
 }
 
 .button {
+    --brand-edge: color-mix(in srgb, var(--color-brand), var(--menu-ink) var(--menu-brand-edge-ink));
+
     display: flex;
     gap: var(--space-3);
     align-items: center;
     justify-content: space-between;
     inline-size: 100%;
-    max-inline-size: var(--content-max);
+    max-inline-size: var(--menu-column-max);
     min-block-size: 56px;
     margin-inline: auto;
     padding: var(--space-2) var(--space-5);
+    border: 1px solid var(--brand-edge);
     border-radius: var(--radius-pill);
     background-color: var(--color-brand);
     color: var(--color-on-brand);
     font-weight: 700;
     box-shadow: var(--shadow-raised);
-}
-
-@media (min-width: 900px) {
-    .button {
-        max-inline-size: var(--menu-max);
-    }
 }
 
 .count {

@@ -1,3 +1,20 @@
+.scope {
+    --color-bg: var(--menu-paper);
+    --color-surface: var(--menu-paper);
+    --color-surface-muted: var(--menu-paper-sunken);
+    --color-text: var(--menu-ink);
+    --color-text-secondary: var(--menu-ink-soft);
+    --color-text-muted: var(--menu-ink-muted);
+    --color-border: var(--menu-rule);
+    --color-border-strong: var(--menu-rule-strong);
+    --color-accent: var(--menu-rust);
+    --color-success: var(--menu-open);
+
+    min-block-size: 100dvh;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+}
+
 .page {
     min-block-size: 100dvh;
     padding-block-end: var(--cart-bar-clearance);
@@ -6,38 +23,19 @@
 .content {
     display: grid;
     gap: var(--space-6);
-    max-inline-size: var(--content-max);
+    max-inline-size: var(--menu-column-max);
     margin-inline: auto;
-    padding: var(--space-5) var(--space-3);
-}
-
-@media (min-width: 900px) {
-    .content {
-        max-inline-size: var(--menu-max);
-    }
+    padding: var(--space-5) var(--menu-gutter);
 }
 
 .sectionTitle {
-    display: flex;
-    gap: var(--space-2);
-    align-items: center;
     margin-block-end: var(--space-3);
-    padding-inline: var(--space-2);
-    font-size: var(--font-size-xl);
-}
-
-.featured {
-    min-inline-size: 0;
-    scroll-margin-block-start: var(--section-scroll-offset);
-}
-
-.featuredList {
-    display: flex;
-    gap: var(--space-3);
-    padding: var(--space-1) var(--space-2) var(--space-3);
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
+    font-family: var(--menu-font-serif);
+    font-size: var(--menu-font-size-section);
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: var(--menu-tracking-title);
+    overflow-wrap: anywhere;
 }
 
 .category {
@@ -46,24 +44,17 @@
 
 .products {
     display: grid;
-    gap: var(--divider-width);
-    overflow: hidden;
-    border: var(--divider-width) solid var(--color-border);
-    border-radius: var(--radius-md);
-    background-color: var(--color-border);
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .products > li {
-    background-color: var(--color-surface);
+    border-block-start: var(--divider-width) solid var(--color-border);
 }
 
 @media (min-width: 900px) {
     .products {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .products > li:last-child:nth-child(odd) {
-        grid-column: 1 / -1;
+        column-gap: var(--space-8);
     }
 }
 

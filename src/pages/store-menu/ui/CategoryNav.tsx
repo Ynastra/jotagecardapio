@@ -4,44 +4,36 @@ import { AssetIcon, ThemeIcon } from '@/shared/ui'
 
 import { toAssetStem } from '../model/search'
 import type { Category } from '../model/types'
-import { FEATURED_SECTION_ID, getScrollBehavior } from '../model/use-active-section'
+import { getScrollBehavior } from '../model/use-active-section'
 import styles from './category-nav.module.css'
 
 type CategoryNavProps = {
     categories: readonly Category[]
     query: string
     onQueryChange: (query: string) => void
-    showFeatured: boolean
     activeId: string
     onSelect: (sectionId: string) => void
 }
 
-function revealActiveChip(chipRow: HTMLElement) {
-    const activeChip = chipRow.querySelector<HTMLElement>('[aria-current="true"]')
+function revealActiveTab(tabRow: HTMLElement) {
+    const activeTab = tabRow.querySelector<HTMLElement>('[aria-current="true"]')
 
-    if (!activeChip) {
+    if (!activeTab) {
         return
     }
 
-    const rowBox = chipRow.getBoundingClientRect()
-    const chipBox = activeChip.getBoundingClientRect()
-    const centeredOffset = (rowBox.width - chipBox.width) / 2
-    const left = chipRow.scrollLeft + chipBox.left - rowBox.left - centeredOffset
+    const rowBox = tabRow.getBoundingClientRect()
+    const tabBox = activeTab.getBoundingClientRect()
+    const centeredOffset = (rowBox.width - tabBox.width) / 2
+    const left = tabRow.scrollLeft + tabBox.left - rowBox.left - centeredOffset
 
-    chipRow.scrollTo({ left, behavior: getScrollBehavior() })
+    tabRow.scrollTo({ left, behavior: getScrollBehavior() })
 }
 
-export function CategoryNav({
-    categories,
-    query,
-    onQueryChange,
-    showFeatured,
-    activeId,
-    onSelect,
-}: CategoryNavProps) {
+export function CategoryNav({ categories, query, onQueryChange, activeId, onSelect }: CategoryNavProps) {
     const [isSearchOpen, setSearchOpen] = useState(false)
     const searchInputRef = useRef<HTMLInputElement>(null)
-    const chipRowRef = useRef<HTMLUListElement>(null)
+    const tabRowRef = useRef<HTMLUListElement>(null)
 
     useEffect(() => {
         if (isSearchOpen) {
@@ -50,8 +42,8 @@ export function CategoryNav({
     }, [isSearchOpen])
 
     useEffect(() => {
-        if (chipRowRef.current) {
-            revealActiveChip(chipRowRef.current)
+        if (tabRowRef.current) {
+            revealActiveTab(tabRowRef.current)
         }
     }, [activeId, isSearchOpen])
 
@@ -60,8 +52,8 @@ export function CategoryNav({
         setSearchOpen(false)
     }
 
-    function getChipClassName(sectionId: string): string {
-        const className = sectionId === activeId ? `${styles.chip} ${styles.chipActive}` : styles.chip
+    function getTabClassName(sectionId: string): string {
+        const className = sectionId === activeId ? `${styles.tab} ${styles.tabActive}` : styles.tab
         return className
     }
 
@@ -85,33 +77,12 @@ export function CategoryNav({
                     </label>
                 ) : (
                     <>
-                        <button
-                            type="button"
-                            className={styles.iconButton}
-                            aria-label="Buscar no cardápio"
-                            onClick={() => setSearchOpen(true)}
-                        >
-                            <ThemeIcon name="busca" size={20} />
-                        </button>
-                        <ul ref={chipRowRef} className={styles.chips}>
-                            {showFeatured ? (
-                                <li>
-                                    <button
-                                        type="button"
-                                        className={getChipClassName(FEATURED_SECTION_ID)}
-                                        aria-current={activeId === FEATURED_SECTION_ID}
-                                        onClick={() => onSelect(FEATURED_SECTION_ID)}
-                                    >
-                                        <ThemeIcon name="destaque" size={18} />
-                                        Destaques
-                                    </button>
-                                </li>
-                            ) : null}
+                        <ul ref={tabRowRef} className={styles.tabs}>
                             {categories.map((category) => (
                                 <li key={category.id}>
                                     <button
                                         type="button"
-                                        className={getChipClassName(category.id)}
+                                        className={getTabClassName(category.id)}
                                         aria-current={activeId === category.id}
                                         onClick={() => onSelect(category.id)}
                                     >
@@ -121,6 +92,14 @@ export function CategoryNav({
                                 </li>
                             ))}
                         </ul>
+                        <button
+                            type="button"
+                            className={styles.iconButton}
+                            aria-label="Buscar no cardápio"
+                            onClick={() => setSearchOpen(true)}
+                        >
+                            <ThemeIcon name="busca" size={20} />
+                        </button>
                     </>
                 )}
             </div>

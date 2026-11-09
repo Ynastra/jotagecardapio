@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-export const FEATURED_SECTION_ID = 'destaques'
-
 const SECTION_ID_PREFIX = 'categoria-'
 const OBSERVED_VIEWPORT_BOTTOM_MARGIN = '-60%'
 const SCROLL_LOCK_FALLBACK_MS = 1000

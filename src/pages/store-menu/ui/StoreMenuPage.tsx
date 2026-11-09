@@ -4,19 +4,21 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import type { DraftLine, OrderMessageContext, PlacedOrder } from '@/entities/order'
 import { ProductCard } from '@/entities/product'
 import { buildBrandStyle, ThemeProvider } from '@/shared/lib'
-import { Button, MakerSignature, StatusMessage, ThemeIcon } from '@/shared/ui'
+import { Button, MakerSignature, StatusMessage } from '@/shared/ui'
 
 import { countProductInCart, getMaxQuantity, getProductAvailability } from '../model/availability'
+import { pickFeaturedHero } from '../model/featured-hero'
 import { isStoreOpenNow } from '../model/opening-hours'
 import { buildOrderConfirmation } from '../model/order-confirmation'
 import { filterCategories } from '../model/search'
 import type { Store, StoreMenu } from '../model/types'
 import { useCart } from '../model/use-cart'
-import { FEATURED_SECTION_ID, toSectionElementId, useActiveSection } from '../model/use-active-section'
+import { toSectionElementId, useActiveSection } from '../model/use-active-section'
 import { useStoreMenu } from '../model/use-store-menu'
 import { CartBar } from './CartBar'
 import { CategoryNav } from './CategoryNav'
 import { CheckoutSheet } from './CheckoutSheet'
+import { FeaturedHero } from './FeaturedHero'
 import { OrderConfirmation } from './OrderConfirmation'
 import { ProductSheet } from './ProductSheet'
 import { StoreHeader } from './StoreHeader'
@@ -62,13 +64,10 @@ function StoreMenuView({ menu }: { menu: StoreMenu }) {
     const selectedProduct =
         requestedProduct && getProductAvailability(requestedProduct) === 'available' ? requestedProduct : undefined
     const visibleCategories = filterCategories(categories, query)
-    const featuredProducts = products.filter((product) => product.featured)
-    const showFeatured = featuredProducts.length > 0 && query.trim() === ''
+    const featuredHero = useMemo(() => pickFeaturedHero(store.slug, products), [store.slug, products])
+    const showFeaturedHero = featuredHero !== null && query.trim() === ''
     const confirmation = placed ? buildOrderConfirmation(store, placed.order, placed.context) : null
-    const sectionIds = [
-        ...(showFeatured ? [FEATURED_SECTION_ID] : []),
-        ...visibleCategories.map((category) => category.id),
-    ]
+    const sectionIds = visibleCategories.map((category) => category.id)
     const { activeId, selectSection } = useActiveSection(sectionIds)
 
     useEffect(() => {
@@ -103,35 +102,21 @@ function StoreMenuView({ menu }: { menu: StoreMenu }) {
 
     return (
         <div className={styles.page} style={buildBrandStyle(store)}>
-            <StoreHeader store={store} />
+            <StoreHeader store={store} itemCount={cart.itemCount} onOpenCart={() => setCheckoutOpen(true)} />
+
+            {showFeaturedHero ? (
+                <FeaturedHero hero={featuredHero} coverUrl={store.coverUrl} onOpen={openProduct} />
+            ) : null}
+
             <CategoryNav
                 categories={categories}
                 query={query}
                 onQueryChange={setQuery}
-                showFeatured={showFeatured}
                 activeId={activeId}
                 onSelect={selectSection}
             />
 
             <main className={styles.content}>
-                {showFeatured ? (
-                    <section
-                        id={toSectionElementId(FEATURED_SECTION_ID)}
-                        className={styles.featured}
-                        aria-labelledby="destaques"
-                    >
-                        <h2 id="destaques" className={styles.sectionTitle}>
-                            <ThemeIcon name="destaque" size={22} />
-                            Destaques
-                        </h2>
-                        <div className={styles.featuredList}>
-                            {featuredProducts.map((product) => (
-                                <ProductCard key={product.id} product={product} onOpen={openProduct} layout="tile" />
-                            ))}
-                        </div>
-                    </section>
-                ) : null}
-
                 {visibleCategories.map((category) => (
                     <section
                         key={category.id}
@@ -203,19 +188,21 @@ export function StoreMenuPage() {
 
     return (
         <ThemeProvider folders={folders}>
-            {state.status === 'loading' ? <p className={styles.loading}>Carregando cardápio</p> : null}
-            {state.status === 'ready' ? <StoreMenuView menu={state.menu} /> : null}
-            {state.status === 'not-found' ? (
-                <StatusMessage illustration="nao-encontrado" title="Cardápio não encontrado">
-                    <p>Confira o endereço que você recebeu da loja.</p>
-                </StatusMessage>
-            ) : null}
-            {state.status === 'error' ? (
-                <StatusMessage illustration="erro-conexao" title="Não deu para abrir o cardápio">
-                    <p>Confira a internet e tente de novo.</p>
-                    <Button onClick={() => window.location.reload()}>Tentar de novo</Button>
-                </StatusMessage>
-            ) : null}
+            <div className={styles.scope}>
+                {state.status === 'loading' ? <p className={styles.loading}>Carregando cardápio</p> : null}
+                {state.status === 'ready' ? <StoreMenuView menu={state.menu} /> : null}
+                {state.status === 'not-found' ? (
+                    <StatusMessage illustration="nao-encontrado" title="Cardápio não encontrado">
+                        <p>Confira o endereço que você recebeu da loja.</p>
+                    </StatusMessage>
+                ) : null}
+                {state.status === 'error' ? (
+                    <StatusMessage illustration="erro-conexao" title="Não deu para abrir o cardápio">
+                        <p>Confira a internet e tente de novo.</p>
+                        <Button onClick={() => window.location.reload()}>Tentar de novo</Button>
+                    </StatusMessage>
+                ) : null}
+            </div>
         </ThemeProvider>
     )
 }

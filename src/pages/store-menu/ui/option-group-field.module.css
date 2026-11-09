@@ -59,6 +59,10 @@
     cursor: pointer;
 }
 
+.option input {
+    flex: none;
+}
+
 .blocked {
     opacity: 0.5;
     cursor: not-allowed;
