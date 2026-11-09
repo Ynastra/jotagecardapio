@@ -92,6 +92,7 @@
     --receipt-border-heavy: 2px;
     --receipt-padding-block: 22px;
     --receipt-padding-inline: 18px;
+    --receipt-width: 72mm;
 
     --touch-target: 44px;
     --padding-safe-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
