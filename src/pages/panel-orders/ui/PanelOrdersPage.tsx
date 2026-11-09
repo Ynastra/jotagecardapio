@@ -8,12 +8,14 @@ import { StatusMessage } from '@/shared/ui'
 
 import { ORDERS_QUERY_LIMIT } from '../model/board'
 import { useLinkedOrder, type LinkedOrderFailure } from '../model/use-linked-order'
+import { buildSampleOrder } from '../model/sample-order'
 import { useOrderBoard } from '../model/use-order-board'
 import { usePrintQueue } from '../model/use-print-queue'
 import { BoardCard } from './BoardCard'
 import { BoardColumn, type ColumnTone } from './BoardColumn'
 import { BoardToolbar } from './BoardToolbar'
 import { OrderDrawer } from './OrderDrawer'
+import { PrintControls } from './PrintControls'
 import { PrintStation } from './PrintStation'
 import styles from './order-board.module.css'
 
@@ -117,6 +119,11 @@ export function PanelOrdersPage() {
                 period={board.period}
                 onPeriodChange={board.setPeriod}
                 orderCount={board.visibleCount}
+            />
+
+            <PrintControls
+                storeId={store.id}
+                onTest={(copies) => printQueue.printOrder(buildSampleOrder(new Date()), copies)}
             />
 
             {board.errorMessage ? (
