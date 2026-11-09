@@ -1,6 +1,6 @@
 import type { AddressDisplay, StoreSettings, StoreSettingsPatch } from '@/entities/store'
 import {
-    formatBrazilianPhone,
+    formatNationalPhone,
     getContrastRatio,
     isHexColor,
     isValidBrazilianPhone,
@@ -21,7 +21,6 @@ export const MIN_TEXT_CONTRAST = 4.5
 export const MIN_BRAND_ON_PAGE_CONTRAST = 3
 
 const CENTS_PER_REAL = 100
-const MIN_INTERNATIONAL_DIGITS = 12
 
 export const BRAZILIAN_STATES = [
     'AC',
@@ -110,19 +109,10 @@ function formatCentsText(cents: number): string {
     return text
 }
 
-function toNationalPhone(whatsapp: string): string {
-    const digits = keepDigits(whatsapp)
-    const isInternational = digits.length >= MIN_INTERNATIONAL_DIGITS && digits.startsWith(BRAZIL_COUNTRY_CODE)
-
-    const national = isInternational ? digits.slice(BRAZIL_COUNTRY_CODE.length) : digits
-    const formatted = formatBrazilianPhone(national)
-    return formatted
-}
-
 export function formFromSettings(settings: StoreSettings): StoreForm {
     const form = {
         name: settings.name,
-        whatsapp: toNationalPhone(settings.whatsapp),
+        whatsapp: formatNationalPhone(settings.whatsapp),
         minOrderText: formatCentsText(settings.minOrderCents),
         address: settings.address ?? '',
         city: settings.city ?? '',

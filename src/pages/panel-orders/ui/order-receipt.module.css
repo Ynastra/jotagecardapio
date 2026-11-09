@@ -2,25 +2,52 @@
     display: none;
 }
 
-.header {
+.stamp {
+    display: block;
+    inline-size: var(--receipt-stamp-size);
+    block-size: var(--receipt-stamp-size);
+    margin: 0 auto var(--space-2);
+    object-fit: contain;
+}
+
+.kindBox {
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-2);
+    border: var(--receipt-border-heavy) solid var(--receipt-ink);
     text-align: center;
 }
 
-.storeName {
-    font-size: var(--font-size-lg);
-    font-weight: 800;
+.kind {
+    font-size: var(--receipt-font-size-kind);
+    font-weight: 700;
+    letter-spacing: 0.04em;
 }
 
 .code {
-    font-size: var(--font-size-xl);
-    font-weight: 800;
+    font-size: var(--receipt-font-size-code);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.1;
 }
 
-.block {
+.customer {
     display: grid;
     gap: var(--space-1);
-    padding-block: var(--space-2);
-    border-block-start: 1px dashed currentColor;
+    margin-block-start: var(--space-3);
+}
+
+.delivery {
+    display: grid;
+    gap: var(--space-1);
+    margin-block-start: var(--space-2);
+    padding: var(--space-2);
+    border: var(--receipt-border-box) solid var(--receipt-ink);
+}
+
+.deliveryLabel {
+    font-size: var(--receipt-font-size-kind);
+    font-weight: 700;
 }
 
 .row {
@@ -30,19 +57,70 @@
 }
 
 .strong {
-    font-weight: 800;
+    font-weight: 700;
 }
 
-.detail {
-    padding-inline-start: var(--space-3);
+.soft {
+    color: var(--receipt-ink-soft);
 }
 
 .items {
     display: grid;
-    gap: var(--space-2);
-    margin: 0;
+    margin: var(--space-3) 0 0;
     padding: 0;
     list-style: none;
+}
+
+.item + .item {
+    margin-block-start: var(--space-3);
+    padding-block-start: var(--space-3);
+    border-block-start: var(--receipt-border-heavy) dotted var(--receipt-ink);
+}
+
+.band {
+    display: flex;
+    gap: var(--space-2);
+    justify-content: space-between;
+    padding: var(--space-1) var(--space-2);
+    background-color: var(--receipt-ink);
+    color: var(--receipt-paper);
+    font-size: var(--receipt-font-size-item);
+    font-weight: 700;
+}
+
+.answers {
+    display: grid;
+    gap: var(--space-1);
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.answers li::before {
+    content: '▸ ';
+}
+
+.noteBox {
+    margin-block-start: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    border: var(--receipt-border-box) solid var(--receipt-ink);
+    font-weight: 700;
+}
+
+.totals {
+    display: grid;
+    gap: var(--space-1);
+    margin-block-start: var(--space-3);
+    padding-block-start: var(--space-3);
+    border-block-start: var(--receipt-border-heavy) dotted var(--receipt-ink);
+}
+
+.footer {
+    margin-block-start: var(--space-3);
+    padding-block-start: var(--space-3);
+    border-block-start: var(--receipt-border-thin) solid var(--receipt-ink);
+    color: var(--receipt-ink-soft);
+    text-align: center;
 }
 
 @page {
@@ -58,11 +136,14 @@
     .receipt {
         display: block;
         inline-size: 80mm;
-        padding: var(--space-2) var(--space-3);
-        background-color: transparent;
-        color: var(--color-text);
-        font-family: var(--font-body);
-        font-size: var(--font-size-sm);
+        padding: var(--receipt-padding-block) var(--receipt-padding-inline);
+        background-color: var(--receipt-paper);
+        color: var(--receipt-ink);
+        font-family: var(--receipt-font);
+        font-size: var(--receipt-font-size);
+        font-variant-numeric: tabular-nums;
         line-height: 1.35;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
     }
 }

@@ -6,6 +6,7 @@ type StoreRow = {
     id: string
     name: string
     slug: string
+    whatsapp: string
     timezone: string
     prep_time_minutes: number
 }
@@ -15,6 +16,7 @@ function mapStore(row: StoreRow): Store {
         id: row.id,
         name: row.name,
         slug: row.slug,
+        whatsapp: row.whatsapp,
         timezone: row.timezone,
         prepTimeMinutes: row.prep_time_minutes,
     }
@@ -24,7 +26,7 @@ function mapStore(row: StoreRow): Store {
 export async function fetchMyStores(): Promise<Store[]> {
     const { data, error } = await supabase
         .from('store_members')
-        .select('stores (id, name, slug, timezone, prep_time_minutes)')
+        .select('stores (id, name, slug, whatsapp, timezone, prep_time_minutes)')
 
     if (error) {
         throw error
