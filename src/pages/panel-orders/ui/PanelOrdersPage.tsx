@@ -9,10 +9,12 @@ import { StatusMessage } from '@/shared/ui'
 import { ORDERS_QUERY_LIMIT } from '../model/board'
 import { useLinkedOrder, type LinkedOrderFailure } from '../model/use-linked-order'
 import { useOrderBoard } from '../model/use-order-board'
+import { usePrintQueue } from '../model/use-print-queue'
 import { BoardCard } from './BoardCard'
 import { BoardColumn, type ColumnTone } from './BoardColumn'
 import { BoardToolbar } from './BoardToolbar'
 import { OrderDrawer } from './OrderDrawer'
+import { PrintStation } from './PrintStation'
 import styles from './order-board.module.css'
 
 const COLUMN_DEFINITIONS = [
@@ -24,6 +26,7 @@ const COLUMN_DEFINITIONS = [
 
 const OPEN_ORDER_PARAM = 'pedido'
 const LINK_NOTICE_MS = 6000
+const MANUAL_PRINT_COPIES = 1
 
 const LINK_NOTICE_MESSAGES: Record<LinkedOrderFailure, string> = {
     'not-found': 'Pedido não encontrado',
@@ -39,7 +42,8 @@ export function PanelOrdersPage() {
     const [searchParams, setSearchParams] = useSearchParams()
     const [linkNotice, setLinkNotice] = useState<LinkedOrderFailure | null>(null)
     const openOrderId = searchParams.get(OPEN_ORDER_PARAM)
-    const board = useOrderBoard(store, openOrderId)
+    const printQueue = usePrintQueue(store.id)
+    const board = useOrderBoard(store, openOrderId, printQueue.printNewOrder)
     const openOrder = openOrderId ? board.findOrder(openOrderId) : null
 
     function openDrawer(orderId: string) {
@@ -186,8 +190,11 @@ export function PanelOrdersPage() {
                     onClose={closeDrawer}
                     onChangeStatus={board.changeStatus}
                     onChangePayment={board.changePaymentStatus}
+                    onPrint={(order) => printQueue.printOrder(order, MANUAL_PRINT_COPIES)}
                 />
             ) : null}
+
+            <PrintStation store={store} job={printQueue.currentJob} onDone={printQueue.finishJob} />
         </div>
     )
 }

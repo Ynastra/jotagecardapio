@@ -6,7 +6,6 @@ import { Button, ThemeIcon } from '@/shared/ui'
 
 import { getNextStep, getPreviousStatus, isActiveOrder } from '../model/order-flow'
 import { OrderDetail } from './OrderDetail'
-import { OrderReceipt } from './OrderReceipt'
 import styles from './order-drawer.module.css'
 
 type OrderDrawerProps = {
@@ -18,6 +17,7 @@ type OrderDrawerProps = {
     onClose: () => void
     onChangeStatus: (orderId: string, status: OrderStatus) => void
     onChangePayment: (orderId: string, paymentStatus: OrderPaymentStatus) => void
+    onPrint: (order: PanelOrder) => void
 }
 
 export function OrderDrawer({
@@ -29,6 +29,7 @@ export function OrderDrawer({
     onClose,
     onChangeStatus,
     onChangePayment,
+    onPrint,
 }: OrderDrawerProps) {
     const dialogRef = useRef<HTMLDialogElement>(null)
     const [isConfirmingCancel, setConfirmingCancel] = useState(false)
@@ -73,7 +74,7 @@ export function OrderDrawer({
             <div className={styles.panel}>
                 <header className={styles.header}>
                     <h2 className={styles.title}>Pedido {order.publicCode}</h2>
-                    <button type="button" className={styles.link} onClick={() => window.print()}>
+                    <button type="button" className={styles.link} onClick={() => onPrint(order)}>
                         Imprimir
                     </button>
                     <button type="button" className={styles.close} onClick={onClose} aria-label="Fechar">
@@ -132,7 +133,6 @@ export function OrderDrawer({
                     )}
                 </footer>
             </div>
-            <OrderReceipt order={order} store={store} />
         </dialog>
     )
 }
