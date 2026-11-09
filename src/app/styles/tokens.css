@@ -78,6 +78,21 @@
     --color-on-jg-muted: rgb(255 255 255 / 62%);
     --color-jg-hover: rgb(255 255 255 / 10%);
 
+    --receipt-ink: #141414;
+    --receipt-ink-soft: #3a3a3a;
+    --receipt-paper: #ffffff;
+    --receipt-font: Arial, 'Helvetica Neue', sans-serif;
+    --receipt-font-size: 13px;
+    --receipt-font-size-item: 15px;
+    --receipt-font-size-kind: 16px;
+    --receipt-font-size-code: 26px;
+    --receipt-stamp-size: 84px;
+    --receipt-border-thin: 1px;
+    --receipt-border-box: 1.5px;
+    --receipt-border-heavy: 2px;
+    --receipt-padding-block: 22px;
+    --receipt-padding-inline: 18px;
+
     --touch-target: 44px;
     --padding-safe-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
     --cart-bar-clearance: 112px;
